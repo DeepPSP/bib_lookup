@@ -15,7 +15,7 @@ _EXPECTED_OUTPUTS = _EXPECTED_OUTPUT_FILE.read_text().strip(" \n")
 _OUTPUT_FILE = _CWD / "test_output.bib"
 
 
-bl = bib_lookup.BibLookup(_OUTPUT_FILE)
+bl = bib_lookup.BibLookup(output_file=_OUTPUT_FILE)
 
 
 def test_io_from_file():
