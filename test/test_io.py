@@ -23,7 +23,7 @@ def test_io_from_file():
     assert lookup_result == _EXPECTED_OUTPUTS
     assert len(bl) == 3
     bib_identifier, bib_item = bl[1], bl[bl[1]]
-    bl.save([0,2])
+    bl.save([0, 2])
     assert len(bl) == 1
     assert (bib_identifier, bib_item) == (bl[0], bl[bl[0]])
     bl.save()

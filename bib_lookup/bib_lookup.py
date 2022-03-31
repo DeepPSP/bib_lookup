@@ -132,8 +132,9 @@ class BibLookup(object):
         ], f"align must be one of 'middle', 'left', 'left-middle', 'left_middle', but got {self.align}"
         self.output_file = Path(output_file) if output_file is not None else None
         if self.output_file is not None:
-            assert self.output_file.suffix == ".bib", \
-                f"output_file must be a .bib file, but got {self.output_file}"
+            assert (
+                self.output_file.suffix == ".bib"
+            ), f"output_file must be a .bib file, but got {self.output_file}"
         self.__cached_lookup_results = OrderedDict()
         self.email = email
         self._ignore_fields = [k.lower() for k in ignore_fields]
@@ -177,7 +178,9 @@ class BibLookup(object):
         )
         self._ordering = [k.lower() for k in self._ordering]
 
-    def __call__(self, identifier: Union[Path, str, Sequence[str]], align: Optional[str] = None) -> str:
+    def __call__(
+        self, identifier: Union[Path, str, Sequence[str]], align: Optional[str] = None
+    ) -> str:
         """finished, checked,
 
         Parameters
@@ -202,12 +205,15 @@ class BibLookup(object):
             if Path(identifier).exists():
                 return self(Path(identifier), align)
         elif isinstance(identifier, Sequence):
-            assert all([isinstance(i, str) for i in identifier]), \
-                f"identifier must be a string or a sequence of strings, but got {identifier}"
+            assert all(
+                [isinstance(i, str) for i in identifier]
+            ), f"identifier must be a string or a sequence of strings, but got {identifier}"
             return "\n".join(self(l, align) for l in identifier)
         else:
-            raise TypeError(f"identifier must be a string or a sequence of strings, but got {identifier}")
-            
+            raise TypeError(
+                f"identifier must be a string or a sequence of strings, but got {identifier}"
+            )
+
         category, feed_content = self._obtain_feed_content(identifier)
         if category == "doi":
             res = self._handle_doi(feed_content)
@@ -537,7 +543,11 @@ class BibLookup(object):
     def debug(self) -> NoReturn:
         self.verbose = 2
 
-    def save(self, identifiers: Union[int, str, Sequence[str], Sequence[int]]=None, output_file: Optional[Union[str, Path]] = None) -> NoReturn:
+    def save(
+        self,
+        identifiers: Union[int, str, Sequence[str], Sequence[int]] = None,
+        output_file: Optional[Union[str, Path]] = None,
+    ) -> NoReturn:
         """
 
         save bib items corresponding to the identifiers to the output file.
@@ -565,10 +575,13 @@ class BibLookup(object):
             identifiers = [self[identifiers]]
         elif isinstance(identifiers, str):
             identifiers = [identifiers]
-        elif isinstance(identifiers, Sequence) and all([isinstance(i, int) for i in identifiers]):
+        elif isinstance(identifiers, Sequence) and all(
+            [isinstance(i, int) for i in identifiers]
+        ):
             identifiers = [self[i] for i in identifiers]
-        assert isinstance(identifiers, Sequence) and all([isinstance(i, str) for i in identifiers]), \
-            "identifiers must be a string (or an integer) or a sequence of strings (or integers)"
+        assert isinstance(identifiers, Sequence) and all(
+            [isinstance(i, str) for i in identifiers]
+        ), "identifiers must be a string (or an integer) or a sequence of strings (or integers)"
         identifiers = [i for i in identifiers if i in self.__cached_lookup_results]
 
         with open(_output_file, "a") as f:
@@ -578,7 +591,9 @@ class BibLookup(object):
         for i in identifiers:
             self.__cached_lookup_results.pop(i)
 
-    def pop(self, identifiers: Union[int, str, Sequence[str], Sequence[int]]) -> NoReturn:
+    def pop(
+        self, identifiers: Union[int, str, Sequence[str], Sequence[int]]
+    ) -> NoReturn:
         """
 
         remove the bib corresponding to the identifiers from the cache
@@ -593,10 +608,13 @@ class BibLookup(object):
             identifiers = [self[identifiers]]
         elif isinstance(identifiers, str):
             identifiers = [identifiers]
-        elif isinstance(identifiers, Sequence) and all([isinstance(i, int) for i in identifiers]):
+        elif isinstance(identifiers, Sequence) and all(
+            [isinstance(i, int) for i in identifiers]
+        ):
             identifiers = [self[i] for i in identifiers]
-        assert isinstance(identifiers, Sequence) and all([isinstance(i, str) for i in identifiers]), \
-            "identifiers must be a string (or an integer) or a sequence of strings (or integers)"
+        assert isinstance(identifiers, Sequence) and all(
+            [isinstance(i, str) for i in identifiers]
+        ), "identifiers must be a string (or an integer) or a sequence of strings (or integers)"
         for i in identifiers:
             self.__cached_lookup_results.pop(i, None)
 
@@ -607,7 +625,9 @@ class BibLookup(object):
             assert index in self.__cached_lookup_results, f"{index} not found"
             return self.__cached_lookup_results[index]
         else:
-            raise ValueError(f"index should be an integer or a string, not {type(index)}")
+            raise ValueError(
+                f"index should be an integer or a string, not {type(index)}"
+            )
 
     def __len__(self) -> int:
         return len(self.__cached_lookup_results)
