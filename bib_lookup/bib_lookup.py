@@ -155,11 +155,9 @@ class BibLookup(object):
         # arXiv examples:
         # "arXiv:1501.00001v1", "arXiv:cs/0012022"
         self.__arxiv_pattern_prefix = (
-            f"((?:(?:(?:https?:\/\/)?arxiv.org\/)?abs\/)|arxiv{colon})"
+            f"((?:(?:(?:https?:\/\/)?arxiv.org\/)?abs\/)|(arxiv{colon}))"
         )
-        self.__arxiv_pattern = (
-            f"^(?:{self.__arxiv_pattern_prefix})?(?:[\w\-]+\/\d+|\d+\.\d+(v(\d+))?)$"
-        )
+        self.__arxiv_pattern = f"^(?:{self.__arxiv_pattern_prefix})?(?:([\w\-]+\/\d+)|(\d+\.\d+(v(\d+))?))$"
         # self.__arxiv_pattern_old = f"^(?:{self.__arxiv_pattern_prefix})?[\w\-]+\/\d+$"
         self.__default_err = "Not Found"
 
@@ -497,6 +495,10 @@ class BibLookup(object):
     @property
     def pubmed_pattern(self) -> str:
         return self.__pm_pattern
+
+    @property
+    def default_err(self) -> str:
+        return self.__default_err
 
     @property
     def ignore_fields(self) -> List[str]:
