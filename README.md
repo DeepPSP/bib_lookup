@@ -11,7 +11,7 @@ Run
 ```bash
 python -m pip install bib-lookup
 ```
-or install the latest version in [GitHub](https://github.com/DeepPSP/bib_lookup/)
+or install the latest version in [GitHub](https://github.com/DeepPSP/bib_lookup/) using
 ```bash
 python -m pip install git+https://github.com/DeepPSP/bib_lookup.git
 ```
