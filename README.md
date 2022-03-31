@@ -4,6 +4,23 @@ A useful tool for looking up Bib entries using DOI, or pubmed ID (or URL), or ar
 It is an updated version of
 https://github.com/wenh06/utils/blob/master/utils_universal/utils_bib.py
 
+**NOTE** that you should have internet connection to use `bib_lookup`.
+
+## Installation
+Run
+```bash
+python -m pip install bib-lookup
+```
+or install the latest version in [GitHub](https://github.com/DeepPSP/bib_lookup/)
+```bash
+python -m pip install git+https://github.com/DeepPSP/bib_lookup.git
+```
+or git clone this repository and install locally via
+```bash
+cd bib_lookup
+python -m pip install .
+```
+
 ## Requirements
 - requests
 - feedparser
