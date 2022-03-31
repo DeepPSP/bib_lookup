@@ -68,11 +68,17 @@ python -m pip install .
 ## WARNING
 Many journals have specific requirements for the Bib entries,
 for example, the title and/or journal (and/or booktitle), etc. should be **capitalized**,
-which could not be done automatically as some abbreviations in title
-should have characters all in the upper case,
-some should have characters all in in the lower case,
-and some others should have mixed cases (e.g. `pFedMe`).
-This should be corrected by the user himself **if necessary**,
+which could not be done automatically since
+- some abbreviations in title should have characters all in the upper case, for example
+> ALBERT: A Lite BERT for Self-supervised Learning of Language Representations
+
+- some should have characters all in in the lower case,
+> mixup: Beyond Empirical Risk Minimization
+
+- and some others should have mixed cases,
+> KeMRE: Knowledge-enhanced Medical Relation Extraction for Chinese Medicine Instructions
+
+This should be corrected by the user himself **if necessary** (which although is rare),
 and remember to enclose such fields with **double curly braces**.
 
 ## References
