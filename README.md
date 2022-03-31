@@ -28,6 +28,7 @@ python -m pip install .
 
 ## Usage Examples
 ```python
+>>> from bib_lookup import BibLookup
 >>> bl = BibLookup(align="middle")
 >>> res = bl("1707.07183")
 @article{wen2017_1707.07183v2,
@@ -57,6 +58,24 @@ python -m pip install .
   month     = {9},
   publisher = {{IEEE}},
 }
+```
+
+## Output (Append) to a `.bib` File
+Each time a bib item is successfully found, it will be cached. One can call the `save` function to write the cached bib items to a `.bib` file, in the append mode.
+```python
+>>> from bib_lookup import BibLookup
+>>> bl = BibLookup()
+>>> bl(["10.1109/CVPR.2016.90", "10.23919/cinc53138.2021.9662801", "DOI: 10.1142/S1005386718000305"]);
+>>> len(bl)
+3
+>>> bl[0]
+'10.1109/CVPR.2016.90'
+>>> bl.save([0, 2], "path/to/some/file.bib")  # save bib item corr. to "10.1109/CVPR.2016.90" and "DOI: 10.1142/S1005386718000305"
+>>> len(bl)
+1
+>>> bl.pop(0)  # remove the bib item corr. "10.23919/cinc53138.2021.9662801", equivalent to `bl.pop("10.23919/cinc53138.2021.9662801")`
+>>> len(bl)
+0
 ```
 
 ## TODO
