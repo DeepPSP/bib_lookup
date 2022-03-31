@@ -13,6 +13,7 @@ Requirements
 
 import re, warnings, calendar
 from time import strptime
+from pathlib import Path
 from collections import OrderedDict
 from typing import Union, Optional, Tuple, List, Sequence, Tuple, Dict, NoReturn
 from numbers import Number
@@ -95,6 +96,7 @@ class BibLookup(object):
         self,
         align: str = "middle",
         ignore_fields: Sequence[str] = ["url"],
+        output_file: Optional[Union[str, Path]] = None,
         email: Optional[str] = None,
         **kwargs,
     ) -> NoReturn:
@@ -107,7 +109,10 @@ class BibLookup(object):
             can be one of "middle", "left", "left-middle", "left_middle"
         ignore_fields: sequence of str, default ["url"],
             fields to be ignored in the final output,
-            case insensitive,
+            case insensitive
+        output_file: str or Path, optional,
+            the file to save the lookup results,
+            append mode is used if the file exists
         email: str, optional,
             email for querying PubMed publications
         kwargs: additional key word arguments, including
@@ -125,6 +130,11 @@ class BibLookup(object):
             "left-middle",
             "left_middle",
         ], f"align must be one of 'middle', 'left', 'left-middle', 'left_middle', but got {self.align}"
+        self.output_file = Path(output_file) if output_file is not None else None
+        if self.output_file is not None:
+            assert self.output_file.suffix == ".bib", \
+                f"output_file must be a .bib file, but got {self.output_file}"
+        self.__cached_lookup_results = OrderedDict()
         self.email = email
         self._ignore_fields = [k.lower() for k in ignore_fields]
         assert self.align in [
@@ -167,12 +177,12 @@ class BibLookup(object):
         )
         self._ordering = [k.lower() for k in self._ordering]
 
-    def __call__(self, identifier: str, align: Optional[str] = None) -> str:
+    def __call__(self, identifier: Union[Path, str, Sequence[str]], align: Optional[str] = None) -> str:
         """finished, checked,
 
         Parameters
         ----------
-        identifier: str,
+        identifier: Path or str or sequence of str,
             identifier of a publication,
             can be DOI, PMID (or url), PMCID (or url), arXiv id,
         align: str, optional,
@@ -185,6 +195,19 @@ class BibLookup(object):
             the final output in the `str` format
 
         """
+        if isinstance(identifier, Path):
+            identifier = [l for l in identifier.read_text().splitlines() if len(l) > 0]
+            return self(identifier, align)
+        if isinstance(identifier, str):
+            if Path(identifier).exists():
+                return self(Path(identifier), align)
+        elif isinstance(identifier, Sequence):
+            assert all([isinstance(i, str) for i in identifier]), \
+                f"identifier must be a string or a sequence of strings, but got {identifier}"
+            return "\n".join(self(l, align) for l in identifier)
+        else:
+            raise TypeError(f"identifier must be a string or a sequence of strings, but got {identifier}")
+            
         category, feed_content = self._obtain_feed_content(identifier)
         if category == "doi":
             res = self._handle_doi(feed_content)
@@ -197,7 +220,10 @@ class BibLookup(object):
 
         if res != self.__default_err:
             res = self._align_result(res, align=(align or self.align).lower())
-        print(res)
+            self.__cached_lookup_results[identifier] = res
+
+        if self.verbose >= 1:
+            print(res)
 
         return res
 
@@ -510,3 +536,78 @@ class BibLookup(object):
 
     def debug(self) -> NoReturn:
         self.verbose = 2
+
+    def save(self, identifiers: Union[int, str, Sequence[str], Sequence[int]]=None, output_file: Optional[Union[str, Path]] = None) -> NoReturn:
+        """
+
+        save bib items corresponding to the identifiers to the output file.
+
+        Parameters
+        ----------
+        identifiers: int or str or sequence of int or sequence of str, optional,
+            the bib corresponding to the identifiers are to be saved,
+            defaults to all
+        output_file: str or Path, optional,
+            the output file, defaults to `self.output_file`
+            if specified, `self.output_file` is ignored
+
+        WARNING
+        -------
+        saved bib items will be removed from the cache
+
+        """
+        _output_file = output_file or self.output_file
+        assert _output_file is not None, "output_file is not specified"
+        _output_file = Path(_output_file)
+        if identifiers is None:
+            identifiers = list(self.__cached_lookup_results)
+        elif isinstance(identifiers, int):
+            identifiers = [self[identifiers]]
+        elif isinstance(identifiers, str):
+            identifiers = [identifiers]
+        elif isinstance(identifiers, Sequence) and all([isinstance(i, int) for i in identifiers]):
+            identifiers = [self[i] for i in identifiers]
+        assert isinstance(identifiers, Sequence) and all([isinstance(i, str) for i in identifiers]), \
+            "identifiers must be a string (or an integer) or a sequence of strings (or integers)"
+        identifiers = [i for i in identifiers if i in self.__cached_lookup_results]
+
+        with open(_output_file, "a") as f:
+            f.writelines([f"{self.__cached_lookup_results[i]}\n" for i in identifiers])
+
+        # remove saved bib items from the cache
+        for i in identifiers:
+            self.__cached_lookup_results.pop(i)
+
+    def pop(self, identifiers: Union[int, str, Sequence[str], Sequence[int]]) -> NoReturn:
+        """
+
+        remove the bib corresponding to the identifiers from the cache
+
+        Parameters
+        ----------
+        identifiers: int or str or sequence of int or sequence of str,
+            the identifiers to be removed from the cache
+
+        """
+        if isinstance(identifiers, int):
+            identifiers = [self[identifiers]]
+        elif isinstance(identifiers, str):
+            identifiers = [identifiers]
+        elif isinstance(identifiers, Sequence) and all([isinstance(i, int) for i in identifiers]):
+            identifiers = [self[i] for i in identifiers]
+        assert isinstance(identifiers, Sequence) and all([isinstance(i, str) for i in identifiers]), \
+            "identifiers must be a string (or an integer) or a sequence of strings (or integers)"
+        for i in identifiers:
+            self.__cached_lookup_results.pop(i, None)
+
+    def __getitem__(self, index: Union[int, str]) -> str:
+        if isinstance(index, int):
+            return list(self.__cached_lookup_results)[index]
+        elif isinstance(index, str):
+            assert index in self.__cached_lookup_results, f"{index} not found"
+            return self.__cached_lookup_results[index]
+        else:
+            raise ValueError(f"index should be an integer or a string, not {type(index)}")
+
+    def __len__(self) -> int:
+        return len(self.__cached_lookup_results)
