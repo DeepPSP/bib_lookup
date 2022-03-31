@@ -29,14 +29,6 @@ __all__ = [
 class BibLookup(object):
     """finished, continuous improving,
 
-    References
-    ----------
-    [1] https://github.com/davidagraf/doi2bib2
-    [2] https://arxiv.org/help/api
-    [3] https://github.com/mfcovington/pubmed-lookup/
-    [4] https://serpapi.com/google-scholar-cite-api
-    [5] https://www.bibtex.com/
-
     Example
     -------
     >>> bl = BibLookup(align="middle")
@@ -71,9 +63,10 @@ class BibLookup(object):
 
     TODO
     ----
-    use eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi for PubMed, as in [3];
-    try using google scholar api described in [4] (unfortunately [4] is charged);
-    use `Flask` to write a simple browser-based UI;
+    1. add CLI support;
+    2. use eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi for PubMed, as in [3];
+    3. try using google scholar api described in [4] (unfortunately [4] is charged);
+    4. use `Flask` to write a simple browser-based UI;
 
     WARNING
     -------
@@ -85,6 +78,14 @@ class BibLookup(object):
     and some others should have mixed cases (e.g. `pFedMe`).
     This should be corrected by the user himself **if necessary**,
     and remember to enclose such fields with **double curly braces**.
+
+    References
+    ----------
+    [1]. https://github.com/davidagraf/doi2bib2
+    [2]. https://arxiv.org/help/api
+    [3]. https://github.com/mfcovington/pubmed-lookup/
+    [4]. https://serpapi.com/google-scholar-cite-api
+    [5]. https://www.bibtex.com/
 
     """
 
