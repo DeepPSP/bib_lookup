@@ -21,6 +21,8 @@ from numbers import Number
 import requests
 import feedparser
 
+from ._bib import BibItem
+
 
 __all__ = [
     "BibLookup",
@@ -215,7 +217,7 @@ class BibLookup(object):
                 f"identifier must be a string or a sequence of strings, but got {identifier}"
             )
 
-        category, feed_content = self._obtain_feed_content(identifier)
+        category, feed_content, idtf = self._obtain_feed_content(identifier)
         if category == "doi":
             res = self._handle_doi(feed_content)
         elif category == "pm":
@@ -234,7 +236,7 @@ class BibLookup(object):
 
         return res
 
-    def _obtain_feed_content(self, identifier: str) -> Tuple[str, dict]:
+    def _obtain_feed_content(self, identifier: str) -> Tuple[str, dict, str]:
         """
 
         Parameters
@@ -249,45 +251,44 @@ class BibLookup(object):
             one of "doi", "pm", "arxiv"
         fc: dict,
             feed content to GET or POST
+        idtf: str,
+            simplified identifier of the publication,
 
         """
         idtf = identifier.lower().strip()
         if re.search(self.__doi_pattern, idtf):
-            url = (
-                "https://doi.org/"
-                + re.sub(
-                    self.__doi_pattern_prefix,
-                    "",
-                    idtf,
-                ).strip("/")
-            )
+            idtf = re.sub(
+                self.__doi_pattern_prefix,
+                "",
+                idtf,
+            ).strip("/")
+            url = "https://doi.org/" + idtf
             fc = {
                 "url": url,
                 "headers": {"Accept": "application/x-bibtex; charset=utf-8"},
             }
             category = "doi"
         elif re.search(self.__pm_pattern, idtf):
+            idtf = re.sub(
+                self.__pm_pattern_prefix,
+                "",
+                idtf,
+            ).strip("/")
             url = (
                 "http://www.pubmedcentral.nih.gov/utils/idconv/v1.0/?format=json&ids="
-                + re.sub(
-                    self.__pm_pattern_prefix,
-                    "",
-                    idtf,
-                ).strip("/")
+                + idtf
             )
             fc = {
                 "url": url,
             }
             category = "pm"
         elif re.search(self.__arxiv_pattern, idtf):
-            url = (
-                "http://export.arxiv.org/api/query?id_list="
-                + re.sub(
-                    self.__arxiv_pattern_prefix,
-                    "",
-                    idtf,
-                ).strip("/")
-            )
+            idtf = re.sub(
+                self.__arxiv_pattern_prefix,
+                "",
+                idtf,
+            ).strip("/")
+            url = "http://export.arxiv.org/api/query?id_list=" + idtf
             fc = {
                 "url": url,
             }
@@ -300,7 +301,8 @@ class BibLookup(object):
         if self.verbose > 1:
             print(f"category = {category}")
             print(f"feed content = {fc}")
-        return category, fc
+            print(f"simplified identifier = {idtf}")
+        return category, fc, idtf
 
     def _handle_doi(self, feed_content: dict) -> str:
         """
@@ -348,7 +350,7 @@ class BibLookup(object):
         if self.verbose > 1:
             print(f"doi = {doi}")
         if doi:
-            _, feed_content = self._obtain_feed_content(doi)
+            _, feed_content, _ = self._obtain_feed_content(doi)
             res = self._handle_doi(feed_content)
         else:
             res = self.__default_err
