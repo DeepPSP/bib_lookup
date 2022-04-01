@@ -82,11 +82,12 @@ class BibLookup(object):
 
     References
     ----------
-    [1]. https://github.com/davidagraf/doi2bib2
-    [2]. https://arxiv.org/help/api
-    [3]. https://github.com/mfcovington/pubmed-lookup/
-    [4]. https://serpapi.com/google-scholar-cite-api
-    [5]. https://www.bibtex.com/
+    1. <a name="ref1"></a> https://github.com/davidagraf/doi2bib2
+    2. <a name="ref2"></a> https://arxiv.org/help/api
+    3. <a name="ref3"></a> https://github.com/mfcovington/pubmed-lookup/
+    4. <a name="ref4"></a> https://serpapi.com/google-scholar-cite-api
+    5. <a name="ref5"></a> https://www.bibtex.com/
+    6. <a name="ref6"></a> http://tug.ctan.org/info/biblatex-cheatsheet/biblatex-cheatsheet.pdf
 
     """
 
@@ -100,7 +101,7 @@ class BibLookup(object):
         email: Optional[str] = None,
         **kwargs,
     ) -> NoReturn:
-        """finished, checked,
+        """
 
         Parameters
         ----------
@@ -181,7 +182,7 @@ class BibLookup(object):
     def __call__(
         self, identifier: Union[Path, str, Sequence[str]], align: Optional[str] = None
     ) -> str:
-        """finished, checked,
+        """
 
         Parameters
         ----------
@@ -234,7 +235,7 @@ class BibLookup(object):
         return res
 
     def _obtain_feed_content(self, identifier: str) -> Tuple[str, dict]:
-        """finished, checked,
+        """
 
         Parameters
         ----------
@@ -302,7 +303,7 @@ class BibLookup(object):
         return category, fc
 
     def _handle_doi(self, feed_content: dict) -> str:
-        """finished, checked,
+        """
 
         handle a DOI query using POST
 
@@ -324,7 +325,7 @@ class BibLookup(object):
         return res
 
     def _handle_pm(self, feed_content: dict) -> str:
-        """finished, checked,
+        """
 
         handle a PubMed query using POST
 
@@ -354,7 +355,7 @@ class BibLookup(object):
         return res
 
     def _handle_arxiv(self, feed_content: dict) -> Union[str, Dict[str, str]]:
-        """finished, checked,
+        """
 
         handle a arXiv query using GET
 
@@ -395,13 +396,13 @@ class BibLookup(object):
         res[
             "label"
         ] = f"{parsed['authors'][0]['name'].split(' ')[-1].lower()}{year}_{arxiv_id}"
-        res["class"] = "article"
+        res["entry_type"] = "article"
         return res
 
     def _align_result(
         self, res: Union[str, Dict[str, str]], align: Optional[str] = None
     ) -> str:
-        """finished, checked,
+        """
 
         Parameters
         ----------
@@ -441,7 +442,9 @@ class BibLookup(object):
         elif isinstance(res, dict):
             header = f"@{res['class']}{{{res['label']},"
             d = OrderedDict()
-            tmp = {k.strip(): v for k, v in res.items() if k not in ["class", "label"]}
+            tmp = {
+                k.strip(): v for k, v in res.items() if k not in ["entry_type", "label"]
+            }
             for idx, (k, v) in enumerate(tmp.items()):
                 # convert month from abbreviation to number
                 if (
@@ -487,7 +490,7 @@ class BibLookup(object):
         return new_str
 
     def _enclose_braces(self, s: Union[int, str]) -> str:
-        """finished, checked,
+        """
 
         ensure that the input string is enclosed with braces
 
