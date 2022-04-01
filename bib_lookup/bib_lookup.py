@@ -440,7 +440,7 @@ class BibLookup(object):
                     val = val.replace(_val, str(strptime(_val, "%b").tm_mon))
                 d[key.strip()] = self._enclose_braces(val)
         elif isinstance(res, dict):
-            header = f"@{res['class']}{{{res['label']},"
+            header = f"@{res['entry_type']}{{{res['label']},"
             d = OrderedDict()
             tmp = {
                 k.strip(): v for k, v in res.items() if k not in ["entry_type", "label"]
