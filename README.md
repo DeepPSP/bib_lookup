@@ -100,9 +100,13 @@ which could not be done automatically since
 This should be corrected by the user himself **if necessary** (which although is rare),
 and remember to enclose such fields with **double curly braces**.
 
+## Biblatex Cheetsheet
+[This file](/biblatex-cheatsheet.pdf) downloaded from \[[6](#ref6)\] gives full knowledge about `bib` entries.
+
 ## References
 1. <a name="ref1"></a> https://github.com/davidagraf/doi2bib2
 2. <a name="ref2"></a> https://arxiv.org/help/api
 3. <a name="ref3"></a> https://github.com/mfcovington/pubmed-lookup/
 4. <a name="ref4"></a> https://serpapi.com/google-scholar-cite-api
 5. <a name="ref5"></a> https://www.bibtex.com/
+6. <a name="ref6"></a> http://tug.ctan.org/info/biblatex-cheatsheet/biblatex-cheatsheet.pdf
