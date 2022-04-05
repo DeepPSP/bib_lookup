@@ -11,6 +11,15 @@ cwd = Path(__file__).absolute().parent
 
 long_description = (cwd / "README.md").read_text(encoding="utf-8")
 
+extras = {}
+extras["test"] = [
+    "black",
+    "flake8",
+    "pytest",
+    "pytest-xdist",
+]
+extras["dev"] = extras["docs"]
+
 
 setuptools.setup(
     name="bib_lookup",
@@ -44,4 +53,5 @@ setuptools.setup(
     ],
     python_requires=">=3.6",
     install_requires=open("requirements.txt").readlines(),
+    extras_require=extras,
 )

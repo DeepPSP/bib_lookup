@@ -7,7 +7,6 @@ http://tug.ctan.org/info/biblatex-cheatsheet/biblatex-cheatsheet.pdf
 import calendar
 from time import strptime
 from collections import OrderedDict
-from copy import deepcopy
 from typing import NoReturn, Optional, Union, Sequence
 
 import pandas as pd

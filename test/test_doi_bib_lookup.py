@@ -1,5 +1,3 @@
-import pytest
-
 import bib_lookup
 
 
