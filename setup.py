@@ -18,7 +18,7 @@ extras["test"] = [
     "pytest",
     "pytest-xdist",
 ]
-extras["dev"] = extras["docs"]
+extras["dev"] = extras["test"]
 
 
 setuptools.setup(
