@@ -1,4 +1,8 @@
 # bib_lookup
+
+![pytest](https://github.com/DeepPSP/bib_lookup/actions/workflows/run-pytest.yml/badge.svg)
+![PyPI](https://img.shields.io/pypi/v/bib_lookup?style=flat-square)
+
 A useful tool for looking up Bib entries using DOI, or pubmed ID (or URL), or arXiv ID (or URL).
 
 It is an updated version of
