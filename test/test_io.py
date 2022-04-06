@@ -1,7 +1,13 @@
 import os
 from pathlib import Path
 
-import bib_lookup
+try:
+    import bib_lookup
+except ModuleNotFoundError:
+    import sys
+
+    sys.path.insert(0, str(Path(__file__).parent.parent.resolve()))
+    import bib_lookup
 
 
 _CWD = Path(__file__).absolute().parent
