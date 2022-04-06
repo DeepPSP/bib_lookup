@@ -11,10 +11,8 @@ Requirements
 
 """
 
-import calendar
 import re
 import warnings
-from time import strptime
 from pathlib import Path
 from collections import OrderedDict
 from typing import Union, Optional, Tuple, List, Sequence, Dict, NoReturn
@@ -160,9 +158,9 @@ class BibLookup(object):
         # "22331878" or
         # "http://www.ncbi.nlm.nih.gov/pubmed/22331878"
         self.__pmid_pattern_prefix = f"pmid{colon}|pmcid{colon}"  # and pmcid
-        # self.__pmid_pattern = f"^(?:{self.__pmid_pattern_prefix})?(?:\d+|pmc\d+(?:\.\d+)?)$"
+        # self.__pmid_pattern = f"^(?:{self.__pmid_pattern_prefix})?(?:\\d+|pmc\\d+(?:\\.\\d+)?)$"
         self.__pmurl_pattern_prefix = "(?:https?:\\/\\/)?(?:pubmed\\.ncbi\\.nlm\\.nih\\.gov\\/|www\\.ncbi\\.nlm\\.nih\\.gov\\/pubmed\\/)"
-        # self.__pmurl_pattern = f"^(?:{self.__pmurl_pattern_prefix})?(?:\d+|pmc\d+(?:\.\d+)?)(?:\/)?$"
+        # self.__pmurl_pattern = f"^(?:{self.__pmurl_pattern_prefix})?(?:\\d+|pmc\\d+(?:\\.\\d+)?)(?:\\/)?$"
         self.__pm_pattern_prefix = (
             f"{self.__pmurl_pattern_prefix}|{self.__pmid_pattern_prefix}"
         )
@@ -175,8 +173,9 @@ class BibLookup(object):
             f"((?:(?:(?:https?:\\/\\/)?arxiv.org\\/)?abs\\/)|(arxiv{colon}))"
         )
         self.__arxiv_pattern = f"^(?:{self.__arxiv_pattern_prefix})?(?:([\\w\\-]+\\/\\d+)|(\\d+\\.\\d+(v(\\d+))?))$"
-        # self.__arxiv_pattern_old = f"^(?:{self.__arxiv_pattern_prefix})?[\w\-]+\/\d+$"
+        # self.__arxiv_pattern_old = f"^(?:{self.__arxiv_pattern_prefix})?[\\w\\-]+\\/\\d+$"
         self.__default_err = "Not Found"
+        self.__header_pattern = "^@(?P<entry_type>\\w+)\\{(?P<label>[^,]+)"
 
         self.verbose = kwargs.get("verbose", 0)
         self._ordering = kwargs.get(
@@ -193,7 +192,7 @@ class BibLookup(object):
         ----------
         identifier: Path or str or sequence of str,
             identifier of a publication,
-            can be DOI, PMID (or url), PMCID (or url), arXiv id,
+            can be DOI, PMID (or url), PMCID (or url), arXiv id, etc.
         align: str, optional,
             alignment of the final output, case insensitive,
             if specified, `self.align` is ignored
@@ -230,16 +229,16 @@ class BibLookup(object):
         elif category == "arxiv":
             res = self._handle_arxiv(feed_content)
         elif category == "error":
-            res = self.__default_err
+            res = self.default_err
 
-        if res != self.__default_err:
-            res = self._align_result(res, align=(align or self.align).lower())
+        if res != self.default_err:
+            res = self._to_bib_item(idtf, res, align)
             self.__cached_lookup_results[identifier] = res
 
         if self.verbose >= 1:
             print(res)
 
-        return res
+        return str(res)
 
     def _obtain_feed_content(self, identifier: str) -> Tuple[str, dict, str]:
         """
@@ -261,9 +260,9 @@ class BibLookup(object):
 
         """
         idtf = identifier.lower().strip()
-        if re.search(self.__doi_pattern, idtf):
+        if re.search(self.doi_pattern, idtf):
             idtf = re.sub(
-                self.__doi_pattern_prefix,
+                self.doi_pattern_prefix,
                 "",
                 idtf,
             ).strip("/")
@@ -273,9 +272,9 @@ class BibLookup(object):
                 "headers": {"Accept": "application/x-bibtex; charset=utf-8"},
             }
             category = "doi"
-        elif re.search(self.__pm_pattern, idtf):
+        elif re.search(self.pm_pattern, idtf):
             idtf = re.sub(
-                self.__pm_pattern_prefix,
+                self.pm_pattern_prefix,
                 "",
                 idtf,
             ).strip("/")
@@ -287,9 +286,9 @@ class BibLookup(object):
                 "url": url,
             }
             category = "pm"
-        elif re.search(self.__arxiv_pattern, idtf):
+        elif re.search(self.arxiv_pattern, idtf):
             idtf = re.sub(
-                self.__arxiv_pattern_prefix,
+                self.arxiv_pattern_prefix,
                 "",
                 idtf,
             ).strip("/")
@@ -358,7 +357,7 @@ class BibLookup(object):
             _, feed_content, _ = self._obtain_feed_content(doi)
             res = self._handle_doi(feed_content)
         else:
-            res = self.__default_err
+            res = self.default_err
         return res
 
     def _handle_arxiv(self, feed_content: dict) -> Union[str, Dict[str, str]]:
@@ -383,7 +382,7 @@ class BibLookup(object):
             print(parsed)
         title = re.sub("[\\s]+", " ", parsed["title"])  # sometimes this field has "\n"
         if title == "Error":
-            res = self.__default_err
+            res = self.default_err
             return res
         arxiv_id = parsed["id"].split("arxiv.org/abs/")[-1]
         year = parsed["published_parsed"].tm_year
@@ -406,13 +405,19 @@ class BibLookup(object):
         res["entry_type"] = "article"
         return res
 
-    def _align_result(
-        self, res: Union[str, Dict[str, str]], align: Optional[str] = None
-    ) -> str:
+    def _to_bib_item(
+        self,
+        identifier: str,
+        res: Union[str, Dict[str, str]],
+        align: Optional[str] = None,
+    ) -> BibItem:
         """
 
         Parameters
         ----------
+        identifier: str,
+            identifier of a publication,
+            can be DOI, PMID (or url), PMCID (or url), arXiv id, etc.
         res: str or dict,
             result obtained via GET or POST
         align: str, optional,
@@ -421,8 +426,8 @@ class BibLookup(object):
 
         Returns
         -------
-        new_str: str,
-            the aligned bib string
+        bib_item: BibItem,
+            a BibItem instance converted from `res`
 
         """
         _align = (align or self.align).lower()
@@ -434,109 +439,85 @@ class BibLookup(object):
         ], f"align must be one of 'middle', 'left', 'left-middle', 'left_middle', but got {_align}"
         if isinstance(res, str):
             lines = [line.strip() for line in res.split("\n") if len(line.strip()) > 0]
-            d = OrderedDict()
-            header = lines[0]
+            header_dict = list(re.finditer(self.bib_header_pattern, lines[0]))[
+                0
+            ].groupdict()
+            field_dict = OrderedDict()
             for line in lines[1:-1]:
                 key, val = line.strip().split("=")
-                # convert month from abbreviation to number
-                if (
-                    key.lower().strip() == "month"
-                    and val.strip("\\{\\}, ").capitalize() in calendar.month_abbr
-                ):
-                    _val = val.strip("\\{\\}, ")
-                    val = val.replace(_val, str(strptime(_val, "%b").tm_mon))
-                d[key.strip()] = self._enclose_braces(val)
+                field_dict[key.strip()] = val.strip(", ")
         elif isinstance(res, dict):
-            header = f"@{res['entry_type']}{{{res['label']},"
-            d = OrderedDict()
-            tmp = {
-                k.strip(): v for k, v in res.items() if k not in ["entry_type", "label"]
+            header_dict = {
+                k.strip(): str(v).strip(", ")
+                for k, v in res.items()
+                if k in ["entry_type", "label"]
             }
-            for idx, (k, v) in enumerate(tmp.items()):
-                # convert month from abbreviation to number
-                if (
-                    k.lower().strip() == "month"
-                    and isinstance(v, str)
-                    and v.strip("\\{\\}, ").capitalize() in calendar.month_abbr
-                ):
-                    _v = v.strip("\\{\\}, ")
-                    v = v.replace(_v, str(strptime(_v, "%b").tm_mon))
-                d[k] = self._enclose_braces(v)
-                if idx < len(tmp) - 1:
-                    d[k] += ","
+            field_dict = OrderedDict(
+                {
+                    k.strip(): str(v).strip(", ")
+                    for k, v in res.items()
+                    if k not in ["entry_type", "label"]
+                }
+            )
 
         # all field names to lower case,
         # and ignore the fields in the list `self.ignore_fields`
-        d = {k.lower(): v for k, v in d.items() if k.lower() not in self.ignore_fields}
+        field_dict = {
+            k.lower(): v
+            for k, v in field_dict.items()
+            if k.lower() not in self.ignore_fields
+        }
 
         # re-order the fields according to the list `self.ordering`
-        _ordering = self.ordering + [k for k in d if k not in self.ordering]
-        _ordering = [k for k in _ordering if k in d]
-        d = OrderedDict((k, d[k]) for k in _ordering)
+        _ordering = self.ordering + [k for k in field_dict if k not in self.ordering]
+        _ordering = [k for k in _ordering if k in field_dict]
+        field_dict = OrderedDict((k, field_dict[k]) for k in _ordering)
 
-        # align the fields
-        max_key_len = max([len(k) for k in d.keys()])
-        if _align == "middle":
-            lines = (
-                [header]
-                + [f"{' '*(2+max_key_len-len(k))}{k} = {v}" for k, v in d.items()]
-                + ["}"]
-            )
-        elif _align == "left":
-            lines = [header] + [f"{' '*2}{k} = {v}" for k, v in d.items()] + ["}"]
-        elif _align in [
-            "left-middle",
-            "left_middle",
-        ]:
-            lines = (
-                [header]
-                + [f"{' '*2}{k}{' '*(1+max_key_len-len(k))}= {v}" for k, v in d.items()]
-                + ["}"]
-            )
-        new_str = "\n".join(lines)
-        return new_str
-
-    def _enclose_braces(self, s: Union[int, str]) -> str:
-        """
-
-        ensure that the input string is enclosed with braces
-
-        Parameters
-        ----------
-        s: str,
-            the input string, possibly enclosed with braces and possibly not
-
-        Returns
-        -------
-        new_s: str,
-            the string `s` enclosed with braces
-
-        """
-        s_str = str(s).strip()
-        # new_s = s_str.strip("{},")  # counter example "publisher = {{IOP} Publishing},"
-        # new_s = f"{{{new_s}}}"
-        new_s = s_str.strip(",")
-        if not all([new_s.startswith("{"), new_s.endswith("}")]):
-            new_s = f"{{{new_s}}}"
-        if s_str.endswith(","):
-            new_s += ","
-        return new_s
+        # to BibItem
+        bib_item = BibItem(
+            identifier=identifier,
+            entry_type=header_dict["entry_type"],
+            fields=field_dict,
+            label=header_dict["label"],
+            align=_align,
+        )
+        return bib_item
 
     @property
     def doi_pattern(self) -> str:
         return self.__doi_pattern
 
     @property
+    def doi_pattern_prefix(self) -> str:
+        return self.__doi_pattern_prefix
+
+    @property
     def arxiv_pattern(self) -> str:
         return self.__arxiv_pattern
+
+    @property
+    def arxiv_pattern_prefix(self) -> str:
+        return self.__arxiv_pattern_prefix
 
     @property
     def pm_pattern(self) -> str:
         return self.__pm_pattern
 
     @property
+    def pm_pattern_prefix(self) -> str:
+        return self.__pm_pattern_prefix
+
+    @property
     def pubmed_pattern(self) -> str:
         return self.__pm_pattern
+
+    @property
+    def pubmed_pattern_prefix(self) -> str:
+        return self.__pm_pattern_prefix
+
+    @property
+    def bib_header_pattern(self) -> str:
+        return self.__header_pattern
 
     @property
     def default_err(self) -> str:
@@ -595,7 +576,9 @@ class BibLookup(object):
         identifiers = [i for i in identifiers if i in self.__cached_lookup_results]
 
         with open(_output_file, "a") as f:
-            f.writelines([f"{self.__cached_lookup_results[i]}\n" for i in identifiers])
+            f.writelines(
+                [f"{str(self.__cached_lookup_results[i])}\n" for i in identifiers]
+            )
 
         # remove saved bib items from the cache
         for i in identifiers:

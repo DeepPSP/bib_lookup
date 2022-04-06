@@ -56,6 +56,7 @@ class BibItem(object):
         assert isinstance(
             self.__fields, OrderedDict
         ), f"fields must be OrderedDict, but got {type(self.__fields)}"
+        self.__double_braces_flags = dict()
         self.__normalize_fields()
         self.__label = label  # TODO: consider how to add label when it's None
         if self.label is None:
@@ -90,47 +91,64 @@ class BibItem(object):
         remove redundant curly braces
         convert all field names to lower case
         """
-        d = OrderedDict()
+        field_dict = OrderedDict()
         for k, v in self.fields.items():
             # field names to lower case
             k = k.strip().lower()
             # assert k in BIB_FIELDS, f"{k} is not a valid field name"
             # remove redundant curly braces and commas
             v = str(v).strip(" ,")  # DO NOT strip "{}"
-            while all([v.startswith("{"), v.endswith("}")]):
+            self.__double_braces_flags[k] = False
+            braces_count = 0
+            while all([v.startswith("{"), v.endswith("}")]) or all(
+                [v.startswith('"'), v.endswith('"')]
+            ):
                 v = v[1:-1]
+                braces_count += 1
+            if braces_count >= 2:
+                self.__double_braces_flags[k] = True
             # convert month to number if applicable
             if k.lower().strip() == "month" and v.capitalize() in calendar.month_abbr:
                 v = strptime(v, "%b").tm_mon
-            d[k] = v
-        self.__fields = d
+            field_dict[k] = v
+        self.__fields = field_dict
         for k, v in self.fields.items():
             self.__setattr__(k, v)
 
     def __str__(self) -> str:
         header = f"@{self.entry_type}{{{self.label},"
-        d = OrderedDict()
+        field_dict = OrderedDict()
         for idx, (k, v) in enumerate(self.fields.items()):
-            d[k] = f"{{{v}}}"
+            field_dict[k] = f"{{{v}}}"
+            if self.__double_braces_flags[k]:
+                field_dict[k] = f"{{{field_dict[k]}}}"
             if idx < len(self.fields) - 1:
-                d[k] += ","
+                field_dict[k] += ","
         # align the fields
-        max_key_len = max([len(k) for k in d.keys()])
+        max_key_len = max([len(k) for k in field_dict.keys()])
         if self.align == "middle":
             lines = (
                 [header]
-                + [f"{' '*(2+max_key_len-len(k))}{k} = {v}" for k, v in d.items()]
+                + [
+                    f"{' '*(2+max_key_len-len(k))}{k} = {v}"
+                    for k, v in field_dict.items()
+                ]
                 + ["}"]
             )
         elif self.align == "left":
-            lines = [header] + [f"{' '*2}{k} = {v}" for k, v in d.items()] + ["}"]
+            lines = (
+                [header] + [f"{' '*2}{k} = {v}" for k, v in field_dict.items()] + ["}"]
+            )
         elif self.align in [
             "left-middle",
             "left_middle",
         ]:
             lines = (
                 [header]
-                + [f"{' '*2}{k}{' '*(1+max_key_len-len(k))}= {v}" for k, v in d.items()]
+                + [
+                    f"{' '*2}{k}{' '*(1+max_key_len-len(k))}= {v}"
+                    for k, v in field_dict.items()
+                ]
                 + ["}"]
             )
         return "\n".join(lines)
