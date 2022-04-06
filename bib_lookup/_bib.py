@@ -171,6 +171,9 @@ class BibItem(object):
                 f"{e}:{newline}    {BIB_ENTRY_TYPES[e] if e in BIB_ENTRY_TYPES else BIB_FIELDS[e]}{newline}"
             )
 
+    def __eq__(self, other: "BibItem") -> bool:
+        raise NotImplementedError
+
 
 BIB_ENTRY_TYPES = {
     # Material from journals, magazines & newspapers:

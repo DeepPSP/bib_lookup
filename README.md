@@ -95,6 +95,7 @@ bib-lookup 10.1109/CVPR.2016.90 10.23919/cinc53138.2021.9662801 --ignore-fields 
 2. use eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi for PubMed, as in \[[3](#ref3)\];
 3. try using google scholar api described in \[[4](#ref4)\] (unfortunately \[[4](#ref4)\] is charged);
 4. use `Flask` to write a simple browser-based UI;
+5. check if the bib item is already existed in the output file, and skip saving it if so;
 
 ## WARNING
 Many journals have specific requirements for the Bib entries,

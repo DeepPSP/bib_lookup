@@ -560,6 +560,10 @@ class BibLookup(object):
         -------
         saved bib items will be removed from the cache
 
+        TODO
+        ----
+        - check if the bib item is already existed in the output file, and skip saving it if so
+
         """
         _output_file = output_file or self.output_file
         assert _output_file is not None, "output_file is not specified"
@@ -584,6 +588,9 @@ class BibLookup(object):
         ), "identifiers must be a string (or an integer) or a sequence of strings (or integers)"
         identifiers = [i for i in identifiers if i in self.__cached_lookup_results]
 
+        # TODO: check if the bib item is already existed in the output file
+        # existing_bib_items = self.read_bib_file(_output_file)
+
         with open(_output_file, "a") as f:
             f.writelines(
                 "\n".join([str(self.__cached_lookup_results[i]) for i in identifiers])
@@ -595,6 +602,33 @@ class BibLookup(object):
         # remove saved bib items from the cache
         for i in identifiers:
             self.__cached_lookup_results.pop(i)
+
+    def read_bib_file(
+        self, bib_file: Optional[Union[str, Path]] = None
+    ) -> List[BibItem]:
+        """
+
+        Read bib file and return a list of bib items.
+
+        Parameters
+        ----------
+        bib_file: str or Path, optional,
+            the bib file, defaults to `self.output_file`
+
+        Returns
+        -------
+        bib_items: list of BibItem,
+            the list of bib items already existing in the bib file
+
+        """
+        _bib_file = bib_file or self.output_file
+        assert _bib_file is not None, "bib_file is not specified"
+        _bib_file = Path(_bib_file).resolve()
+        assert (
+            _bib_file.suffix == ".bib"
+        ), f"bib_file must be a .bib file, but got {_bib_file}"
+        # TODO: read BibItems from the bib file
+        raise NotImplementedError
 
     def pop(
         self, identifiers: Union[int, str, Sequence[str], Sequence[int]]
