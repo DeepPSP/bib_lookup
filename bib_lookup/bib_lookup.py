@@ -133,11 +133,14 @@ class BibLookup(object):
             "left-middle",
             "left_middle",
         ], f"align must be one of 'middle', 'left', 'left-middle', 'left_middle', but got {self.align}"
-        self.output_file = Path(output_file) if output_file is not None else None
+        self.output_file = (
+            Path(output_file).resolve() if output_file is not None else None
+        )
         if self.output_file is not None:
             assert (
                 self.output_file.suffix == ".bib"
             ), f"output_file must be a .bib file, but got {self.output_file}"
+            self.output_file.parent.mkdir(parents=True, exist_ok=True)
         self.__cached_lookup_results = OrderedDict()
         self.email = email
         self._ignore_fields = [k.lower() for k in ignore_fields]
@@ -560,7 +563,12 @@ class BibLookup(object):
         """
         _output_file = output_file or self.output_file
         assert _output_file is not None, "output_file is not specified"
-        _output_file = Path(_output_file)
+        _output_file = Path(_output_file).resolve()
+        assert (
+            _output_file.suffix == ".bib"
+        ), f"output_file must be a .bib file, but got {_output_file}"
+        _output_file.parent.mkdir(parents=True, exist_ok=True)
+
         if identifiers is None:
             identifiers = list(self.__cached_lookup_results)
         elif isinstance(identifiers, int):
@@ -578,8 +586,11 @@ class BibLookup(object):
 
         with open(_output_file, "a") as f:
             f.writelines(
-                [f"{str(self.__cached_lookup_results[i])}\n" for i in identifiers]
+                "\n".join([str(self.__cached_lookup_results[i]) for i in identifiers])
+                + "\n"
             )
+
+        print(f"Bib items written to {str(_output_file)}")
 
         # remove saved bib items from the cache
         for i in identifiers:
@@ -611,6 +622,37 @@ class BibLookup(object):
         ), "identifiers must be a string (or an integer) or a sequence of strings (or integers)"
         for i in identifiers:
             self.__cached_lookup_results.pop(i, None)
+
+    def print(self) -> NoReturn:
+        """
+
+        print the bib items in the cache
+
+        """
+        print(self.get_cache(string_format=True))
+
+    def get_cache(self, string_format: bool = False) -> Union[str, OrderedDict]:
+        """
+
+        get all bib items in the cache
+
+        Parameters
+        ----------
+        string_format: bool, default False,
+            whether to return the bib items in string format,
+            or the ordered dict of cached instances of BibItem
+
+        Returns
+        -------
+        str or OrderedDict:
+            the bib items in string format,
+            or the ordered dict of cached instances of BibItem
+
+        """
+        if string_format:
+            return "\n".join([str(self[item]) for item in self])
+        else:
+            return self.__cached_lookup_results
 
     def __getitem__(self, index: Union[int, str]) -> str:
         if isinstance(index, int):

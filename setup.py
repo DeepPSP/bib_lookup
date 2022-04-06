@@ -54,4 +54,7 @@ setuptools.setup(
     python_requires=">=3.6",
     install_requires=open("requirements.txt").readlines(),
     extras_require=extras,
+    entry_points={
+        "console_scripts": ["bib-lookup=bib_lookup.cli:main"],
+    },
 )
