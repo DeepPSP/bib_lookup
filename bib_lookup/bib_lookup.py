@@ -8,6 +8,7 @@ Requirements
 ------------
 - requests
 - feedparser
+- pandas
 
 """
 
@@ -38,7 +39,7 @@ class BibLookup(object):
     @article{wen2017_1707.07183v2,
        author = {Hao Wen and Chunhui Liu},
         title = {Counting Multiplicities in a Hypersurface over a Number Field},
-      journal = {arXiv preprint arXiv:1707.07183v2}
+      journal = {arXiv preprint arXiv:1707.07183v2},
          year = {2017},
         month = {7},
     }
@@ -46,7 +47,7 @@ class BibLookup(object):
     @inproceedings{He_2016,
          author = {Kaiming He and Xiangyu Zhang and Shaoqing Ren and Jian Sun},
           title = {Deep Residual Learning for Image Recognition},
-      booktitle = {2016 {IEEE} Conference on Computer Vision and Pattern Recognition ({CVPR})}
+      booktitle = {2016 {IEEE} Conference on Computer Vision and Pattern Recognition ({CVPR})},
             doi = {10.1109/cvpr.2016.90},
            year = {2016},
           month = {6},
@@ -56,7 +57,7 @@ class BibLookup(object):
     @inproceedings{Wen_2021,
       author    = {Hao Wen and Jingsu Kang},
       title     = {Hybrid Arrhythmia Detection on Varying-Dimensional Electrocardiography: Combining Deep Neural Networks and Clinical Rules},
-      booktitle = {2021 Computing in Cardiology ({CinC})}
+      booktitle = {2021 Computing in Cardiology ({CinC})},
       doi       = {10.23919/cinc53138.2021.9662801},
       year      = {2021},
       month     = {9},
