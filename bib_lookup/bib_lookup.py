@@ -21,7 +21,7 @@ from typing import Union, Optional, Tuple, List, Sequence, Dict, NoReturn
 import requests
 import feedparser
 
-from ._bib import BibItem  # noqa: F401
+from ._bib import BibItem
 
 
 __all__ = [
@@ -121,7 +121,7 @@ class BibLookup(object):
         kwargs: additional key word arguments, including
             "verbose": int,
                 default 0,
-            "odering": sequence of str,
+            "ordering": sequence of str,
                 default ["author", "title", "journal", "booktitle"],
                 case insensitive,
 

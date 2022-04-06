@@ -79,7 +79,7 @@ def main():
         "--ignore-fields",
         nargs="*",
         type=str,
-        default="url",
+        default=["url"],
         help="List of fields to ignore.",
         dest="ignore_fields",
     )
@@ -89,7 +89,25 @@ def main():
         help="Email address to use for the lookup, optional.",
         dest="email",
     )
+    parser.add_argument(
+        "--ordering",
+        type=str,
+        nargs="*",
+        default=["author", "title", "journal", "booktitle"],
+        help="Order of the fields in the output.",
+        dest="ordering",
+    )
+    parser.add_argument(
+        "--allow-duplicates",
+        action="store_true",
+        help="allow duplicate entries when writing to file.",
+        dest="allow_duplicates",
+    )
+
     args = vars(parser.parse_args())
+
+    print(args)
+    return
 
     assert (
         len(args["identifiers"]) > 0 or args["input_file"] is not None
@@ -100,6 +118,7 @@ def main():
         ignore_fields=args["ignore_fields"],
         output_file=args["output_file"],
         email=args["email"],
+        ordering=args["ordering"],
         verbose=0,
     )
 
@@ -108,7 +127,7 @@ def main():
     if args["input_file"] is not None:
         bl(args["input_file"])
     if args["output_file"] is not None:
-        bl.save()
+        bl.save(skip_existing=not args["allow_duplicates"])
     else:
         bl.print()
 
