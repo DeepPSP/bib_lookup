@@ -83,8 +83,15 @@ Each time a bib item is successfully found, it will be cached. One can call the 
 0
 ```
 
+
+## Command-line Usage
+After installation, one can use `bib-lookup` in the command line:
+```bash
+bib-lookup 10.1109/CVPR.2016.90 10.23919/cinc53138.2021.9662801 --ignore-fields url doi -i path/to/input.txt -o path/to/output.bib
+```
+
 ## TODO
-1. add CLI support;
+1. ([DONE](#command-line-usage)) ~~add CLI support~~;
 2. use eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi for PubMed, as in \[[3](#ref3)\];
 3. try using google scholar api described in \[[4](#ref4)\] (unfortunately \[[4](#ref4)\] is charged);
 4. use `Flask` to write a simple browser-based UI;
