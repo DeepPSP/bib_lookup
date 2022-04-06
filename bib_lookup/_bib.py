@@ -5,6 +5,7 @@ http://tug.ctan.org/info/biblatex-cheatsheet/biblatex-cheatsheet.pdf
 """
 
 import calendar
+import re
 from time import strptime
 from collections import OrderedDict
 from typing import NoReturn, Optional, Union, Sequence
@@ -171,8 +172,82 @@ class BibItem(object):
                 f"{e}:{newline}    {BIB_ENTRY_TYPES[e] if e in BIB_ENTRY_TYPES else BIB_FIELDS[e]}{newline}"
             )
 
-    def __eq__(self, other: "BibItem") -> bool:
-        raise NotImplementedError
+    def __eq__(self, other: "BibItem", strict: bool = False) -> bool:
+        """
+
+        Parameters
+        ----------
+        other : BibItem
+            the other BibItem to compare with
+        strict : bool, default False
+            whether to compare the fields strictly,
+            if False, only entry_type and label will be compared;
+            if True, entry_type, title, first author will be compared
+
+        Examples
+        --------
+        >>> from copy import deepcopy
+        >>> from bib_lookup import BibLookup
+        >>> bl = BibLookup()
+        >>> bl(""10.1109/CVPR.2016.90");
+        >>> bl[bl[0]]
+        @inproceedings{He_2016,
+             author = {Kaiming He and Xiangyu Zhang and Shaoqing Ren and Jian Sun},
+              title = {Deep Residual Learning for Image Recognition},
+          booktitle = {2016 {IEEE} Conference on Computer Vision and Pattern Recognition ({CVPR})},
+                doi = {10.1109/cvpr.2016.90},
+               year = {2016},
+              month = {6},
+          publisher = {{IEEE}}
+        }
+        >>> bib_item = deepcopy(bl[bl[0]])
+        >>> bib_item._BibItem__label = "haha"
+        >>> bib_item
+        @inproceedings{haha,
+             author = {Kaiming He and Xiangyu Zhang and Shaoqing Ren and Jian Sun},
+              title = {Deep Residual Learning for Image Recognition},
+          booktitle = {2016 {IEEE} Conference on Computer Vision and Pattern Recognition ({CVPR})},
+                doi = {10.1109/cvpr.2016.90},
+               year = {2016},
+              month = {6},
+          publisher = {{IEEE}}
+        }
+        >>> bib_item == bl[bl[0]]
+        False
+        >>> bib_item.__eq__(bl[bl[0]], strict=True)
+        True
+
+        """
+        if self.entry_type != other.entry_type:
+            return False
+        if not strict:
+            if self.label != other.label:
+                return False
+            else:
+                return True
+        title = re.sub(
+            "\\s+", " ", re.sub("[^\\w\\s]", " ", self.title).lower().strip()
+        )
+        other_title = re.sub(
+            "\\s+", " ", re.sub("[^\\w\\s]", " ", other.title).lower().strip()
+        )
+        if title != other_title:
+            return False
+        first_author = list(
+            filter(
+                lambda s: len(re.sub("[^\\w]", "", s)) > 1,
+                self.author.split("and")[0].strip().split(),
+            )
+        )[-1]
+        other_first_author = list(
+            filter(
+                lambda s: len(re.sub("[^\\w]", "", s)) > 1,
+                other.author.split("and")[0].strip().split(),
+            )
+        )[-1]
+        if first_author != other_first_author:
+            return False
+        return True
 
 
 BIB_ENTRY_TYPES = {

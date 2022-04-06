@@ -236,7 +236,7 @@ class BibLookup(object):
             res = self.default_err
 
         if res != self.default_err:
-            res = self._to_bib_item(idtf, res, align)
+            res = self._to_bib_item(res, idtf, align)
             self.__cached_lookup_results[identifier] = res
 
         if self.verbose >= 1:
@@ -411,19 +411,21 @@ class BibLookup(object):
 
     def _to_bib_item(
         self,
-        identifier: str,
         res: Union[str, Dict[str, str]],
+        identifier: Optional[str] = None,
         align: Optional[str] = None,
     ) -> BibItem:
         """
 
         Parameters
         ----------
-        identifier: str,
+        res: str or dict,
+            result obtained via GET or POST,
+            or read from a file
+        identifier: str, optional,
             identifier of a publication,
             can be DOI, PMID (or url), PMCID (or url), arXiv id, etc.
-        res: str or dict,
-            result obtained via GET or POST
+            if not provided, "label" from the result will be used as `identifier`
         align: str, optional,
             alignment of the final output, case insensitive,
             if specified, `self.align` is ignored
@@ -479,7 +481,7 @@ class BibLookup(object):
 
         # to BibItem
         bib_item = BibItem(
-            identifier=identifier,
+            identifier=identifier or header_dict["label"],
             entry_type=header_dict["entry_type"],
             fields=field_dict,
             label=header_dict["label"],
@@ -542,6 +544,7 @@ class BibLookup(object):
         self,
         identifiers: Union[int, str, Sequence[str], Sequence[int]] = None,
         output_file: Optional[Union[str, Path]] = None,
+        skip_existing: Union[bool, str] = True,
     ) -> NoReturn:
         """
 
@@ -555,14 +558,15 @@ class BibLookup(object):
         output_file: str or Path, optional,
             the output file, defaults to `self.output_file`
             if specified, `self.output_file` is ignored
+        skip_existing: bool or str, default True,
+            can be True, False or "strict",
+            if True or "strict", skip existing bib items in the output file.
+            For "strict" comparison of instances of `BibItem`,
+            ref. the `BibItem.__eq__` method.
 
         WARNING
         -------
         saved bib items will be removed from the cache
-
-        TODO
-        ----
-        - check if the bib item is already existed in the output file, and skip saving it if so
 
         """
         _output_file = output_file or self.output_file
@@ -588,8 +592,33 @@ class BibLookup(object):
         ), "identifiers must be a string (or an integer) or a sequence of strings (or integers)"
         identifiers = [i for i in identifiers if i in self.__cached_lookup_results]
 
-        # TODO: check if the bib item is already existed in the output file
-        # existing_bib_items = self.read_bib_file(_output_file)
+        # check if the bib item is already existed in the output file
+        if skip_existing:
+            existing_bib_items = self.read_bib_file(_output_file)
+            identifiers = [
+                i
+                for i in identifiers
+                if not any(
+                    [
+                        self[i].__eq__(
+                            bib_item,
+                            strict=(
+                                isinstance(skip_existing, str)
+                                and skip_existing.lower() == "strict"
+                            ),
+                        )
+                        for bib_item in existing_bib_items
+                    ]
+                )
+            ]
+
+        if len(identifiers) == 0:
+            print(
+                f"no bib item is saved to {str(_output_file)} "
+                "because all bib items are already existed in the output file, "
+                "or the given identifiers are not found in the cache"
+            )
+            return
 
         with open(_output_file, "a") as f:
             f.writelines(
@@ -604,7 +633,7 @@ class BibLookup(object):
             self.__cached_lookup_results.pop(i)
 
     def read_bib_file(
-        self, bib_file: Optional[Union[str, Path]] = None
+        self, bib_file: Optional[Union[str, Path]] = None, cache: bool = False
     ) -> List[BibItem]:
         """
 
@@ -627,8 +656,25 @@ class BibLookup(object):
         assert (
             _bib_file.suffix == ".bib"
         ), f"bib_file must be a .bib file, but got {_bib_file}"
-        # TODO: read BibItems from the bib file
-        raise NotImplementedError
+        if not _bib_file.exists():
+            return []
+        bib_items = []
+        lines = []
+        for line in _bib_file.read_text().splitlines():
+            line = line.strip(", ")
+            if line.startswith("@") and len(lines) > 0:
+                bib_item = self._to_bib_item("\n".join(lines))
+                bib_items.append(bib_item)
+                if cache:
+                    self.__cached_lookup_results[bib_item.identifier] = bib_item
+                lines = []
+            lines.append(line)
+        if len(lines) > 0:
+            bib_item = self._to_bib_item("\n".join(lines))
+            bib_items.append(bib_item)
+            if cache:
+                self.__cached_lookup_results[bib_item.identifier] = bib_item
+        return bib_items
 
     def pop(
         self, identifiers: Union[int, str, Sequence[str], Sequence[int]]
