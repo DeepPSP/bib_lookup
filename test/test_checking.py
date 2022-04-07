@@ -11,7 +11,7 @@ except ModuleNotFoundError:
 
 _CWD = Path(__file__).absolute().parent
 
-_INPUT_FILE = _CWD / "invalid_items.txt"
+_INPUT_FILE = _CWD / "invalid_items.bib"
 
 
 def test_checking():

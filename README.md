@@ -65,6 +65,13 @@ python -m pip install .
 }
 ```
 
+## Command-line Usage
+After installation, one can use `bib-lookup` in the command line:
+```bash
+bib-lookup 10.1109/CVPR.2016.90 10.23919/cinc53138.2021.9662801 --ignore-fields url doi -i path/to/input.txt -o path/to/output.bib
+```
+
+
 ## Output (Append) to a `.bib` File
 Each time a bib item is successfully found, it will be cached. One can call the `save` function to write the cached bib items to a `.bib` file, in the append mode.
 ```python
@@ -83,19 +90,38 @@ Each time a bib item is successfully found, it will be cached. One can call the 
 0
 ```
 
-
-## Command-line Usage
-After installation, one can use `bib-lookup` in the command line:
-```bash
-bib-lookup 10.1109/CVPR.2016.90 10.23919/cinc53138.2021.9662801 --ignore-fields url doi -i path/to/input.txt -o path/to/output.bib
+## Bib Items Checking
+One can use `BibLookup` to check the validity (required fields, duplicate labels) of bib items in a Bib file
+```python
+>>> from bib_lookup import BibLookup
+>>> bl = BibLookup()
+>>> bl.check_bib_file("./test/invalid_items.bib")
+Bib item "He_2016"
+    starting from line 3 is not valid.
+    Bib item of entry type "inproceedings" should have the following fields:
+    ['author', 'title', 'booktitle', 'year']
+Bib item "Wen_2018"
+    starting from line 16 is not valid.
+    Bib item of entry type "article" should have the following fields:
+    ['author', 'title', 'journal', 'year']
+Bib items "He_2016" starting from line 3
+      and "He_2016" starting from line 45 is duplicate.
+[3, 16, 45]
 ```
+or from command line
+```bash
+bib-lookup -c ./test/invalid_items.bib
+bib-lookup --ignore-fields url doi -i ./test/sample_input.txt -o ./tmp/a.bib -c true
+```
+
 
 ## TODO
 1. ([:heavy_check_mark:](#command-line-usage)) ~~add CLI support~~;
 2. use eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi for PubMed, as in \[[3](#ref3)\];
 3. try using google scholar api described in \[[4](#ref4)\] (unfortunately \[[4](#ref4)\] is charged);
 4. use `Flask` to write a simple browser-based UI;
-5. (:heavy_check_mark:) check if the bib item is already existed in the output file, and skip saving it if so;
+5. (:heavy_check_mark:) ~~check if the bib item is already existed in the output file, and skip saving it if so~~;
+
 
 ## WARNING
 Many journals have specific requirements for the Bib entries,
