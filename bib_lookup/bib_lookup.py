@@ -806,22 +806,32 @@ class BibLookup(object):
 
         """
         _bib_file = Path(bib_file).resolve()
-        assert _bib_file.exists() and _bib_file.name.endswith(
-            ".bib"
-        ), "Not a valid Bib file"
+        assert _bib_file.exists() and _bib_file.suffix == ".bib", "Not a valid Bib file"
         bib_items, line_numbers = self.read_bib_file(
             bib_file=bib_file, cache=False, return_line_numbers=True
         )
-        err_lines = []
+        err_lines = set()
         for ln, bi in zip(line_numbers, bib_items):
             try:
                 bi.check_required_fields()
             except AssertionError:
                 print(
-                    f"Bib item \042{bi.identifier}\042\n    "
+                    f"Bib item \042{bi.label}\042\n    "
                     f"starting from line {ln} is not valid.\n    "
-                    f"Bib item of entry type {bi.entry_type} should have the following fields:\n    "
+                    f"Bib item of entry type \042{bi.entry_type}\042 should have the following fields:\n    "
                     f"{DF_BIB_ENTRY_TYPES[DF_BIB_ENTRY_TYPES.entry_type==bi.entry_type].iloc[0].required_fields}"
                 )
-                err_lines.append(ln)
-        return err_lines
+                err_lines.add(ln)
+        # check for bib items with duplicate labels
+        for i, bi in enumerate(bib_items[:-1]):
+            for j, bj in enumerate(bib_items[i + 1 :]):
+                j += i + 1
+                if bi.label == bj.label:
+                    ln_i = line_numbers[i]
+                    ln_j = line_numbers[j]
+                    err_lines.update({ln_i, ln_j})
+                    print(
+                        f"Bib items \042{bi.label}\042 starting from line {ln_i}\n"
+                        f"      and \042{bi.label}\042 starting from line {ln_j} is duplicate."
+                    )
+        return sorted(err_lines)

@@ -4,13 +4,14 @@ Command-line interface for the bib_lookup package.
 """
 
 import argparse
+from pathlib import Path
+from typing import Union
 
 try:
     from bib_lookup.bib_lookup import BibLookup
 except ImportError:
     # https://gist.github.com/vaultah/d63cb4c86be2774377aa674b009f759a
     import sys
-    from pathlib import Path
 
     level = 1
     global __package__
@@ -39,6 +40,37 @@ def required_length(nmin: int, nmax: int) -> argparse.Action:
     return RequiredLength
 
 
+def str2bool(v: Union[str, bool]) -> bool:
+    """
+
+    converts a "boolean" value possibly in the format of str to bool
+
+    Parameters
+    ----------
+    v: str or bool,
+        the "boolean" value
+
+    Returns
+    -------
+    b: bool,
+        `v` in the format of bool
+
+    References
+    ----------
+    https://stackoverflow.com/questions/15008758/parsing-boolean-values-with-argparse
+
+    """
+    if isinstance(v, bool):
+        b = v
+    elif v.lower() in ("yes", "true", "t", "y", "1"):
+        b = True
+    elif v.lower() in ("no", "false", "f", "n", "0"):
+        b = False
+    else:
+        raise ValueError("Boolean value expected.")
+    return b
+
+
 def main():
     """
     Command-line interface for the bib_lookup package.
@@ -60,6 +92,12 @@ def main():
         default="middle",
         help="Alignment of the output text.",
         choices=["left", "middle", "left-middle"],
+    )
+    parser.add_argument(
+        "-c",
+        "--check-file",
+        help="Can be boolean or path to a Bib File. Checks the input Bib file or output bib file for errors.",
+        dest="check_file",
     )
     parser.add_argument(
         "-o",
@@ -106,12 +144,13 @@ def main():
 
     args = vars(parser.parse_args())
 
-    print(args)
-    return
-
-    assert (
-        len(args["identifiers"]) > 0 or args["input_file"] is not None
-    ), "No identifiers given."
+    check_file = args["check_file"]
+    if check_file is not None:
+        if Path(check_file).is_file() and Path(check_file).suffix == ".bib":
+            # check this file, other augments are ignored
+            check_file = Path(check_file)
+        else:
+            check_file = str2bool(check_file)
 
     bl = BibLookup(
         align=args["align"],
@@ -122,12 +161,22 @@ def main():
         verbose=0,
     )
 
+    if check_file is not None and isinstance(check_file, Path):
+        bl.check_bib_file(check_file)
+        return
+    else:
+        assert (
+            len(args["identifiers"]) > 0 or args["input_file"] is not None
+        ), "No identifiers given."
+
     if len(args["identifiers"]) > 0:
         bl(args["identifiers"])
     if args["input_file"] is not None:
         bl(args["input_file"])
     if args["output_file"] is not None:
         bl.save(skip_existing=not args["allow_duplicates"])
+        if check_file:
+            bl.check_bib_file(bl.output_file)
     else:
         bl.print()
 
