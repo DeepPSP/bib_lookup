@@ -91,7 +91,7 @@ Each time a bib item is successfully found, it will be cached. One can call the 
 ```
 
 ## Bib Items Checking
-One can use `BibLookup` to check the validity (required fields, duplicate labels) of bib items in a Bib file
+One can use `BibLookup` to check the validity (**required fields, duplicate labels**, etc) of bib items in a Bib file. The following is an example with a [Bib file](/test/invalid_items.bib) with incorrect and duplicate bib items.
 ```python
 >>> from bib_lookup import BibLookup
 >>> bl = BibLookup()
