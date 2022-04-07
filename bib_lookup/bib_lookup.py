@@ -21,7 +21,7 @@ from typing import Union, Optional, Tuple, List, Sequence, Dict, NoReturn
 import requests
 import feedparser
 
-from ._bib import BibItem
+from ._bib import BibItem, DF_BIB_ENTRY_TYPES
 
 
 __all__ = [
@@ -186,6 +186,7 @@ class BibLookup(object):
             "ordering", ["author", "title", "journal", "booktitle"]
         )
         self._ordering = [k.lower() for k in self._ordering]
+        self._comment_pattern = re.compile(r"^%")
 
     def __call__(
         self, identifier: Union[Path, str, Sequence[str]], align: Optional[str] = None
@@ -444,7 +445,12 @@ class BibLookup(object):
             "left_middle",
         ], f"align must be one of 'middle', 'left', 'left-middle', 'left_middle', but got {_align}"
         if isinstance(res, str):
-            lines = [line.strip() for line in res.split("\n") if len(line.strip()) > 0]
+            lines = [
+                line.strip()
+                for line in res.split("\n")
+                if len(line.strip()) > 0
+                and not re.match(self._comment_pattern, line.strip())
+            ]
             header_dict = list(re.finditer(self.bib_header_pattern, lines[0]))[
                 0
             ].groupdict()
@@ -633,8 +639,11 @@ class BibLookup(object):
             self.__cached_lookup_results.pop(i)
 
     def read_bib_file(
-        self, bib_file: Optional[Union[str, Path]] = None, cache: bool = False
-    ) -> List[BibItem]:
+        self,
+        bib_file: Optional[Union[str, Path]] = None,
+        cache: bool = False,
+        return_line_numbers: bool = False,
+    ) -> Union[List[BibItem], Tuple[List[BibItem], List[int]]]:
         """
 
         Read bib file and return a list of bib items.
@@ -643,6 +652,10 @@ class BibLookup(object):
         ----------
         bib_file: str or Path, optional,
             the bib file, defaults to `self.output_file`
+        cache: bool, default False,
+            if True, cache the bib items
+        return_line_numbers: bool, default False,
+            if True, return a tuple of (bib items, line numbers)
 
         Returns
         -------
@@ -660,20 +673,27 @@ class BibLookup(object):
             return []
         bib_items = []
         lines = []
-        for line in _bib_file.read_text().splitlines():
+        line_numbers = []
+        for idx, line in enumerate(_bib_file.read_text().splitlines()):
             line = line.strip(", ")
-            if line.startswith("@") and len(lines) > 0:
-                bib_item = self._to_bib_item("\n".join(lines))
-                bib_items.append(bib_item)
-                if cache:
-                    self.__cached_lookup_results[bib_item.identifier] = bib_item
-                lines = []
+            if re.match(self._comment_pattern, line) or len(line) == 0:
+                continue
+            if line.startswith("@"):
+                line_numbers.append(idx)
+                if len(lines) > 0:
+                    bib_item = self._to_bib_item("\n".join(lines))
+                    bib_items.append(bib_item)
+                    if cache:
+                        self.__cached_lookup_results[bib_item.identifier] = bib_item
+                    lines = []
             lines.append(line)
         if len(lines) > 0:
             bib_item = self._to_bib_item("\n".join(lines))
             bib_items.append(bib_item)
             if cache:
                 self.__cached_lookup_results[bib_item.identifier] = bib_item
+        if return_line_numbers:
+            return bib_items, line_numbers
         return bib_items
 
     def pop(
@@ -767,3 +787,41 @@ class BibLookup(object):
         return f"""{self.__name__}({newline}{f",{newline}".join(args)}{newline})"""
 
     __str__ = __repr__
+
+    def check_bib_file(self, bib_file: Union[str, Path]) -> List[int]:
+        """
+
+        check if the bib items in a bib file are valid,
+        by checking if they have all the required fields
+
+        Parameters
+        ----------
+        bib_file: str or Path,
+            the bib file to check
+
+        Returns
+        -------
+        err_lines: list of int,
+            the starting line numbers of the invalid bib items
+
+        """
+        _bib_file = Path(bib_file).resolve()
+        assert _bib_file.exists() and _bib_file.name.endswith(
+            ".bib"
+        ), "Not a valid Bib file"
+        bib_items, line_numbers = self.read_bib_file(
+            bib_file=bib_file, cache=False, return_line_numbers=True
+        )
+        err_lines = []
+        for ln, bi in zip(line_numbers, bib_items):
+            try:
+                bi.check_required_fields()
+            except AssertionError:
+                print(
+                    f"Bib item \042{bi.identifier}\042\n    "
+                    f"starting from line {ln} is not valid.\n    "
+                    f"Bib item of entry type {bi.entry_type} should have the following fields:\n    "
+                    f"{DF_BIB_ENTRY_TYPES[DF_BIB_ENTRY_TYPES.entry_type==bi.entry_type].iloc[0].required_fields}"
+                )
+                err_lines.append(ln)
+        return err_lines

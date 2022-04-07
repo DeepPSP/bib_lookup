@@ -135,7 +135,7 @@ class BibItem(object):
     def check_required_fields(self) -> NoReturn:
         required_fields = DF_BIB_ENTRY_TYPES[
             DF_BIB_ENTRY_TYPES["entry_type"] == self.entry_type
-        ].at[0, "required_fields"]
+        ].iloc[0]["required_fields"]
         for item in required_fields:
             # "xx|yy" means "xx or yy"
             # "xx+|yy" means "xx and/or yy"
