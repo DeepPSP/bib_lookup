@@ -1,6 +1,7 @@
 """
 the database of bibtex entry types and field names, collected from
 http://tug.ctan.org/info/biblatex-cheatsheet/biblatex-cheatsheet.pdf
+and from https://www.openoffice.org/bibliographic/bibtex-defs.html
 
 """
 
@@ -14,7 +15,11 @@ import pandas as pd
 
 
 class BibItem(object):
-    """ """
+    """
+
+    A class representing a bibtex item (entry)
+
+    """
 
     __name__ = "BibItem"
 
@@ -25,6 +30,7 @@ class BibItem(object):
         fields: OrderedDict,
         label: Optional[str] = None,
         align: str = "middle",
+        check_fields: bool = False,
     ) -> NoReturn:
         """
 
@@ -46,6 +52,8 @@ class BibItem(object):
             the alignment of the fields for string representation,
             can be one of "middle", "left", "left-middle", "left_middle",
             case insensitive
+        check_fields: bool, default False,
+            whether to check if the bib item contains all required fields,
 
         """
         self.__identifier = identifier
@@ -58,7 +66,7 @@ class BibItem(object):
             self.__fields, OrderedDict
         ), f"fields must be OrderedDict, but got {type(self.__fields)}"
         self.__double_braces_flags = dict()
-        self.__normalize_fields()
+        self.__normalize_fields(check_fields)
         self.__label = label  # TODO: consider how to add label when it's None
         if self.label is None:
             self.__label = self.identifier
@@ -86,11 +94,17 @@ class BibItem(object):
     def label(self) -> str:
         return self.__label
 
-    def __normalize_fields(self) -> NoReturn:
+    def __normalize_fields(self, check_fields: bool = False) -> NoReturn:
         """
         convert month to number if applicable,
         remove redundant curly braces
         convert all field names to lower case
+
+        Parameters
+        ----------
+        check_fields: bool, default False,
+            whether to check if the bib item contains all required fields,
+
         """
         field_dict = OrderedDict()
         for k, v in self.fields.items():
@@ -113,8 +127,26 @@ class BibItem(object):
                 v = strptime(v, "%b").tm_mon
             field_dict[k] = v
         self.__fields = field_dict
+        if check_fields:
+            self.check_required_fields()
         for k, v in self.fields.items():
             self.__setattr__(k, v)
+
+    def check_required_fields(self) -> NoReturn:
+        required_fields = DF_BIB_ENTRY_TYPES[
+            DF_BIB_ENTRY_TYPES["entry_type"] == self.entry_type
+        ].at[0, "required_fields"]
+        for item in required_fields:
+            # "xx|yy" means "xx or yy"
+            # "xx+|yy" means "xx and/or yy"
+            check_num = sum([rf in self.__fields for rf in re.findall("\\w+", item)])
+            if re.search("\\+", item):
+                assert check_num in [
+                    1,
+                    2,
+                ], f"required field(s) \042{item}\042 is (are) missing"
+            else:
+                assert check_num == 1, f"required field \042{item}\042 is missing"
 
     def __str__(self) -> str:
         header = f"@{self.entry_type}{{{self.label},"
@@ -225,28 +257,42 @@ class BibItem(object):
                 return False
             else:
                 return True
-        title = re.sub(
-            "\\s+", " ", re.sub("[^\\w\\s]", " ", self.title).lower().strip()
-        )
-        other_title = re.sub(
-            "\\s+", " ", re.sub("[^\\w\\s]", " ", other.title).lower().strip()
-        )
-        if title != other_title:
+        check_again = 2  # "title" and "author"
+        if sum([hasattr(self, "title"), hasattr(other, "title")]) == 1:
             return False
-        first_author = list(
-            filter(
-                lambda s: len(re.sub("[^\\w]", "", s)) > 1,
-                self.author.split("and")[0].strip().split(),
+        if hasattr(self, "title") and hasattr(other, "title"):
+            title = re.sub(
+                "\\s+", " ", re.sub("[^\\w\\s]", " ", self.title).lower().strip()
             )
-        )[-1]
-        other_first_author = list(
-            filter(
-                lambda s: len(re.sub("[^\\w]", "", s)) > 1,
-                other.author.split("and")[0].strip().split(),
+            other_title = re.sub(
+                "\\s+", " ", re.sub("[^\\w\\s]", " ", other.title).lower().strip()
             )
-        )[-1]
-        if first_author != other_first_author:
+            if title != other_title:
+                return False
+        else:
+            check_again -= 1
+        if sum([hasattr(self, "author"), hasattr(other, "author")]) == 1:
             return False
+        if hasattr(self, "author") and hasattr(other, "author"):
+            first_author = list(
+                filter(
+                    lambda s: len(re.sub("[^\\w]", "", s)) > 1,
+                    self.author.split("and")[0].strip().split(),
+                )
+            )[-1]
+            other_first_author = list(
+                filter(
+                    lambda s: len(re.sub("[^\\w]", "", s)) > 1,
+                    other.author.split("and")[0].strip().split(),
+                )
+            )[-1]
+            if first_author != other_first_author:
+                return False
+        else:
+            check_again -= 1
+        if check_again == 0:
+            if self.label != other.label:
+                return False
         return True
 
 
@@ -292,6 +338,46 @@ BIB_ENTRY_TYPES = {
 DF_BIB_ENTRY_TYPES = pd.DataFrame(
     [(k, v) for k, v in BIB_ENTRY_TYPES.items()], columns=["entry_type", "description"]
 )
+# fmt: off
+_required_fields = {  # https://www.openoffice.org/bibliographic/bibtex-defs.html
+    "article": ["author", "title", "journal", "year"],
+    "book": ["author|editor", "title", "publisher", "year"],
+    "booklet": ["title"],
+    "inbook": ["author|editor", "title", "chapter+|pages", "publisher", "year"],
+    "incollection": ["author", "title", "booktitle", "publisher", "year"],
+    "inproceedings": ["author", "title", "booktitle", "year"],
+    "conference": ["author", "title", "booktitle", "year"],
+    "manual": ["title"],
+    "mastersthesis": ["author", "title", "school", "year"],
+    "misc": [],
+    "phdthesis": ["author", "title", "school", "year"],
+    "proceedings": ["title", "year"],
+    "techreport": ["author", "title", "institution", "year"],
+    "unpublished": ["author", "title", "note"],
+}
+_optional_fields = {  # https://www.openoffice.org/bibliographic/bibtex-defs.html
+    "article": ["volume", "number", "pages", "month", "note"],
+    "book": ["volume|number", "series", "address", "edition", "month", "note"],
+    "booklet": ["author", "howpublished", "address", "month", "year", "note"],
+    "inbook": ["volume|number", "series", "type", "address", "edition", "month", "note"],
+    "incollection": ["editor", "volume|number", "series", "type", "chapter", "pages", "address", "edition", "month", "note"],
+    "inproceedings": ["editor", "volume|number", "series", "pages", "address", "month", "organization", "publisher", "note"],
+    "conference": ["editor", "volume|number", "series", "pages", "address", "month", "organization", "publisher", "note"],
+    "manual": ["author", "organization", "address", "edition", "month", "year", "note"],
+    "mastersthesis": ["type", "address", "month", "note"],
+    "misc": ["author", "title", "howpublished", "month", "year", "note"],
+    "phdthesis": ["type", "address", "month", "note"],
+    "proceedings": ["editor", "volume|number", "series", "address", "month", "publisher", "organization", "note"],
+    "techreport": ["type", "number", "address", "month", "note"],
+    "unpublished": ["month", "year"],
+}
+# fmt: on
+DF_BIB_ENTRY_TYPES["required_fields"] = DF_BIB_ENTRY_TYPES.entry_type.apply(
+    lambda x: _required_fields.get(x, [])
+)
+DF_BIB_ENTRY_TYPES["optional_fields"] = DF_BIB_ENTRY_TYPES.entry_type.apply(
+    lambda x: _optional_fields.get(x, [])
+)
 
 
 BIB_FIELDS = {
@@ -314,6 +400,7 @@ BIB_FIELDS = {
     "institution": "university or similar",
     "organization": "manual/website publisher or event sponsor",
     "publisher": "publisher(s)",
+    "school": "the name of the school where a thesis was written",
     # titles
     "title": "title",
     "indextitle": "if different from title",
@@ -330,6 +417,7 @@ BIB_FIELDS = {
     "part": "number of physical part of logical volume",
     "issue": "non-number issue of journal",
     "volumes": "number of volumes for multi-volume work",
+    "chapter": "a chapter (or section or whatever) number",
     "edition": "as 〈integer〉 rather than ordinal",
     "version": "revision number for software or manual",
     "pubstate": "publication state",
