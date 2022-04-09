@@ -22,6 +22,7 @@ import requests
 import feedparser
 
 from ._bib import BibItem, DF_BIB_ENTRY_TYPES
+from .utils import ReprMixin, default_class_repr, color_text
 
 
 __all__ = [
@@ -29,7 +30,7 @@ __all__ = [
 ]
 
 
-class BibLookup(object):
+class BibLookup(ReprMixin):
     """finished, continuous improving,
 
     Example
@@ -768,25 +769,8 @@ class BibLookup(object):
     def __len__(self) -> int:
         return len(self.__cached_lookup_results)
 
-    def __repr__(self) -> str:
-        attrs = ["align", "output_file", "_ignore_fields"]
-        max_len = max([len(a.strip("_")) for a in attrs])
-        if self.align == "middle":
-            args = [
-                f"""  {" " * (max_len-len(k.strip("_")))}{k.strip("_")} = {self.__getattribute__(k)}"""
-                for k in attrs
-            ]
-        elif self.align == "left":
-            args = [f"""  {k.strip("_")} = {self.__getattribute__(k)}""" for k in attrs]
-        else:
-            args = [
-                f"""  {k.strip("_")}{" " * (max_len-len(k.strip("_")))} = {self.__getattribute__(k)}"""
-                for k in attrs
-            ]
-        newline = "\n"
-        return f"""{self.__name__}({newline}{f",{newline}".join(args)}{newline})"""
-
-    __str__ = __repr__
+    def extra_repr_keys(self) -> List[str]:
+        return ["align", "output_file", "ignore_fields"]
 
     def check_bib_file(self, bib_file: Union[str, Path]) -> List[int]:
         """
