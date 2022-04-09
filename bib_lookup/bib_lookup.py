@@ -22,7 +22,7 @@ import requests
 import feedparser
 
 from ._bib import BibItem, DF_BIB_ENTRY_TYPES
-from .utils import ReprMixin, default_class_repr, color_text
+from .utils import ReprMixin, color_text
 
 
 __all__ = [
@@ -189,6 +189,9 @@ class BibLookup(ReprMixin):
         self._ordering = [k.lower() for k in self._ordering]
         self._comment_pattern = re.compile(r"^%")
 
+        self.__info_color = "blue"
+        self.__err_color = "red"
+
     def __call__(
         self, identifier: Union[Path, str, Sequence[str]], align: Optional[str] = None
     ) -> str:
@@ -242,7 +245,10 @@ class BibLookup(ReprMixin):
             self.__cached_lookup_results[identifier] = res
 
         if self.verbose >= 1:
-            print(res)
+            if res == self.default_err:
+                print(color_text(res, self.__err_color))
+            else:
+                print(res)
 
         return str(res)
 
@@ -309,9 +315,9 @@ class BibLookup(ReprMixin):
             )
             category, fc = "error", {}
         if self.verbose > 1:
-            print(f"category = {category}")
+            print(f"category = {color_text(category, self.__info_color)}")
             print(f"feed content = {fc}")
-            print(f"simplified identifier = {idtf}")
+            print(f"simplified identifier = {color_text(idtf, self.__info_color)}")
         return category, fc, idtf
 
     def _handle_doi(self, feed_content: dict) -> str:
@@ -621,7 +627,7 @@ class BibLookup(ReprMixin):
 
         if len(identifiers) == 0:
             print(
-                f"no bib item is saved to {str(_output_file)} "
+                f"no bib item is saved to {color_text(str(_output_file), self.__info_color)} "
                 "because all bib items are already existed in the output file, "
                 "or the given identifiers are not found in the cache"
             )
@@ -633,7 +639,9 @@ class BibLookup(ReprMixin):
                 + "\n"
             )
 
-        print(f"Bib items written to {str(_output_file)}")
+        print(
+            f"Bib items written to {color_text(str(_output_file), self.__info_color)}"
+        )
 
         # remove saved bib items from the cache
         for i in identifiers:
@@ -800,10 +808,13 @@ class BibLookup(ReprMixin):
                 bi.check_required_fields()
             except AssertionError:
                 print(
-                    f"Bib item \042{bi.label}\042\n    "
+                    f"Bib item \042{color_text(bi.label, self.__err_color)}\042\n    "
                     f"starting from line {ln} is not valid.\n    "
-                    f"Bib item of entry type \042{bi.entry_type}\042 should have the following fields:\n    "
-                    f"{DF_BIB_ENTRY_TYPES[DF_BIB_ENTRY_TYPES.entry_type==bi.entry_type].iloc[0].required_fields}"
+                    f"Bib item of entry type \042{color_text(bi.entry_type, self.__err_color)}\042 should have the following fields:\n    "
+                    + color_text(
+                        f"{DF_BIB_ENTRY_TYPES[DF_BIB_ENTRY_TYPES.entry_type==bi.entry_type].iloc[0].required_fields}",
+                        self.__info_color,
+                    )
                 )
                 err_lines.add(ln)
         # check for bib items with duplicate labels
@@ -815,7 +826,9 @@ class BibLookup(ReprMixin):
                     ln_j = line_numbers[j]
                     err_lines.update({ln_i, ln_j})
                     print(
-                        f"Bib items \042{bi.label}\042 starting from line {ln_i}\n"
-                        f"      and \042{bi.label}\042 starting from line {ln_j} is duplicate."
+                        f"Bib items \042{color_text(bi.label, self.__err_color)}\042 "
+                        f"starting from line {color_text(str(ln_i), self.__err_color)}\n"
+                        f"      and \042{color_text(bi.label, self.__err_color)}\042 "
+                        f"starting from line {color_text(str(ln_j), self.__err_color)} is duplicate."
                     )
         return sorted(err_lines)
