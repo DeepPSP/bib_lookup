@@ -145,13 +145,13 @@ and remember to enclose such fields with **double curly braces**.
 
 ## Citation
 ```latex
-@misc{https://doi.org/10.5281/zenodo.6434583,
-     author = {{WEN Hao}},
-      title = {DeepPSP/bib_lookup: First GitHub Release},
-        doi = {10.5281/ZENODO.6434583},
+@misc{https://doi.org/10.5281/zenodo.6435017,
+     author = {WEN, Hao},
+      title = {bib_lookup: A Useful Tool for Uooking Up Bib Entries},
+        doi = {10.5281/ZENODO.6435017},
   publisher = {Zenodo},
        year = {2022},
-  copyright = {Open Access}
+  copyright = {MIT License}
 }
 ```
 
@@ -159,7 +159,7 @@ The above citation can be get via
 ```python
 >>> from bib_lookup import BibLookup
 >>> bl = BibLookup()
->>> print(bl("DOI: 10.5281/zenodo.6434583"))
+>>> print(bl("DOI: 10.5281/zenodo.6435017"))
 ```
 
 ## References
