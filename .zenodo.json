@@ -1,0 +1,13 @@
+{
+    "title": "bib_lookup: A Useful Tool for Uooking Up Bib Entries",
+    "license": "MIT",
+    "creators": [
+        {
+            "name": "Hao WEN",
+            "affiliation": "LMIB and School of Mathematical Sciences, Beihang University, Beijing, China",
+            "orcid": "0000-0002-8856-0883"
+        }
+    ],
+    "access_right": "open",
+    "description": "A useful tool for looking up Bib entries using DOI, or pubmed ID (or URL), or arXiv ID (or URL)."
+}
