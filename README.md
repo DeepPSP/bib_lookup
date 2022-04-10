@@ -2,6 +2,7 @@
 
 ![pytest](https://github.com/DeepPSP/bib_lookup/actions/workflows/run-pytest.yml/badge.svg)
 ![PyPI](https://img.shields.io/pypi/v/bib_lookup?style=flat-square)
+[![DOI](https://zenodo.org/badge/476130336.svg)](https://zenodo.org/badge/latestdoi/476130336)
 
 A useful tool for looking up Bib entries using DOI, or pubmed ID (or URL), or arXiv ID (or URL).
 
@@ -141,6 +142,25 @@ and remember to enclose such fields with **double curly braces**.
 
 ## Biblatex Cheetsheet
 [This file](/biblatex-cheatsheet.pdf) downloaded from \[[6](#ref6)\] gives full knowledge about `bib` entries.
+
+## Citation
+```latex
+@misc{https://doi.org/10.5281/zenodo.6434583,
+     author = {{WEN Hao}},
+      title = {DeepPSP/bib_lookup: First GitHub Release},
+        doi = {10.5281/ZENODO.6434583},
+  publisher = {Zenodo},
+       year = {2022},
+  copyright = {Open Access}
+}
+```
+
+The above citation can be get via
+```python
+>>> from bib_lookup import BibLookup
+>>> bl = BibLookup()
+>>> print(bl("DOI: 10.5281/zenodo.6434583"))
+```
 
 ## References
 1. <a name="ref1"></a> https://github.com/davidagraf/doi2bib2
