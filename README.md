@@ -149,6 +149,7 @@ and remember to enclose such fields with **double curly braces**.
      author = {WEN, Hao},
       title = {bib_lookup: A Useful Tool for Uooking Up Bib Entries},
         doi = {10.5281/ZENODO.6435017},
+        url = {https://zenodo.org/record/6435017},
   publisher = {Zenodo},
        year = {2022},
   copyright = {MIT License}
