@@ -22,12 +22,24 @@ import requests
 import feedparser
 
 from ._bib import BibItem, DF_BIB_ENTRY_TYPES
-from .utils import ReprMixin, color_text
+from .utils import is_notebook, ReprMixin, color_text, md_text, printmd
 
 
 __all__ = [
     "BibLookup",
 ]
+
+
+if is_notebook():
+    print_func = printmd
+    process_text = md_text
+    newline = "<br/>"
+    whitespace = "&nbsp;"
+else:
+    print_func = print
+    process_text = color_text
+    newline = "\n"
+    whitespace = " "
 
 
 class BibLookup(ReprMixin):
@@ -191,6 +203,7 @@ class BibLookup(ReprMixin):
 
         self.__info_color = "blue"
         self.__err_color = "red"
+        self.__err_fontsize = "large"
 
     def __call__(
         self, identifier: Union[Path, str, Sequence[str]], align: Optional[str] = None
@@ -246,9 +259,11 @@ class BibLookup(ReprMixin):
 
         if self.verbose >= 1:
             if res == self.default_err:
-                print(color_text(res, self.__err_color))
+                print_func(
+                    process_text(res, self.__err_color, font_size=self.__err_fontsize)
+                )
             else:
-                print(res)
+                print_func(res)
 
         return str(res)
 
@@ -315,9 +330,11 @@ class BibLookup(ReprMixin):
             )
             category, fc = "error", {}
         if self.verbose > 1:
-            print(f"category = {color_text(category, self.__info_color)}")
-            print(f"feed content = {fc}")
-            print(f"simplified identifier = {color_text(idtf, self.__info_color)}")
+            print_func(f"category = {process_text(category, self.__info_color)}")
+            print_func(f"feed content = {fc}")
+            print_func(
+                f"simplified identifier = {process_text(idtf, self.__info_color)}"
+            )
         return category, fc, idtf
 
     def _handle_doi(self, feed_content: dict) -> str:
@@ -339,7 +356,7 @@ class BibLookup(ReprMixin):
         r = requests.post(**feed_content)
         res = r.content.decode("utf-8")
         if self.verbose > 1:
-            print(res)
+            print_func(res)
         return res
 
     def _handle_pm(self, feed_content: dict) -> str:
@@ -360,11 +377,11 @@ class BibLookup(ReprMixin):
         """
         r = requests.post(**feed_content)
         if self.verbose > 1:
-            print(r.json())
+            print_func(r.json())
         mid_res = r.json()["records"][0]
         doi = mid_res.get("doi", "")
         if self.verbose > 1:
-            print(f"doi = {doi}")
+            print_func(f"doi = {doi}")
         if doi:
             _, feed_content, _ = self._obtain_feed_content(doi)
             res = self._handle_doi(feed_content)
@@ -391,7 +408,7 @@ class BibLookup(ReprMixin):
         r = requests.get(**feed_content)
         parsed = feedparser.parse(r.content.decode("utf-8")).entries[0]
         if self.verbose > 1:
-            print(parsed)
+            print_func(parsed)
         title = re.sub("[\\s]+", " ", parsed["title"])  # sometimes this field has "\n"
         if title == "Error":
             res = self.default_err
@@ -626,8 +643,8 @@ class BibLookup(ReprMixin):
             ]
 
         if len(identifiers) == 0:
-            print(
-                f"no bib item is saved to {color_text(str(_output_file), self.__info_color)} "
+            print_func(
+                f"no bib item is saved to {process_text(str(_output_file), self.__info_color)} "
                 "because all bib items are already existed in the output file, "
                 "or the given identifiers are not found in the cache"
             )
@@ -639,8 +656,8 @@ class BibLookup(ReprMixin):
                 + "\n"
             )
 
-        print(
-            f"Bib items written to {color_text(str(_output_file), self.__info_color)}"
+        print_func(
+            f"Bib items written to {process_text(str(_output_file), self.__info_color)}"
         )
 
         # remove saved bib items from the cache
@@ -807,14 +824,17 @@ class BibLookup(ReprMixin):
             try:
                 bi.check_required_fields()
             except AssertionError:
-                print(
-                    f"Bib item \042{color_text(bi.label, self.__err_color)}\042\n    "
-                    f"starting from line {ln} is not valid.\n    "
-                    f"Bib item of entry type \042{color_text(bi.entry_type, self.__err_color)}\042 should have the following fields:\n    "
-                    + color_text(
+                print_func(
+                    f"Bib item \042{process_text(bi.label, self.__err_color, font_size=self.__err_fontsize)}\042{newline}"
+                    f"{whitespace * 4}starting from line {ln} is not valid.{newline}"
+                    f"{whitespace * 4}Bib item of entry type "
+                    f"\042{process_text(bi.entry_type, self.__err_color, font_size=self.__err_fontsize)}\042 "
+                    f"should have the following fields:{newline}{whitespace * 4}"
+                    + process_text(
                         f"{DF_BIB_ENTRY_TYPES[DF_BIB_ENTRY_TYPES.entry_type==bi.entry_type].iloc[0].required_fields}",
                         self.__info_color,
                     )
+                    + newline
                 )
                 err_lines.add(ln)
         # check for bib items with duplicate labels
@@ -825,10 +845,11 @@ class BibLookup(ReprMixin):
                     ln_i = line_numbers[i]
                     ln_j = line_numbers[j]
                     err_lines.update({ln_i, ln_j})
-                    print(
-                        f"Bib items \042{color_text(bi.label, self.__err_color)}\042 "
-                        f"starting from line {color_text(str(ln_i), self.__err_color)}\n"
-                        f"      and \042{color_text(bi.label, self.__err_color)}\042 "
-                        f"starting from line {color_text(str(ln_j), self.__err_color)} is duplicate."
+                    print_func(
+                        f"Bib items \042{process_text(bi.label, self.__err_color, font_size=self.__err_fontsize)}\042 "
+                        f"starting from line {process_text(str(ln_i), self.__err_color, font_size=self.__err_fontsize)}{newline}"
+                        f"{whitespace * 6}and \042{process_text(bi.label, self.__err_color, font_size=self.__err_fontsize)}\042 "
+                        f"starting from line {process_text(str(ln_j), self.__err_color, font_size=self.__err_fontsize)} is duplicate."
+                        + newline
                     )
         return sorted(err_lines)

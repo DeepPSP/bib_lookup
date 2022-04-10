@@ -2,7 +2,7 @@
 """
 
 from enum import Enum
-from typing import List, Optional, NoReturn
+from typing import List, Optional, NoReturn, Any, Union
 
 try:
     from IPython import get_ipython
@@ -15,6 +15,7 @@ __all__ = [
     "default_class_repr",
     "ReprMixin",
     "color_text",
+    "md_text",
     "printmd",
 ]
 
@@ -124,8 +125,30 @@ class _ANSI_ESCAPE_CODES(Enum):
     STOP = "\033[0m"
 
 
-def color_text(text: str, color: Optional[str] = None, method: str = "ansi") -> str:
-    """ """
+def color_text(
+    text: str, color: Optional[str] = None, method: str = "ansi", **kwargs: Any
+) -> str:
+    """
+
+    Parameters
+    ----------
+    text: str,
+        the text to be colored
+    color: str, optional,
+        the color of the text,
+        if None, the text will be printed in the default color
+    method: str, default "ansi",
+        the method to print the text,
+        can be "ansi", "html" or "file"
+    kwargs: Any,
+        not used, to be consistent with the methods `md_text` and `printmd`
+
+    Returns
+    -------
+    str,
+        the colored text
+
+    """
     if color is None:
         return text
     if not isinstance(color, (str, tuple)):
@@ -163,6 +186,54 @@ def color_text(text: str, color: Optional[str] = None, method: str = "ansi") -> 
         return "[[" + text + "]]"
     else:
         raise ValueError(f"unknown text color method {method}")
+
+
+def md_text(
+    text: str,
+    color: Optional[str] = None,
+    method: str = "md",
+    bold: bool = False,
+    font_size: Optional[Union[int, str]] = None,
+    font_family: Optional[str] = None,
+) -> str:
+    """
+
+    Parameters
+    ----------
+    text: str,
+        the text to be turned into markdown
+    color: str, optional,
+        the color of the text,
+        if None, the text will be printed in the default color
+    method: str, default "md",
+        not used, to be consistent with the methods `color_text`,
+        should be one of "html", "md" or "markdown"
+    bold: bool, default False,
+        whether to bold the text
+    font_size: int or str, optional,
+        the font size of the text
+        if None, the text will be printed in the default font size
+    font_family: str, optional,
+        the font family of the text
+        if None, the text will be printed in the default font family
+
+    Returns
+    -------
+    md_str: str,
+        the markdown text
+
+    """
+    assert method in ["html", "md", "markdown"]
+    color_style = f"color: {color}" if color is not None else ""
+    font_family_style = (
+        f"font-family: '{font_family}'" if font_family is not None else ""
+    )
+    font_size_style = f"font-size: {str(font_size)}" if font_size is not None else ""
+    span_style = "; ".join([color_style, font_size_style, font_family_style])
+    md_str = f"""<span style="{span_style}">{text}</span>"""
+    if bold:
+        md_str = f"""<strong>{md_str}</strong>"""
+    return md_str
 
 
 def printmd(md_str: str) -> NoReturn:
