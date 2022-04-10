@@ -494,7 +494,9 @@ class BibLookup(ReprMixin):
 
         # replace the "_" in title with "\_"
         if "title" in field_dict:
-            field_dict["title"] = field_dict["title"].replace("_", r"\_").replace(r"\\_", r"\_")
+            field_dict["title"] = (
+                field_dict["title"].replace("_", r"\_").replace(r"\\_", r"\_")
+            )
 
         # all field names to lower case,
         # and ignore the fields in the list `self.ignore_fields`
