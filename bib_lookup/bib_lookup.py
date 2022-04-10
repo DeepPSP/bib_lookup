@@ -263,7 +263,7 @@ class BibLookup(ReprMixin):
                     process_text(res, self.__err_color, font_size=self.__err_fontsize)
                 )
             else:
-                print_func(res)
+                print(res)
 
         return str(res)
 
@@ -355,8 +355,10 @@ class BibLookup(ReprMixin):
         """
         r = requests.post(**feed_content)
         res = r.content.decode("utf-8")
-        if self.verbose > 1:
+        if self.verbose > 3:
             print_func(res)
+        if "DOI Not Found" in res:
+            return self.default_err
         return res
 
     def _handle_pm(self, feed_content: dict) -> str:
@@ -380,7 +382,7 @@ class BibLookup(ReprMixin):
             print_func(r.json())
         mid_res = r.json()["records"][0]
         doi = mid_res.get("doi", "")
-        if self.verbose > 1:
+        if self.verbose > 3:
             print_func(f"doi = {doi}")
         if doi:
             _, feed_content, _ = self._obtain_feed_content(doi)
@@ -407,7 +409,7 @@ class BibLookup(ReprMixin):
         """
         r = requests.get(**feed_content)
         parsed = feedparser.parse(r.content.decode("utf-8")).entries[0]
-        if self.verbose > 1:
+        if self.verbose > 3:
             print_func(parsed)
         title = re.sub("[\\s]+", " ", parsed["title"])  # sometimes this field has "\n"
         if title == "Error":
@@ -416,12 +418,6 @@ class BibLookup(ReprMixin):
         arxiv_id = parsed["id"].split("arxiv.org/abs/")[-1]
         year = parsed["published_parsed"].tm_year
         res = {"title": title}
-        # authors = []
-        # for item in parsed["authors"]:
-        #     a = item["name"].split(" ")
-        #     if len(a) > 1:
-        #         a[-2] = a[-2] + ","
-        #     authors.append(" ".join(a))
         # it seems that surnames are put in the last position of full names by arXiv
         authors = [item["name"] for item in parsed["authors"]]
         res["author"] = " and ".join(authors)
