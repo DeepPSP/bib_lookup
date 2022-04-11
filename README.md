@@ -158,7 +158,7 @@ For example, the lookup result for the `AlexNet` paper is
       pages = {84--90}
 }
 ```
-This result should be adjusted to
+This result (the title) should be adjusted to
 ```latex
 @article{Krizhevsky_2017,
      author = {Alex Krizhevsky and Ilya Sutskever and Geoffrey E. Hinton},
@@ -173,6 +173,32 @@ This result should be adjusted to
       pages = {84--90}
 }
 ```
+A more severe example that need manual correction is as follows
+```python
+>>> from bib_lookup import BibLookup
+>>> bl = BibLookup()
+>>> print(bl("10.1093/acprof:oso/9780195058239.001.0001"))
+@book{Malmivuo_1995,
+     author = {Jaakko Malmivuo and Robert Plonsey},
+      title = {{BioelectromagnetismPrinciples} and Applications of Bioelectric and Biomagnetic Fields},
+        doi = {10.1093/acprof:oso/9780195058239.001.0001},
+       year = {1995},
+      month = {10},
+  publisher = {Oxford University Press}
+}
+```
+Adjust it to
+```latex
+@book{Malmivuo_1995,
+     author = {Jaakko Malmivuo and Robert Plonsey},
+      title = {{Bioelectromagnetism: Principles and Applications of Bioelectric and Biomagnetic Fields}},
+        doi = {10.1093/acprof:oso/9780195058239.001.0001},
+       year = {1995},
+      month = {10},
+  publisher = {Oxford University Press}
+}
+```
+This shows that the data in the DOI database is **NOT** always correct.
 
 ## Biblatex Cheetsheet
 [This file](/biblatex-cheatsheet.pdf) downloaded from \[[6](#ref6)\] gives full knowledge about `bib` entries.
