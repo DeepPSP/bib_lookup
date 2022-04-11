@@ -111,7 +111,7 @@ class BibLookup(ReprMixin):
     def __init__(
         self,
         align: str = "middle",
-        ignore_fields: Sequence[str] = ["url"],
+        ignore_fields: Union[str, Sequence[str]] = ["url"],
         output_file: Optional[Union[str, Path]] = None,
         email: Optional[str] = None,
         **kwargs,
@@ -123,7 +123,7 @@ class BibLookup(ReprMixin):
         align: str, default "middle",
             alignment of the final output, case insensitive,
             can be one of "middle", "left", "left-middle", "left_middle"
-        ignore_fields: sequence of str, default ["url"],
+        ignore_fields: str or sequence of str, default ["url"],
             fields to be ignored in the final output,
             case insensitive
         output_file: str or Path, optional,
@@ -156,7 +156,10 @@ class BibLookup(ReprMixin):
             self.output_file.parent.mkdir(parents=True, exist_ok=True)
         self.__cached_lookup_results = OrderedDict()
         self.email = email
-        self._ignore_fields = [k.lower() for k in ignore_fields]
+        if isinstance(ignore_fields, str):
+            self._ignore_fields = [ignore_fields.lower()]
+        else:
+            self._ignore_fields = [k.lower() for k in ignore_fields]
         assert self.align in [
             "middle",
             "left",
@@ -206,7 +209,10 @@ class BibLookup(ReprMixin):
         self.__err_fontsize = "large"
 
     def __call__(
-        self, identifier: Union[Path, str, Sequence[str]], align: Optional[str] = None
+        self,
+        identifier: Union[Path, str, Sequence[str]],
+        align: Optional[str] = None,
+        ignore_fields: Optional[Union[str, Sequence[str]]] = None,
     ) -> str:
         """
 
@@ -218,6 +224,10 @@ class BibLookup(ReprMixin):
         align: str, optional,
             alignment of the final output, case insensitive,
             if specified, `self.align` is ignored
+        ignore_fields: str or sequence of str, optional,
+            fields to be ignored in the final output,
+            case insensitive,
+            if specified, `self._ignore_fields` is ignored
 
         Returns
         -------
@@ -229,15 +239,15 @@ class BibLookup(ReprMixin):
             identifier = [
                 line for line in identifier.read_text().splitlines() if len(line) > 0
             ]
-            return self(identifier, align)
+            return self(identifier, align, ignore_fields)
         if isinstance(identifier, str):
             if Path(identifier).exists():
-                return self(Path(identifier), align)
+                return self(Path(identifier), align, ignore_fields)
         elif isinstance(identifier, Sequence):
             assert all(
                 [isinstance(i, str) for i in identifier]
             ), f"identifier must be a string or a sequence of strings, but got {identifier}"
-            return "\n".join(self(item, align) for item in identifier)
+            return "\n".join(self(item, align, ignore_fields) for item in identifier)
         else:
             raise TypeError(
                 f"identifier must be a string or a sequence of strings, but got {identifier}"
@@ -254,7 +264,7 @@ class BibLookup(ReprMixin):
             res = self.default_err
 
         if res != self.default_err:
-            res = self._to_bib_item(res, idtf, align)
+            res = self._to_bib_item(res, idtf, align, ignore_fields)
             self.__cached_lookup_results[identifier] = res
 
         if self.verbose >= 1:
@@ -435,6 +445,7 @@ class BibLookup(ReprMixin):
         res: Union[str, Dict[str, str]],
         identifier: Optional[str] = None,
         align: Optional[str] = None,
+        ignore_fields: Optional[Union[str, Sequence[str]]] = None,
     ) -> BibItem:
         """
 
@@ -450,6 +461,10 @@ class BibLookup(ReprMixin):
         align: str, optional,
             alignment of the final output, case insensitive,
             if specified, `self.align` is ignored
+        ignore_fields: str or sequence of str, optional,
+            fields to be ignored in the final output,
+            case insensitive,
+            if specified, `self._ignore_fields` is ignored
 
         Returns
         -------
@@ -457,6 +472,12 @@ class BibLookup(ReprMixin):
             a BibItem instance converted from `res`
 
         """
+        if ignore_fields is None:
+            _ignore_fields = self.ignore_fields
+        elif isinstance(ignore_fields, str):
+            _ignore_fields = [ignore_fields.lower()]
+        else:
+            _ignore_fields = [k.lower() for k in ignore_fields]
         _align = (align or self.align).lower()
         assert _align in [
             "middle",
@@ -499,11 +520,11 @@ class BibLookup(ReprMixin):
             )
 
         # all field names to lower case,
-        # and ignore the fields in the list `self.ignore_fields`
+        # and ignore the fields in the list `_ignore_fields`
         field_dict = {
             k.lower(): v
             for k, v in field_dict.items()
-            if k.lower() not in self.ignore_fields
+            if k.lower() not in _ignore_fields
         }
 
         # re-order the fields according to the list `self.ordering`
