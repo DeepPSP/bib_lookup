@@ -36,7 +36,7 @@ python -m pip install .
 ```python
 >>> from bib_lookup import BibLookup
 >>> bl = BibLookup(align="middle")
->>> res = bl("1707.07183")
+>>> print(bl("1707.07183"))
 @article{wen2017_1707.07183v2,
    author = {Hao Wen and Chunhui Liu},
     title = {Counting Multiplicities in a Hypersurface over a Number Field},
@@ -44,7 +44,7 @@ python -m pip install .
      year = {2017},
     month = {7},
 }
->>> bl("10.1109/CVPR.2016.90")
+>>> print(bl("10.1109/CVPR.2016.90"))
 @inproceedings{He_2016,
      author = {Kaiming He and Xiangyu Zhang and Shaoqing Ren and Jian Sun},
       title = {Deep Residual Learning for Image Recognition},
@@ -54,7 +54,7 @@ python -m pip install .
       month = {6},
   publisher = {{IEEE}},
 }
->>> bl("10.23919/cinc53138.2021.9662801", align="left-middle")
+>>> print(bl("10.23919/cinc53138.2021.9662801", align="left-middle"))
 @inproceedings{Wen_2021,
   author    = {Hao Wen and Jingsu Kang},
   title     = {Hybrid Arrhythmia Detection on Varying-Dimensional Electrocardiography: Combining Deep Neural Networks and Clinical Rules},
@@ -139,6 +139,40 @@ which could not be done automatically since
 
 This should be corrected by the user himself **if necessary** (which although is rare),
 and remember to enclose such fields with **double curly braces**.
+
+For example, the lookup result for the `AlexNet` paper is
+```python
+>>> from bib_lookup import BibLookup
+>>> bl = BibLookup()
+>>> print(bl("https://doi.org/10.1145/3065386"))
+@article{Krizhevsky_2017,
+     author = {Alex Krizhevsky and Ilya Sutskever and Geoffrey E. Hinton},
+      title = {{ImageNet} classification with deep convolutional neural networks},
+    journal = {Communications of the {ACM}},
+        doi = {10.1145/3065386},
+       year = {2017},
+      month = {5},
+  publisher = {Association for Computing Machinery ({ACM})},
+     volume = {60},
+     number = {6},
+      pages = {84--90}
+}
+```
+This result should be adjusted to
+```latex
+@article{Krizhevsky_2017,
+     author = {Alex Krizhevsky and Ilya Sutskever and Geoffrey E. Hinton},
+      title = {{ImageNet Classification with Deep Convolutional Neural Networks}},
+    journal = {Communications of the {ACM}},
+        doi = {10.1145/3065386},
+       year = {2017},
+      month = {5},
+  publisher = {Association for Computing Machinery ({ACM})},
+     volume = {60},
+     number = {6},
+      pages = {84--90}
+}
+```
 
 ## Biblatex Cheetsheet
 [This file](/biblatex-cheatsheet.pdf) downloaded from \[[6](#ref6)\] gives full knowledge about `bib` entries.
