@@ -11,6 +11,25 @@ https://github.com/wenh06/utils/blob/master/utils_universal/utils_bib.py
 
 **NOTE** that you should have internet connection to use `bib_lookup`.
 
+
+<!-- toc -->
+
+- [Installation](#installation)
+- [Dependencies](#dependencies)
+- [Basic Usage Examples](#basic-usage-examples)
+- [Command-line Usage](#command-line-usage)
+- [Output (Append) to a `.bib` File](#append-to-file)
+- [arXiv to DOI](#arxiv-to-doi)
+- [Bib Items Checking](#bib-items-checking)
+- [TODO](#todo)
+- [WARNING](#warning)
+- [Biblatex Cheetsheet](#biblatex-cheetsheet)
+- [Citation](#citation)
+- [References](#references)
+
+<!-- tocstop -->
+
+
 ## Installation
 Run
 ```bash
@@ -26,13 +45,20 @@ cd bib_lookup
 python -m pip install .
 ```
 
-## Requirements
+:point_right: [Back to TOC](#bib_lookup)
+
+## Dependencies
 - requests
 - feedparser
 - pandas
 
+:point_right: [Back to TOC](#bib_lookup)
 
-## Usage Examples
+## Basic Usage Examples
+
+<details>
+<summary>Click to expand!</summary>
+
 ```python
 >>> from bib_lookup import BibLookup
 >>> bl = BibLookup(align="middle")
@@ -66,14 +92,29 @@ python -m pip install .
 }
 ```
 
+:point_right: [Back to TOC](#bib_lookup)
+
+</details>
+
 ## Command-line Usage
+
+<details>
+<summary>Click to expand!</summary>
+
 After installation, one can use `bib-lookup` in the command line:
 ```bash
 bib-lookup 10.1109/CVPR.2016.90 10.23919/cinc53138.2021.9662801 --ignore-fields url doi -i path/to/input.txt -o path/to/output.bib
 ```
 
+:point_right: [Back to TOC](#bib_lookup)
 
-## Output (Append) to a `.bib` File
+</details>
+
+## <a name="append-to-file"></a> Output (Append) to a `.bib` File
+
+<details>
+<summary>Click to expand!</summary>
+
 Each time a bib item is successfully found, it will be cached. One can call the `save` function to write the cached bib items to a `.bib` file, in the append mode.
 ```python
 >>> from bib_lookup import BibLookup
@@ -91,7 +132,51 @@ Each time a bib item is successfully found, it will be cached. One can call the 
 0
 ```
 
+:point_right: [Back to TOC](#bib_lookup)
+
+</details>
+
+
+## arXiv to DOI
+
+<details>
+<summary>Click to expand!</summary>
+
+From 2022.2.17, new arXiv articles are automatically assigned DOIs (old ones in progress). If one prefers DOI citation to arXiv citation then
+```python
+>>> from bib_lookup import BibLookup
+>>> bl = BibLookup(arxiv2doi=True)  # the default for `arxiv2doi` is False
+>>> print(bl("https://arxiv.org/abs/2204.04420"))
+@misc{https://doi.org/10.48550/arxiv.2204.04420,
+     author = {Hao, Wen and Jingsu, Kang},
+      title = {Investigating Deep Learning Benchmarks for Electrocardiography Signal Processing},
+        doi = {10.48550/ARXIV.2204.04420},
+   keywords = {Machine Learning (cs.LG), FOS: Computer and information sciences, FOS: Computer and information sciences},
+  publisher = {arXiv},
+       year = {2022},
+  copyright = {Creative Commons Attribution 4.0 International}
+}
+```
+while with `bl = BibLookup()`, one would get
+```latex
+@article{hao2022_2204.04420v1,
+   author = {Wen Hao and Kang Jingsu},
+    title = {Investigating Deep Learning Benchmarks for Electrocardiography Signal Processing},
+  journal = {arXiv preprint arXiv:2204.04420v1},
+     year = {2022},
+    month = {4}
+}
+```
+
+:point_right: [Back to TOC](#bib_lookup)
+
+</details>
+
 ## Bib Items Checking
+
+<details>
+<summary>Click to expand!</summary>
+
 One can use `BibLookup` to check the validity (**required fields, duplicate labels**, etc) of bib items in a Bib file. The following is an example with a [Bib file](/test/invalid_items.bib) with incorrect and duplicate bib items.
 ```python
 >>> from bib_lookup import BibLookup
@@ -115,8 +200,15 @@ bib-lookup -c ./test/invalid_items.bib
 bib-lookup --ignore-fields url doi -i ./test/sample_input.txt -o ./tmp/a.bib -c true
 ```
 
+:point_right: [Back to TOC](#bib_lookup)
+
+</details>
 
 ## TODO
+
+<details>
+<summary>Click to expand!</summary>
+
 1. ([:heavy_check_mark:](#command-line-usage)) ~~add CLI support~~;
 2. use eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi for PubMed, as in \[[3](#ref3)\];
 3. try using google scholar api described in \[[4](#ref4)\] (unfortunately \[[4](#ref4)\] is charged);
@@ -124,8 +216,16 @@ bib-lookup --ignore-fields url doi -i ./test/sample_input.txt -o ./tmp/a.bib -c 
 5. (:heavy_check_mark:) ~~check if the bib item is already existed in the output file, and skip saving it if so~~;
 6. since arXiv articles are now automatically assigned DOIs (ref. [this blog](https://blog.arxiv.org/2022/02/17/new-arxiv-articles-are-now-automatically-assigned-dois/)), consider converting arXiv identifiers to DOI indentifiers, and requesting from DOI. Currently, the request results are different, at least the entry type is change from `article` to `misc`.
 
+:point_right: [Back to TOC](#bib_lookup)
+
+</details>
+
 
 ## WARNING
+
+<details>
+<summary>Click to expand!</summary>
+
 Many journals have specific requirements for the Bib entries,
 for example, the title and/or journal (and/or booktitle), etc. should be **capitalized**,
 which could not be done automatically since
@@ -201,8 +301,14 @@ Adjust it to
 ```
 This shows that the data in the DOI database is **NOT** always correct.
 
+:point_right: [Back to TOC](#bib_lookup)
+
+</details>
+
 ## Biblatex Cheetsheet
 [This file](/biblatex-cheatsheet.pdf) downloaded from \[[6](#ref6)\] gives full knowledge about `bib` entries.
+
+:point_right: [Back to TOC](#bib_lookup)
 
 ## Citation
 ```latex
@@ -224,6 +330,8 @@ The above citation can be get via
 >>> print(bl("DOI: 10.5281/zenodo.6435017"))
 ```
 
+:point_right: [Back to TOC](#bib_lookup)
+
 ## References
 1. <a name="ref1"></a> https://github.com/davidagraf/doi2bib2
 2. <a name="ref2"></a> https://arxiv.org/help/api
@@ -231,3 +339,5 @@ The above citation can be get via
 4. <a name="ref4"></a> https://serpapi.com/google-scholar-cite-api
 5. <a name="ref5"></a> https://www.bibtex.com/
 6. <a name="ref6"></a> http://tug.ctan.org/info/biblatex-cheatsheet/biblatex-cheatsheet.pdf
+
+:point_right: [Back to TOC](#bib_lookup)

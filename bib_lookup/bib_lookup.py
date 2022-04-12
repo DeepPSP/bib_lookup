@@ -337,7 +337,7 @@ class BibLookup(ReprMixin):
             category = "arxiv"
             if self._arxiv2doi:
                 idtf = f"10.48550/arXiv.{idtf}"
-                category = "doi"
+                return self._obtain_feed_content(idtf)
         else:
             warnings.warn(
                 "unrecognized indentifier (none of doi, pmid, pmcid, pmurl, arxiv)"
