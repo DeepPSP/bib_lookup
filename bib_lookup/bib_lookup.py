@@ -197,6 +197,7 @@ class BibLookup(ReprMixin):
         self.__default_err = "Not Found"
         self.__header_pattern = "^@(?P<entry_type>\\w+)\\{(?P<label>[^,]+)"
 
+        self._arxiv2doi = kwargs.get("arxiv2doi", False)
         self.verbose = kwargs.get("verbose", 0)
         self._ordering = kwargs.get(
             "ordering", ["author", "title", "journal", "booktitle"]
@@ -334,6 +335,9 @@ class BibLookup(ReprMixin):
                 "url": url,
             }
             category = "arxiv"
+            if self._arxiv2doi:
+                idtf = f"10.48550/arXiv.{idtf}"
+                category = "doi"
         else:
             warnings.warn(
                 "unrecognized indentifier (none of doi, pmid, pmcid, pmurl, arxiv)"
