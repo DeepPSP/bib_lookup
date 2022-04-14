@@ -817,7 +817,14 @@ class BibLookup(ReprMixin):
 
         """
         if string_format:
-            return "\n".join([str(self[item]) for item in self])
+            return "\n".join(
+                [
+                    f"% index: {idx}\n"
+                    + f"% identifier: {self[item].identifier}\n"
+                    + str(self[item])
+                    for idx, item in enumerate(self)
+                ]
+            )
         else:
             return self.__cached_lookup_results
 
