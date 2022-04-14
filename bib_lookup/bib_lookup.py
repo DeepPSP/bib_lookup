@@ -106,6 +106,11 @@ class BibLookup(ReprMixin):
 
     """
 
+    __URL__ = dict(
+        doi="https://doi.org/",
+        pm="http://www.pubmedcentral.nih.gov/utils/idconv/v1.0/?format=json&ids=",
+        arxiv="http://export.arxiv.org/api/query?id_list=",
+    )
     __name__ = "BibLookup"
 
     def __init__(
@@ -214,6 +219,7 @@ class BibLookup(ReprMixin):
         identifier: Union[Path, str, Sequence[str]],
         align: Optional[str] = None,
         ignore_fields: Optional[Union[str, Sequence[str]]] = None,
+        label: Optional[str] = None,
     ) -> str:
         """
 
@@ -229,6 +235,9 @@ class BibLookup(ReprMixin):
             fields to be ignored in the final output,
             case insensitive,
             if specified, `self._ignore_fields` is ignored
+        label: str, optional,
+            label of the publication,
+            if specified, the label provided by the source is ignored
 
         Returns
         -------
@@ -304,7 +313,7 @@ class BibLookup(ReprMixin):
                 "",
                 idtf,
             ).strip("/")
-            url = "https://doi.org/" + idtf
+            url = self.__URL__["doi"] + idtf
             fc = {
                 "url": url,
                 "headers": {"Accept": "application/x-bibtex; charset=utf-8"},
@@ -316,10 +325,7 @@ class BibLookup(ReprMixin):
                 "",
                 idtf,
             ).strip("/")
-            url = (
-                "http://www.pubmedcentral.nih.gov/utils/idconv/v1.0/?format=json&ids="
-                + idtf
-            )
+            url = self.__URL__["pm"] + idtf
             fc = {
                 "url": url,
             }
@@ -330,7 +336,7 @@ class BibLookup(ReprMixin):
                 "",
                 idtf,
             ).strip("/")
-            url = "http://export.arxiv.org/api/query?id_list=" + idtf
+            url = self.__URL__["arxiv"] + idtf
             fc = {
                 "url": url,
             }
@@ -450,6 +456,7 @@ class BibLookup(ReprMixin):
         identifier: Optional[str] = None,
         align: Optional[str] = None,
         ignore_fields: Optional[Union[str, Sequence[str]]] = None,
+        label: Optional[str] = None,
     ) -> BibItem:
         """
 
@@ -469,6 +476,8 @@ class BibLookup(ReprMixin):
             fields to be ignored in the final output,
             case insensitive,
             if specified, `self._ignore_fields` is ignored
+        label: str, optional,
+            label of the publication,
 
         Returns
         -------
@@ -522,6 +531,11 @@ class BibLookup(ReprMixin):
             field_dict["title"] = (
                 field_dict["title"].replace("_", r"\_").replace(r"\\_", r"\_")
             )
+
+        # if label is provided, overwrite the label in the header
+        if label:
+            assert isinstance(label, str), "label must be a string"
+            header_dict["label"] = label
 
         # all field names to lower case,
         # and ignore the fields in the list `_ignore_fields`
