@@ -204,6 +204,24 @@ bib-lookup --ignore-fields url doi -i ./test/sample_input.txt -o ./tmp/a.bib -c 
 
 </details>
 
+## <a name="simplify-file"></a> Simplify a `.bib` File
+
+<details>
+<summary>Click to expand!</summary>
+
+Sometimes one wants a clean bib without bib items that are not cited, then one can use the static method `simplify_bib_file` to generate a new `.bib` File that contains only the cited bib items from an old `.bib` File.
+```python
+>>> from bib_lookup import BibLookup
+>>> new_bib_file_path = BibLookup.simplify_bib_file("path/to/tex/source/file", "path/to/old/bib/file")
+>>> # or use the following if one has multiple source files
+>>> new_bib_file_path = BibLookup.simplify_bib_file(list_of_tex_source_files_or_folders, "path/to/old/bib/file")
+```
+
+:point_right: [Back to TOC](#bib_lookup)
+
+</details>
+
+
 ## TODO
 
 <details>

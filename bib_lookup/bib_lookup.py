@@ -16,6 +16,7 @@ import re
 import warnings
 from pathlib import Path
 from collections import OrderedDict
+from string import punctuation
 from typing import Union, Optional, Tuple, List, Sequence, Dict, NoReturn
 
 import requests
@@ -903,3 +904,68 @@ class BibLookup(ReprMixin):
                         + newline
                     )
         return sorted(err_lines)
+
+    @staticmethod
+    def simplify_bib_file(
+        tex_sources: Union[Path, str, List[Union[Path, str]]],
+        bib_file: Union[Path, str],
+        output_file: Optional[Union[Path, str]] = None,
+    ) -> str:
+        """
+
+        simplify a bib file by removing all the bib items that are not used in the tex sources
+
+        Parameters
+        ----------
+        tex_sources: str or Path or list of str or list of Path,
+            the tex sources to check
+        bib_file: str or Path,
+            the bib file to simplify
+        output_file: str or Path, optional,
+            the output file to save the simplified bib file
+            defaults to ``Path(bib_file).stem + "_simplified.bib"``
+
+        Returns
+        -------
+        str:
+            the path of the simplified bib file in string format
+
+        TODO
+        ----
+        check if it is probable that some cited bib items are missing
+
+        """
+        if isinstance(tex_sources, str):
+            tex_sources = [tex_sources]
+        tex_sources = [Path(tex_source) for tex_source in tex_sources]
+        bib_file = Path(bib_file)
+        if output_file is None:
+            output_file = bib_file.parent / (bib_file.stem + "_simplified.bib")
+        else:
+            output_file = Path(output_file)
+        if output_file.exists():
+            raise FileExistsError(f"Output file \042{output_file}\042 already exists")
+
+        ref_bl = BibLookup()
+        bib_items = ref_bl.read_bib_file(bib_file, cache=True)
+
+        # get the labels of bib items that are cited
+        cited_labels = set()
+        _punctuation = "".join([s for s in punctuation if s not in "{}"])
+        # citation pattern: https://fr.overleaf.com/learn/latex/Natbib_citation_styles
+        citation_pattern = f"\\\\cite(?:t|p|t\\*|p\\*|author|year)?\\{{(?P<label>[\\w{_punctuation}]+)\\}}"
+        for tex_source in tex_sources:
+            if tex_source.is_file():
+                for items in re.findall(citation_pattern, tex_source.read_text()):
+                    cited_labels.update([item.strip() for item in items.split(",")])
+            else:  # is a directory
+                for tex_file in tex_source.rglob("*.tex"):
+                    for items in re.findall(citation_pattern, tex_file.read_text()):
+                        cited_labels.update([item.strip() for item in items.split(",")])
+        cited_identifiers = [
+            idtf for idtf in ref_bl if ref_bl[idtf].label in cited_labels
+        ]
+
+        # write to output file
+        ref_bl.save(cited_identifiers, output_file)
+        return str(output_file)
