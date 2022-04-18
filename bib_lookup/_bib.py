@@ -327,11 +327,14 @@ BIB_ENTRY_TYPES = {
     "report": "institutional report or white paper",
     "patent": "patent or patent request",
     "thesis": "work completed to fulfil degree requirement",
+    "phdthesis": "ph.D. thesis",
+    "mastersthesis": "M.A. thesis",
     # Material from online, informal & other sources:
     "online": "inherently online source",
     "booklet": "informally published book",
     "unpublished": "work not formally published",
     "misc": "last resort (check manual first!)",
+    "software": "software",
     # Special entries for database management:
     "set": "(static) entry ‘set’",
     "xdata": "data-container (cannot be cited)",
@@ -341,7 +344,9 @@ DF_BIB_ENTRY_TYPES = pd.DataFrame(
     [(k, v) for k, v in BIB_ENTRY_TYPES.items()], columns=["entry_type", "description"]
 )
 # fmt: off
-_required_fields = {  # https://www.openoffice.org/bibliographic/bibtex-defs.html
+_required_fields = {
+    # https://www.openoffice.org/bibliographic/bibtex-defs.html
+    # https://www.andy-roberts.net/res/writing/latex/bibentries.pdf
     "article": ["author", "title", "journal", "year"],
     "book": ["author|editor", "title", "publisher", "year"],
     "booklet": ["title"],
@@ -357,7 +362,9 @@ _required_fields = {  # https://www.openoffice.org/bibliographic/bibtex-defs.htm
     "techreport": ["author", "title", "institution", "year"],
     "unpublished": ["author", "title", "note"],
 }
-_optional_fields = {  # https://www.openoffice.org/bibliographic/bibtex-defs.html
+_optional_fields = {
+    # https://www.openoffice.org/bibliographic/bibtex-defs.html
+    # https://www.andy-roberts.net/res/writing/latex/bibentries.pdf
     "article": ["volume", "number", "pages", "month", "note"],
     "book": ["volume|number", "series", "address", "edition", "month", "note"],
     "booklet": ["author", "howpublished", "address", "month", "year", "note"],

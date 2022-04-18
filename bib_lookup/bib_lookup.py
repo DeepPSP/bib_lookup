@@ -510,7 +510,8 @@ class BibLookup(ReprMixin):
             ].groupdict()
             field_dict = OrderedDict()
             for line in lines[1:-1]:
-                key, val = line.strip().split("=")
+                key, *val = line.strip().split("=")  # urls might contain "="
+                val = "".join(val)
                 field_dict[key.strip()] = val.strip(", ")
         elif isinstance(res, dict):
             header_dict = {
@@ -748,13 +749,14 @@ class BibLookup(ReprMixin):
             if line.startswith("@"):
                 line_numbers.append(idx)
                 if len(lines) > 0:
-                    bib_item = self._to_bib_item("\n".join(lines))
-                    bib_items.append(bib_item)
-                    if cache:
-                        self.__cached_lookup_results[bib_item.identifier] = bib_item
+                    if not re.search("bstctl", lines[0].lower()):
+                        bib_item = self._to_bib_item("\n".join(lines))
+                        bib_items.append(bib_item)
+                        if cache:
+                            self.__cached_lookup_results[bib_item.identifier] = bib_item
                     lines = []
             lines.append(line)
-        if len(lines) > 0:
+        if len(lines) > 0 and not re.search("bstctl", lines[0].lower()):
             bib_item = self._to_bib_item("\n".join(lines))
             bib_items.append(bib_item)
             if cache:
