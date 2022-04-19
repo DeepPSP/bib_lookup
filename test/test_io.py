@@ -18,6 +18,8 @@ _EXPECTED_OUTPUT_FILE = _CWD / "expected_output.bib"
 _EXPECTED_OUTPUTS = _EXPECTED_OUTPUT_FILE.read_text().strip(" \n")
 _OUTPUT_FILE = _CWD / "test_output.bib"
 
+_LARGE_DATABASE_FILE = _CWD / "large_database.bib"
+
 
 bl = bib_lookup.BibLookup(output_file=_OUTPUT_FILE)
 
@@ -33,6 +35,9 @@ def test_io_from_file():
     bl.save()
     assert len(bl) == 0
     os.remove(_OUTPUT_FILE)
+
+    bib_items = bl.read_bib_file(_LARGE_DATABASE_FILE, cache=True)
+    assert len(bib_items) == len(bl) == 608
 
 
 def test_io_from_list():
