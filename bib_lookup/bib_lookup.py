@@ -793,6 +793,11 @@ class BibLookup(ReprMixin):
         for i in identifiers:
             self.__cached_lookup_results.pop(i, None)
 
+    def clear_cache(self) -> NoReturn:
+        """ helper function to clear the cached bib items """
+        for item in list(self):
+            self.pop(item)
+
     def print(self) -> NoReturn:
         """
 

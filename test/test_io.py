@@ -38,6 +38,8 @@ def test_io_from_file():
 
     bib_items = bl.read_bib_file(_LARGE_DATABASE_FILE, cache=True)
     assert len(bib_items) == len(bl) == 608
+    bl.clear_cache()
+    assert len(bl) == 0
 
 
 def test_io_from_list():
