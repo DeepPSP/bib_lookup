@@ -204,6 +204,7 @@ class BibLookup(ReprMixin):
         self.__arxiv_pattern = f"^(?:{self.__arxiv_pattern_prefix})?(?:([\\w\\-]+\\/\\d+)|(\\d+\\.\\d+(v(\\d+))?))$"
         # self.__arxiv_pattern_old = f"^(?:{self.__arxiv_pattern_prefix})?[\\w\\-]+\\/\\d+$"
         self.__default_err = "Not Found"
+        self.__timeout_err = "Timeout"
         self.__header_pattern = "^@(?P<entry_type>\\w+)\\{(?P<label>[^,]+)"
 
         self._arxiv2doi = kwargs.get("arxiv2doi", False)
@@ -225,6 +226,7 @@ class BibLookup(ReprMixin):
         ignore_fields: Optional[Union[str, Sequence[str]]] = None,
         label: Optional[str] = None,
         arxiv2doi: Optional[bool] = None,
+        verbose: Optional[int] = None,
     ) -> str:
         """
 
@@ -246,6 +248,9 @@ class BibLookup(ReprMixin):
         arxiv2doi: bool, optional,
             whether to convert arXiv ID to DOI to look up,
             if specified, `self._arxiv2doi` is ignored
+        verbose: int, optional,
+            verbosity level,
+            if specified, `self.verbose` is ignored
 
         Returns
         -------
@@ -253,6 +258,9 @@ class BibLookup(ReprMixin):
             the final output in the `str` format
 
         """
+        original_verbose = self.verbose
+        if verbose is not None:
+            self.verbose = verbose
         if isinstance(identifier, Path):
             identifier = [
                 line for line in identifier.read_text().splitlines() if len(line) > 0
@@ -281,18 +289,18 @@ class BibLookup(ReprMixin):
         elif category == "error":
             res = self.default_err
 
-        if res != self.default_err:
+        if res not in self.lookup_errors:
             res = self._to_bib_item(res, idtf, align, ignore_fields)
             self.__cached_lookup_results[identifier] = res
 
         if self.verbose >= 1:
-            if res == self.default_err:
+            if res in self.lookup_errors:
                 print_func(
                     process_text(res, self.__err_color, font_size=self.__err_fontsize)
                 )
             else:
                 print(res)
-
+        self.verbose = original_verbose
         return str(res)
 
     def _obtain_feed_content(
@@ -393,6 +401,8 @@ class BibLookup(ReprMixin):
             print_func(res)
         if "DOI Not Found" in res:
             return self.default_err
+        elif "504 Gateway Time-out" in res:
+            return self.timeout_err
         return res
 
     def _handle_pm(self, feed_content: dict) -> str:
@@ -614,6 +624,14 @@ class BibLookup(ReprMixin):
     @property
     def default_err(self) -> str:
         return self.__default_err
+
+    @property
+    def timeout_err(self) -> str:
+        return self.__timeout_err
+
+    @property
+    def lookup_errors(self) -> List[str]:
+        return [self.default_err, self.timeout_err]
 
     @property
     def ignore_fields(self) -> List[str]:
