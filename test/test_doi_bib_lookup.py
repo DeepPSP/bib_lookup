@@ -24,3 +24,7 @@ def test_doi_bib_lookup():
     for doi, lookup_result in doi_examples.items():
         bib_string = bl(doi)
         assert bib_string == lookup_result
+
+
+if __name__ == "__main__":
+    test_doi_bib_lookup()

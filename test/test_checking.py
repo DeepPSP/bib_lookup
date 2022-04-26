@@ -18,3 +18,7 @@ def test_checking():
     bl = bib_lookup.BibLookup()
     err_lines = bl.check_bib_file(_INPUT_FILE)
     assert err_lines == [3, 16, 45]
+
+
+if __name__ == "__main__":
+    test_checking()

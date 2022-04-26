@@ -51,3 +51,8 @@ def test_io_from_list():
     bl.save()
     assert _OUTPUT_FILE.read_text().strip(" \n") == _EXPECTED_OUTPUTS
     os.remove(_OUTPUT_FILE)
+
+
+if __name__ == "__main__":
+    test_io_from_file()
+    test_io_from_list()

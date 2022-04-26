@@ -23,3 +23,7 @@ def test_arxiv_bib_lookup():
     for arXiv_id, lookup_result in arXiv_examples.items():
         bib_string = bl(arXiv_id)
         assert bib_string == lookup_result
+
+
+if __name__ == "__main__":
+    test_arxiv_bib_lookup()
