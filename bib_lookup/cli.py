@@ -141,6 +141,12 @@ def main():
         help="allow duplicate entries when writing to file.",
         dest="allow_duplicates",
     )
+    parser.add_argument(
+        "--arxiv2doi",
+        action="store_true",
+        help="Convert arXiv ID to DOI to look up.",
+        dest="arxiv2doi",
+    )
 
     args = vars(parser.parse_args())
 
@@ -158,6 +164,7 @@ def main():
         output_file=args["output_file"],
         email=args["email"],
         ordering=args["ordering"],
+        arxiv2doi=args["arxiv2doi"],
         verbose=0,
     )
 
@@ -178,7 +185,10 @@ def main():
         if check_file:
             bl.check_bib_file(bl.output_file)
     else:
-        bl.print()
+        if len(bl) == 0:
+            print("No entries found.")
+        else:
+            bl.print()
 
 
 if __name__ == "__main__":

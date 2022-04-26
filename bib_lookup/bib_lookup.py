@@ -143,6 +143,9 @@ class BibLookup(ReprMixin):
             "ordering": sequence of str,
                 default ["author", "title", "journal", "booktitle"],
                 case insensitive,
+            "arxiv2doi": bool,
+                default False,
+                whether to convert arXiv ID to DOI to look up
 
         """
         self.align = align.lower()
@@ -221,6 +224,7 @@ class BibLookup(ReprMixin):
         align: Optional[str] = None,
         ignore_fields: Optional[Union[str, Sequence[str]]] = None,
         label: Optional[str] = None,
+        arxiv2doi: Optional[bool] = None,
     ) -> str:
         """
 
@@ -239,6 +243,9 @@ class BibLookup(ReprMixin):
         label: str, optional,
             label of the publication,
             if specified, the label provided by the source is ignored
+        arxiv2doi: bool, optional,
+            whether to convert arXiv ID to DOI to look up,
+            if specified, `self._arxiv2doi` is ignored
 
         Returns
         -------
@@ -264,7 +271,7 @@ class BibLookup(ReprMixin):
                 f"identifier must be a string or a sequence of strings, but got {identifier}"
             )
 
-        category, feed_content, idtf = self._obtain_feed_content(identifier)
+        category, feed_content, idtf = self._obtain_feed_content(identifier, arxiv2doi)
         if category == "doi":
             res = self._handle_doi(feed_content)
         elif category == "pm":
@@ -288,7 +295,9 @@ class BibLookup(ReprMixin):
 
         return str(res)
 
-    def _obtain_feed_content(self, identifier: str) -> Tuple[str, dict, str]:
+    def _obtain_feed_content(
+        self, identifier: str, arxiv2doi: Optional[bool] = None
+    ) -> Tuple[str, dict, str]:
         """
 
         Parameters
@@ -296,6 +305,9 @@ class BibLookup(ReprMixin):
         identifier: str,
             identifier of a publication,
             can be DOI, PMID (or url), PMCID (or url), arXiv id,
+        arxiv2doi: bool, optional,
+            whether to convert arXiv ID to DOI to look up,
+            if specified, `self._arxiv2doi` is ignored
 
         Returns
         -------
@@ -308,6 +320,7 @@ class BibLookup(ReprMixin):
 
         """
         idtf = identifier.lower().strip()
+        _arxiv2doi = self._arxiv2doi if arxiv2doi is None else arxiv2doi
         if re.search(self.doi_pattern, idtf):
             idtf = re.sub(
                 self.doi_pattern_prefix,
@@ -342,7 +355,7 @@ class BibLookup(ReprMixin):
                 "url": url,
             }
             category = "arxiv"
-            if self._arxiv2doi:
+            if _arxiv2doi:
                 idtf = f"10.48550/arXiv.{idtf}"
                 return self._obtain_feed_content(idtf)
         else:
@@ -934,10 +947,6 @@ class BibLookup(ReprMixin):
         -------
         str:
             the path of the simplified bib file in string format
-
-        TODO
-        ----
-        check if it is probable that some cited bib items are missing
 
         """
         if isinstance(tex_sources, str):
