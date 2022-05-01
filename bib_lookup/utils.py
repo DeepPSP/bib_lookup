@@ -1,6 +1,8 @@
 """
 """
 
+import re
+from pathlib import Path
 from enum import Enum
 from typing import List, Optional, NoReturn, Any, Union
 
@@ -17,6 +19,7 @@ __all__ = [
     "color_text",
     "md_text",
     "printmd",
+    "gather_tex_source_files_in_one",
 ]
 
 
@@ -256,3 +259,70 @@ def printmd(md_str: str) -> NoReturn:
         display(Markdown(md_str))
     except ModuleNotFoundError:
         print(md_str)
+
+
+def gather_tex_source_files_in_one(
+    entry_file: Union[str, Path],
+    write_file: bool = False,
+    output_file: Optional[Union[str, Path]] = None,
+) -> str:
+    """
+
+    gathers all the tex source files in one file.
+    This is useful when the entry file contains `input` commands
+    to include other tex files,
+    and when the journal submission system does not support subdirectories
+
+    Parameters
+    ----------
+    entry_file: str or Path,
+        the entry file (usually the main.tex file)
+    write_file: bool, default False,
+        whether to write the tex source into a file
+        if False, the tex source will be returned
+    output_file: str or Path, optional,
+        the output file to write the tex source into
+        if None and `write_file` is True,
+        the output file will be the `{entry_file.stem}_{in_one}.tex`
+
+    Returns
+    -------
+    str,
+        the tex source if `write_file` is False,
+        or the path to the output file if `write_file` is True
+
+    """
+    input_pattern = """\\\\input\\{(?P<filepath>[\\w|/]+)\\}"""
+    root = Path(entry_file).parent
+    content = Path(entry_file).read_text()
+    while True:
+        input_items = []
+        for item in re.findall(input_pattern, content):
+            for line in content.splitlines():
+                if line.strip().startswith("%"):
+                    continue
+                if item in line:
+                    input_items.append(item)
+                    break
+        if len(input_items) == 0:
+            break
+        for item in input_items:
+            content = content.replace(
+                f"\\input{{{item}}}", (root / Path(f"{item}.tex")).read_text()
+            )
+    if not write_file:
+        return content
+    if output_file is None:
+        output_file = root / f"{Path(entry_file).stem}_in_one.tex"
+    if Path(entry_file).resolve() == Path(output_file).resolve():
+        raise ValueError(
+            "The entry file and the output file are the same, "
+            "which is not allowed for security reasons."
+        )
+    if Path(output_file).exists():
+        raise ValueError(
+            "The output file exists. "
+            "If you want to overwrite it, you should delete it manually first."
+        )
+    Path(output_file).write_text(content, encoding="utf-8")
+    return str(output_file)
