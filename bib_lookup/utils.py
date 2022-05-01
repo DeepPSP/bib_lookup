@@ -292,7 +292,8 @@ def gather_tex_source_files_in_one(
         or the path to the output file if `write_file` is True
 
     """
-    input_pattern = """\\\\input\\{(?P<filepath>[\\w|/]+)\\}"""
+    input_pattern = "[\\w|\\/]+(?:\\.tex)?"
+    input_pattern = f"""\\\\input{{(?P<filepath>{input_pattern})}}"""
     root = Path(entry_file).parent
     content = Path(entry_file).read_text()
     while True:
@@ -308,7 +309,7 @@ def gather_tex_source_files_in_one(
             break
         for item in input_items:
             content = content.replace(
-                f"\\input{{{item}}}", (root / Path(f"{item}.tex")).read_text()
+                f"\\input{{{item}}}", (root / item).with_suffix(".tex").read_text()
             )
     if not write_file:
         return content
