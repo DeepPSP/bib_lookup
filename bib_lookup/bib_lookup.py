@@ -23,7 +23,14 @@ import requests
 import feedparser
 
 from ._bib import BibItem, DF_BIB_ENTRY_TYPES
-from .utils import is_notebook, ReprMixin, color_text, md_text, printmd
+from .utils import (
+    is_notebook,
+    ReprMixin,
+    color_text,
+    md_text,
+    printmd,
+    NETWORK_ERROR_MESSAGES,
+)
 
 
 __all__ = [
@@ -204,13 +211,14 @@ class BibLookup(ReprMixin):
         self.__arxiv_pattern = f"^(?:{self.__arxiv_pattern_prefix})?(?:([\\w\\-]+\\/\\d+)|(\\d+\\.\\d+(v(\\d+))?))$"
         # self.__arxiv_pattern_old = f"^(?:{self.__arxiv_pattern_prefix})?[\\w\\-]+\\/\\d+$"
         self.__default_err = "Not Found"
-        self.__timeout_err = "Timeout"
+        self.__network_err = "Network Error"
+
         self.__header_pattern = "^@(?P<entry_type>\\w+)\\{(?P<label>[^,]+)"
 
         self._arxiv2doi = kwargs.get("arxiv2doi", False)
         self.verbose = kwargs.get("verbose", 0)
         self._ordering = kwargs.get(
-            "ordering", ["author", "title", "journal", "booktitle"]
+            "ordering", ["title", "author", "journal", "booktitle"]
         )
         self._ordering = [k.lower() for k in self._ordering]
         self._comment_pattern = re.compile(r"^%")
@@ -288,6 +296,8 @@ class BibLookup(ReprMixin):
             res = self._handle_arxiv(feed_content)
         elif category == "error":
             res = self.default_err
+
+        res = self._handle_network_error(res)
 
         if res not in self.lookup_errors:
             res = self._to_bib_item(res, idtf, align, ignore_fields)
@@ -399,10 +409,6 @@ class BibLookup(ReprMixin):
         res = r.content.decode("utf-8")
         if self.verbose > 3:
             print_func(res)
-        if "DOI Not Found" in res:
-            return self.default_err
-        elif "504 Gateway Time-out" in res:
-            return self.timeout_err
         return res
 
     def _handle_pm(self, feed_content: dict) -> str:
@@ -472,6 +478,14 @@ class BibLookup(ReprMixin):
             "label"
         ] = f"{parsed['authors'][0]['name'].split(' ')[-1].lower()}{year}_{arxiv_id}"
         res["entry_type"] = "article"
+        return res
+
+    def _handle_network_error(self, res: str) -> str:
+        """handle network error"""
+        if "DOI Not Found" in res:
+            return self.default_err
+        elif any([item in res for item in NETWORK_ERROR_MESSAGES]):
+            return self.network_err
         return res
 
     def _to_bib_item(
@@ -626,12 +640,12 @@ class BibLookup(ReprMixin):
         return self.__default_err
 
     @property
-    def timeout_err(self) -> str:
-        return self.__timeout_err
+    def network_err(self) -> str:
+        return self.__network_err
 
     @property
     def lookup_errors(self) -> List[str]:
-        return [self.default_err, self.timeout_err]
+        return [self.default_err, self.network_err]
 
     @property
     def ignore_fields(self) -> List[str]:
