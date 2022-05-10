@@ -133,31 +133,11 @@ dmypy.json
 .idea
 .DS_Store
 
-
-test/CPSC0223/
-test/CPSC0236/
-test/ati_cnn/ckpt/
-
-working_dir
 tmp
 temp
-checkpoints
 log
 
 # notebooks are ignored by default
 # notebooks that are not ignored should be specified
 *.ipynb
-!train/train_seq_lab_net_cpsc2019/train_seq_lab_net_cpsc2019.ipynb
-!train/train_unet_cpsc2019/train_unet_cpsc2019.ipynb
-
-# dl models
-*.h5
-*.pth
-*.pth.tar
-
-
-# models used
-!train/train_crnn_cpsc2020/saved_models/crnn_10s.pth
-!train/train_crnn_cpsc2020/saved_models/seq_lab_10s.pth
-!train/train_crnn_cpsc2020/signal_processing/ecg_rpeaks_dl_models/CPSC2019_0416/CNN.h5
-!train/train_crnn_cpsc2020/signal_processing/ecg_rpeaks_dl_models/CPSC2019_0416/CRNN.h5
+!demo.ipynb
