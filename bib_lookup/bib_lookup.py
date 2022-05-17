@@ -296,7 +296,7 @@ class BibLookup(ReprMixin):
             res = self._handle_pm(feed_content)
         elif category == "arxiv":
             res = self._handle_arxiv(feed_content)
-        elif category == "error" or re.find(
+        elif category == "error" or re.findall(
             "|".join(self.__exceptional_doi_domains), idtf
         ):
             res = self.default_err
