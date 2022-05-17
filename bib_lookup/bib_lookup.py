@@ -227,6 +227,8 @@ class BibLookup(ReprMixin):
         self.__err_color = "red"
         self.__err_fontsize = "large"
 
+        self.__exceptional_doi_domains = ["cnki"]
+
     def __call__(
         self,
         identifier: Union[Path, str, Sequence[str]],
@@ -294,14 +296,19 @@ class BibLookup(ReprMixin):
             res = self._handle_pm(feed_content)
         elif category == "arxiv":
             res = self._handle_arxiv(feed_content)
-        elif category == "error":
+        elif category == "error" or re.find(
+            "|".join(self.__exceptional_doi_domains), idtf
+        ):
             res = self.default_err
 
         res = self._handle_network_error(res)
 
         if res not in self.lookup_errors:
-            res = self._to_bib_item(res, idtf, align, ignore_fields)
-            self.__cached_lookup_results[identifier] = res
+            try:
+                res = self._to_bib_item(res, idtf, align, ignore_fields)
+                self.__cached_lookup_results[identifier] = res
+            except Exception:
+                res = self.default_err
 
         if self.verbose >= 1:
             if res in self.lookup_errors:
