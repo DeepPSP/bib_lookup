@@ -35,6 +35,7 @@ from .utils import (
 
 __all__ = [
     "BibLookup",
+    "bib_lookuper",
 ]
 
 
@@ -217,6 +218,7 @@ class BibLookup(ReprMixin):
 
         self._arxiv2doi = kwargs.get("arxiv2doi", False)
         self.verbose = kwargs.get("verbose", 0)
+        self.print_result = kwargs.get("print_result", False)
         self._ordering = kwargs.get(
             "ordering", ["title", "author", "journal", "booktitle"]
         )
@@ -237,7 +239,8 @@ class BibLookup(ReprMixin):
         label: Optional[str] = None,
         arxiv2doi: Optional[bool] = None,
         verbose: Optional[int] = None,
-    ) -> str:
+        print_result: Optional[bool] = None,
+    ) -> Union[str, type(None)]:
         """
 
         Parameters
@@ -261,11 +264,15 @@ class BibLookup(ReprMixin):
         verbose: int, optional,
             verbosity level,
             if specified, `self.verbose` is ignored
+        print_result: bool, optional,
+            whether to print the final output,
+            if specified, `self.print_result` is ignored
 
         Returns
         -------
-        res: str,
-            the final output in the `str` format
+        res: str or None,
+            the final output in the `str` format,
+            if `print_result` or `self.print_result` is True, return None
 
         """
         original_verbose = self.verbose
@@ -318,6 +325,11 @@ class BibLookup(ReprMixin):
             else:
                 print(res)
         self.verbose = original_verbose
+
+        print_result = self.print_result if print_result is None else print_result
+        if print_result:
+            print(res)
+            return
         return str(res)
 
     def _obtain_feed_content(
@@ -1022,3 +1034,6 @@ class BibLookup(ReprMixin):
         # write to output file
         ref_bl.save(cited_identifiers, output_file)
         return str(output_file)
+
+
+bib_lookuper = BibLookup(print_result=True)

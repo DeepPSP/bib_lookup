@@ -35,7 +35,7 @@ setuptools.setup(
     packages=setuptools.find_packages(
         exclude=[
             "docs*",
-            "tests*",
+            "test*",
         ]
     ),
     # package_data=,
