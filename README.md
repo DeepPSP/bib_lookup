@@ -3,6 +3,8 @@
 ![pytest](https://github.com/DeepPSP/bib_lookup/actions/workflows/run-pytest.yml/badge.svg)
 ![PyPI](https://img.shields.io/pypi/v/bib_lookup?style=flat-square)
 [![DOI](https://zenodo.org/badge/476130336.svg)](https://zenodo.org/badge/latestdoi/476130336)
+![downloads](https://img.shields.io/pypi/dm/bib-lookup?style=flat-square)
+![license](https://img.shields.io/github/license/DeepPSP/bib_lookup?style=flat-square)
 
 A useful tool for looking up Bib entries using DOI, or pubmed ID (or URL), or arXiv ID (or URL).
 
