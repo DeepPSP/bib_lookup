@@ -236,7 +236,7 @@ class BibLookup(ReprMixin):
         identifier: Union[Path, str, Sequence[str]],
         align: Optional[str] = None,
         ignore_fields: Optional[Union[str, Sequence[str]]] = None,
-        label: Optional[str] = None,
+        label: Optional[Union[str, Sequence[str]]] = None,
         arxiv2doi: Optional[bool] = None,
         verbose: Optional[int] = None,
         print_result: Optional[bool] = None,
@@ -255,9 +255,9 @@ class BibLookup(ReprMixin):
             fields to be ignored in the final output,
             case insensitive,
             if specified, `self._ignore_fields` is ignored
-        label: str, optional,
-            label of the publication,
-            if specified, the label provided by the source is ignored
+        label: str or sequence of str, optional,
+            label(s) of the publication(s),
+            if specified, the label(s) provided by the source is/are ignored
         arxiv2doi: bool, optional,
             whether to convert arXiv ID to DOI to look up,
             if specified, `self._arxiv2doi` is ignored
@@ -278,19 +278,68 @@ class BibLookup(ReprMixin):
         original_verbose = self.verbose
         if verbose is not None:
             self.verbose = verbose
+        print_result = self.print_result if print_result is None else print_result
         if isinstance(identifier, Path):
             identifier = [
                 line for line in identifier.read_text().splitlines() if len(line) > 0
             ]
-            return self(identifier, align, ignore_fields)
+            return self(
+                identifier,
+                align,
+                ignore_fields,
+                label,
+                arxiv2doi,
+                verbose,
+                print_result,
+            )
         if isinstance(identifier, str):
             if Path(identifier).exists():
-                return self(Path(identifier), align, ignore_fields)
+                return self(
+                    Path(identifier),
+                    align,
+                    ignore_fields,
+                    label,
+                    arxiv2doi,
+                    verbose,
+                    print_result,
+                )
         elif isinstance(identifier, Sequence):
             assert all(
                 [isinstance(i, str) for i in identifier]
             ), f"identifier must be a string or a sequence of strings, but got {identifier}"
-            return "\n".join(self(item, align, ignore_fields) for item in identifier)
+            if label is not None:
+                assert (
+                    not isinstance(label, str)
+                    and len(label) == len(identifier)
+                    and all([isinstance(i, str) for i in label])
+                ), "label must be a sequence of strings of the same length as identifier"
+            else:
+                label = [None] * len(identifier)
+            if print_result:
+                for idx, item in enumerate(identifier):
+                    self(
+                        item,
+                        align,
+                        ignore_fields,
+                        label[idx],
+                        arxiv2doi,
+                        verbose,
+                        print_result,
+                    )
+                return
+            else:
+                return "\n".join(
+                    self(
+                        item,
+                        align,
+                        ignore_fields,
+                        label[idx],
+                        arxiv2doi,
+                        verbose,
+                        print_result,
+                    )
+                    for idx, item in enumerate(identifier)
+                )
         else:
             raise TypeError(
                 f"identifier must be a string or a sequence of strings, but got {identifier}"
@@ -312,7 +361,7 @@ class BibLookup(ReprMixin):
 
         if res not in self.lookup_errors:
             try:
-                res = self._to_bib_item(res, idtf, align, ignore_fields)
+                res = self._to_bib_item(res, idtf, align, ignore_fields, label)
                 self.__cached_lookup_results[identifier] = res
             except Exception:
                 res = self.default_err
@@ -326,7 +375,6 @@ class BibLookup(ReprMixin):
                 print(res)
         self.verbose = original_verbose
 
-        print_result = self.print_result if print_result is None else print_result
         if print_result:
             print(res)
             return
@@ -1012,7 +1060,8 @@ class BibLookup(ReprMixin):
             raise FileExistsError(f"Output file \042{output_file}\042 already exists")
 
         ref_bl = BibLookup()
-        bib_items = ref_bl.read_bib_file(bib_file, cache=True)
+        # bib_items = ref_bl.read_bib_file(bib_file, cache=True)
+        ref_bl.read_bib_file(bib_file, cache=True)
 
         # get the labels of bib items that are cited
         cited_labels = set()
