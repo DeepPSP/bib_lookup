@@ -521,6 +521,8 @@ class BibLookup(ReprMixin):
             res = r.content.decode("utf-8")
         except requests.Timeout:
             res = self.timeout_err
+        except Exception:
+            res = self.default_err
         if self.verbose > 3:
             print_func(res)
         return res
@@ -548,6 +550,9 @@ class BibLookup(ReprMixin):
             mid_res = r.json()["records"][0]
         except requests.Timeout:
             res = self.timeout_err
+            return res
+        except Exception:
+            res = self.default_err
             return res
         doi = mid_res.get("doi", "")
         if self.verbose > 3:
@@ -581,6 +586,9 @@ class BibLookup(ReprMixin):
             r = requests.get(**feed_content)
         except requests.Timeout:
             res = self.timeout_err
+            return res
+        except Exception:
+            res = self.default_err
             return res
         parsed = feedparser.parse(r.content.decode("utf-8")).entries[0]
         if self.verbose > 3:
