@@ -154,6 +154,12 @@ class BibLookup(ReprMixin):
             "arxiv2doi": bool,
                 default False,
                 whether to convert arXiv ID to DOI to look up
+            "timeout": float,
+                default 6.0,
+                timeout for requests
+            "ignore_errors": bool,
+                default False,
+                whether to ignore errors
 
         """
         self.align = align.lower()
@@ -213,9 +219,12 @@ class BibLookup(ReprMixin):
         # self.__arxiv_pattern_old = f"^(?:{self.__arxiv_pattern_prefix})?[\\w\\-]+\\/\\d+$"
         self.__default_err = "Not Found"
         self.__network_err = "Network Error"
+        self.__timeout_err = "Timeout Error"
 
         self.__header_pattern = "^@(?P<entry_type>\\w+)\\{(?P<label>[^,]+)"
 
+        self.ignore_errors = kwargs.get("ignore_errors", False)
+        self.timeout = kwargs.get("timeout", 6.0)
         self._arxiv2doi = kwargs.get("arxiv2doi", False)
         self.verbose = kwargs.get("verbose", 0)
         self.print_result = kwargs.get("print_result", False)
@@ -240,6 +249,8 @@ class BibLookup(ReprMixin):
         arxiv2doi: Optional[bool] = None,
         verbose: Optional[int] = None,
         print_result: Optional[bool] = None,
+        timeout: Optional[float] = None,
+        ignore_errors: Optional[bool] = None,
     ) -> Union[str, type(None)]:
         """
 
@@ -267,6 +278,12 @@ class BibLookup(ReprMixin):
         print_result: bool, optional,
             whether to print the final output,
             if specified, `self.print_result` is ignored
+        timeout: float, optional,
+            timeout for the network request,
+            if specified, `self.timeout` is ignored
+        ignore_errors: bool, optional,
+            whether to ignore errors,
+            if specified, `self.ignore_errors` is ignored
 
         Returns
         -------
@@ -279,6 +296,7 @@ class BibLookup(ReprMixin):
         if verbose is not None:
             self.verbose = verbose
         print_result = self.print_result if print_result is None else print_result
+        ignore_errors = self.ignore_errors if ignore_errors is None else ignore_errors
         if isinstance(identifier, Path):
             identifier = [
                 line for line in identifier.read_text().splitlines() if len(line) > 0
@@ -291,6 +309,8 @@ class BibLookup(ReprMixin):
                 arxiv2doi,
                 verbose,
                 print_result,
+                timeout,
+                ignore_errors,
             )
         if isinstance(identifier, str):
             if Path(identifier).exists():
@@ -302,6 +322,8 @@ class BibLookup(ReprMixin):
                     arxiv2doi,
                     verbose,
                     print_result,
+                    timeout,
+                    ignore_errors,
                 )
         elif isinstance(identifier, Sequence):
             assert all(
@@ -325,6 +347,8 @@ class BibLookup(ReprMixin):
                         arxiv2doi,
                         verbose,
                         print_result,
+                        timeout,
+                        ignore_errors,
                     )
                 return
             else:
@@ -337,15 +361,19 @@ class BibLookup(ReprMixin):
                         arxiv2doi,
                         verbose,
                         print_result,
+                        timeout,
+                        ignore_errors,
                     )
                     for idx, item in enumerate(identifier)
-                )
+                ).strip("\n")
         else:
             raise TypeError(
                 f"identifier must be a string or a sequence of strings, but got {identifier}"
             )
 
-        category, feed_content, idtf = self._obtain_feed_content(identifier, arxiv2doi)
+        category, feed_content, idtf = self._obtain_feed_content(
+            identifier, arxiv2doi, timeout
+        )
         if category == "doi":
             res = self._handle_doi(feed_content)
         elif category == "pm":
@@ -375,13 +403,19 @@ class BibLookup(ReprMixin):
                 print(res)
         self.verbose = original_verbose
 
+        if res in self.lookup_errors and ignore_errors:
+            res = ""
+
         if print_result:
             print(res)
             return
         return str(res)
 
     def _obtain_feed_content(
-        self, identifier: str, arxiv2doi: Optional[bool] = None
+        self,
+        identifier: str,
+        arxiv2doi: Optional[bool] = None,
+        timeout: Optional[float] = None,
     ) -> Tuple[str, dict, str]:
         """
 
@@ -393,6 +427,9 @@ class BibLookup(ReprMixin):
         arxiv2doi: bool, optional,
             whether to convert arXiv ID to DOI to look up,
             if specified, `self._arxiv2doi` is ignored
+        timeout: float, optional,
+            timeout for the network request,
+            if specified, `self.timeout` is ignored
 
         Returns
         -------
@@ -406,6 +443,7 @@ class BibLookup(ReprMixin):
         """
         idtf = identifier.lower().strip()
         _arxiv2doi = self._arxiv2doi if arxiv2doi is None else arxiv2doi
+        fc = {"timeout": self.timeout if timeout is None else timeout}
         if re.search(self.doi_pattern, idtf):
             idtf = re.sub(
                 self.doi_pattern_prefix,
@@ -413,10 +451,12 @@ class BibLookup(ReprMixin):
                 idtf,
             ).strip("/")
             url = self.__URL__["doi"] + idtf
-            fc = {
-                "url": url,
-                "headers": {"Accept": "application/x-bibtex; charset=utf-8"},
-            }
+            fc.update(
+                {
+                    "url": url,
+                    "headers": {"Accept": "application/x-bibtex; charset=utf-8"},
+                }
+            )
             category = "doi"
         elif re.search(self.pm_pattern, idtf):
             idtf = re.sub(
@@ -425,9 +465,11 @@ class BibLookup(ReprMixin):
                 idtf,
             ).strip("/")
             url = self.__URL__["pm"] + idtf
-            fc = {
-                "url": url,
-            }
+            fc.update(
+                {
+                    "url": url,
+                }
+            )
             category = "pm"
         elif re.search(self.arxiv_pattern, idtf):
             idtf = re.sub(
@@ -436,9 +478,11 @@ class BibLookup(ReprMixin):
                 idtf,
             ).strip("/")
             url = self.__URL__["arxiv"] + idtf
-            fc = {
-                "url": url,
-            }
+            fc.update(
+                {
+                    "url": url,
+                }
+            )
             category = "arxiv"
             if _arxiv2doi:
                 idtf = f"10.48550/arXiv.{idtf}"
@@ -472,8 +516,11 @@ class BibLookup(ReprMixin):
             decoded query result
 
         """
-        r = requests.post(**feed_content)
-        res = r.content.decode("utf-8")
+        try:
+            r = requests.post(**feed_content)
+            res = r.content.decode("utf-8")
+        except requests.Timeout:
+            res = self.timeout_err
         if self.verbose > 3:
             print_func(res)
         return res
@@ -494,15 +541,21 @@ class BibLookup(ReprMixin):
             decoded query result
 
         """
-        r = requests.post(**feed_content)
-        if self.verbose > 1:
-            print_func(r.json())
-        mid_res = r.json()["records"][0]
+        try:
+            r = requests.post(**feed_content)
+            if self.verbose > 1:
+                print_func(r.json())
+            mid_res = r.json()["records"][0]
+        except requests.Timeout:
+            res = self.timeout_err
+            return res
         doi = mid_res.get("doi", "")
         if self.verbose > 3:
             print_func(f"doi = {doi}")
         if doi:
-            _, feed_content, _ = self._obtain_feed_content(doi)
+            _, feed_content, _ = self._obtain_feed_content(
+                doi, timeout=feed_content.get("timeout", None)
+            )
             res = self._handle_doi(feed_content)
         else:
             res = self.default_err
@@ -524,7 +577,11 @@ class BibLookup(ReprMixin):
             decoded and parsed query result
 
         """
-        r = requests.get(**feed_content)
+        try:
+            r = requests.get(**feed_content)
+        except requests.Timeout:
+            res = self.timeout_err
+            return res
         parsed = feedparser.parse(r.content.decode("utf-8")).entries[0]
         if self.verbose > 3:
             print_func(parsed)
@@ -711,8 +768,12 @@ class BibLookup(ReprMixin):
         return self.__network_err
 
     @property
+    def timeout_err(self) -> int:
+        return self.__timeout_err
+
+    @property
     def lookup_errors(self) -> List[str]:
-        return [self.default_err, self.network_err]
+        return [self.default_err, self.network_err, self.timeout_err]
 
     @property
     def ignore_fields(self) -> List[str]:
