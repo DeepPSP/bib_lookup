@@ -22,7 +22,7 @@ from typing import Union, Optional, Tuple, List, Sequence, Dict, NoReturn
 import requests
 import feedparser
 
-from ._bib import BibItem, DF_BIB_ENTRY_TYPES
+from ._bib import BibItem, DF_BIB_ENTRY_TYPES, BIB_FIELDS
 from .utils import (
     is_notebook,
     ReprMixin,
@@ -131,7 +131,6 @@ class BibLookup(ReprMixin):
         **kwargs,
     ) -> NoReturn:
         """
-
         Parameters
         ----------
         align: str, default "middle",
@@ -253,7 +252,6 @@ class BibLookup(ReprMixin):
         ignore_errors: Optional[bool] = None,
     ) -> Union[str, type(None)]:
         """
-
         Parameters
         ----------
         identifier: Path or str or sequence of str,
@@ -419,7 +417,6 @@ class BibLookup(ReprMixin):
         timeout: Optional[float] = None,
     ) -> Tuple[str, dict, str]:
         """
-
         Parameters
         ----------
         identifier: str,
@@ -503,7 +500,6 @@ class BibLookup(ReprMixin):
 
     def _handle_doi(self, feed_content: dict) -> str:
         """
-
         handle a DOI query using POST
 
         Parameters
@@ -525,12 +521,11 @@ class BibLookup(ReprMixin):
         except requests.RequestException:
             res = self.network_err
         if self.verbose > 3:
-            print_func(res)
+            print_func(f"via _handle_doi, fetched content = {res}")
         return res
 
     def _handle_pm(self, feed_content: dict) -> str:
         """
-
         handle a PubMed query using POST
 
         Parameters
@@ -569,7 +564,6 @@ class BibLookup(ReprMixin):
 
     def _handle_arxiv(self, feed_content: dict) -> Union[str, Dict[str, str]]:
         """
-
         handle a arXiv query using GET
 
         Parameters
@@ -630,7 +624,6 @@ class BibLookup(ReprMixin):
         label: Optional[str] = None,
     ) -> BibItem:
         """
-
         Parameters
         ----------
         res: str or dict,
@@ -683,7 +676,13 @@ class BibLookup(ReprMixin):
             for line in lines[1:-1]:
                 key, *val = line.strip().split("=")  # urls might contain "="
                 val = "".join(val)
-                field_dict[key.strip()] = val.strip(", ")
+                if key.strip().lower() in BIB_FIELDS:
+                    # field_dict[key.strip()] = val.strip(", ")
+                    field_dict[key.strip()] = val
+                else:
+                    # line breaks inside a field
+                    key = list(field_dict.keys())[-1]
+                    field_dict[key] += f" {line.strip()}"
         elif isinstance(res, dict):
             header_dict = {
                 k.strip(): str(v).strip(", ")
@@ -802,7 +801,6 @@ class BibLookup(ReprMixin):
         skip_existing: Union[bool, str] = True,
     ) -> NoReturn:
         """
-
         save bib items corresponding to the identifiers to the output file.
 
         Parameters
@@ -896,7 +894,6 @@ class BibLookup(ReprMixin):
         return_line_numbers: bool = False,
     ) -> Union[List[BibItem], Tuple[List[BibItem], List[int]]]:
         """
-
         Read bib file and return a list of bib items.
 
         Parameters
@@ -952,7 +949,6 @@ class BibLookup(ReprMixin):
         self, identifiers: Union[int, str, Sequence[str], Sequence[int]]
     ) -> NoReturn:
         """
-
         remove the bib corresponding to the identifiers from the cache
 
         Parameters
@@ -981,16 +977,11 @@ class BibLookup(ReprMixin):
             self.pop(item)
 
     def print(self) -> NoReturn:
-        """
-
-        print the bib items in the cache
-
-        """
+        """print the bib items in the cache"""
         print(self.get_cache(string_format=True))
 
     def get_cache(self, string_format: bool = False) -> Union[str, OrderedDict]:
         """
-
         get all bib items in the cache
 
         Parameters
@@ -1037,7 +1028,6 @@ class BibLookup(ReprMixin):
 
     def check_bib_file(self, bib_file: Union[str, Path]) -> List[int]:
         """
-
         check if the bib items in a bib file are valid,
         by checking if they have all the required fields
 
@@ -1099,7 +1089,6 @@ class BibLookup(ReprMixin):
         output_file: Optional[Union[Path, str]] = None,
     ) -> str:
         """
-
         simplify a bib file by removing all the bib items that are not used in the tex sources
 
         Parameters
