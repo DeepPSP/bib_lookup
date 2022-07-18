@@ -410,6 +410,7 @@ BIB_FIELDS = {
     "organization": "manual/website publisher or event sponsor",
     "publisher": "publisher(s)",
     "school": "the name of the school where a thesis was written",
+    "journal": "journal name",
     # titles
     "title": "title",
     "indextitle": "if different from title",
@@ -431,6 +432,7 @@ BIB_FIELDS = {
     "version": "revision number for software or manual",
     "pubstate": "publication state",
     # pages
+    "numpages": "number of pages",
     "pages": "page list or range",
     "pagetotal": "total number of pages",
     "(book)pagination": "pagination format of (book)title",
@@ -442,6 +444,7 @@ BIB_FIELDS = {
     "month": "month of publication",
     # places
     "location": "or address, where published",
+    "address": "place of publication",
     "venue": "of event",
     # digital
     "url": "URL",
@@ -456,6 +459,8 @@ BIB_FIELDS = {
     "addendum": "miscellaneous data printed at end of entry",
     "note": "miscellaneous data printed within entry",
     "howpublished": "non-standard publication details",
+    "articleno": "article number",
+    "copyright": "Copyright notice",
     # international standards
     "isan": "International Standard Audiovisual Number",
     "isbn": "International Standard Book Number",
@@ -495,6 +500,10 @@ BIB_FIELDS = {
     "sorttitle": "replaces title when sorting",
     "indexsorttitle": "replaces title when sorting index",
     "sortyear": "replaces year (from date) when sorting",
+    # arXiv
+    "arxivid": "arXiv identifier",
+    "archiveprefix": "arXiv Prefix",
+    "primaryclass": "primary class, e.g. cs.CV",
 }
 
 DF_BIB_FIELDS = pd.DataFrame(
