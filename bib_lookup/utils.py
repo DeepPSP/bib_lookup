@@ -26,7 +26,6 @@ __all__ = [
 
 def is_notebook() -> bool:
     """
-
     check if the current environment is a notebook (Jupyter or Colab)
 
     Returns
@@ -95,10 +94,7 @@ def default_class_repr(c: object, align: str = "center", depth: int = 1) -> str:
 
 
 class ReprMixin(object):
-    """
-    Mixin for enhanced __repr__ and __str__ methods.
-
-    """
+    """Mixin for enhanced __repr__ and __str__ methods."""
 
     def __repr__(self) -> str:
         return default_class_repr(self)
@@ -242,7 +238,6 @@ def md_text(
 
 def printmd(md_str: str) -> NoReturn:
     """
-
     printing bold, colored, etc., text
 
     Parameters
@@ -268,7 +263,6 @@ def gather_tex_source_files_in_one(
     output_file: Optional[Union[str, Path]] = None,
 ) -> str:
     """
-
     gathers all the tex source files in one file.
     This is useful when the entry file contains `input` commands
     to include other tex files,
@@ -303,7 +297,7 @@ def gather_tex_source_files_in_one(
             for line in content.splitlines():
                 if line.strip().startswith("%"):
                     continue
-                if item in line:
+                if f"{{{item}}}" in line:
                     input_items.append(item)
                     break
         if len(input_items) == 0:
