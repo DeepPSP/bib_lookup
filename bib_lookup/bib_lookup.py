@@ -930,14 +930,16 @@ class BibLookup(ReprMixin):
                 line_numbers.append(idx)
                 if len(lines) > 0:
                     if not re.search("bstctl", lines[0].lower()):
-                        bib_item = self._to_bib_item("\n".join(lines))
+                        # ignore_fields should be set empty
+                        # to keep it unchanged
+                        bib_item = self._to_bib_item("\n".join(lines), ignore_fields=[])
                         bib_items.append(bib_item)
                         if cache:
                             self.__cached_lookup_results[bib_item.identifier] = bib_item
                     lines = []
             lines.append(line)
         if len(lines) > 0 and not re.search("bstctl", lines[0].lower()):
-            bib_item = self._to_bib_item("\n".join(lines))
+            bib_item = self._to_bib_item("\n".join(lines), ignore_fields=[])
             bib_items.append(bib_item)
             if cache:
                 self.__cached_lookup_results[bib_item.identifier] = bib_item
