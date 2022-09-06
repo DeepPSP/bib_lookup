@@ -9,10 +9,9 @@
 A useful tool for looking up Bib entries using DOI, or pubmed ID (or URL), or arXiv ID (or URL).
 
 It is an updated version of
-https://github.com/wenh06/utils/blob/master/utils_universal/utils_bib.py
+<https://github.com/wenh06/utils/blob/master/utils_universal/utils_bib.py>
 
 **NOTE** that you should have internet connection to use `bib_lookup`.
-
 
 <!-- toc -->
 
@@ -32,7 +31,6 @@ https://github.com/wenh06/utils/blob/master/utils_universal/utils_bib.py
   - [References](#references)
 
 <!-- tocstop -->
-
 
 ## Installation
 
