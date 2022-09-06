@@ -21,8 +21,8 @@ bl = bib_lookup.BibLookup()
 
 def test_arxiv_bib_lookup():
     for arXiv_id, lookup_result in arXiv_examples.items():
-        bib_string = bl(arXiv_id)
-        assert bib_string == lookup_result
+        bib_string = bl(arXiv_id, timeout=1000)
+        assert bib_string == lookup_result, f"{arXiv_id} mismatch"
 
 
 if __name__ == "__main__":

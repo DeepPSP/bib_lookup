@@ -22,8 +22,8 @@ bl = bib_lookup.BibLookup()
 
 def test_doi_bib_lookup():
     for doi, lookup_result in doi_examples.items():
-        bib_string = bl(doi)
-        assert bib_string == lookup_result
+        bib_string = bl(doi, timeout=1000)
+        assert bib_string == lookup_result, f"{doi} mismatch"
 
 
 if __name__ == "__main__":

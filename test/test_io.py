@@ -25,7 +25,7 @@ bl = bib_lookup.BibLookup(output_file=_OUTPUT_FILE)
 
 
 def test_io_from_file():
-    lookup_result = bl(_SAMPLE_INPUT_FILE)
+    lookup_result = bl(_SAMPLE_INPUT_FILE, timeout=1000)
     assert lookup_result == _EXPECTED_OUTPUTS
     assert len(bl) == 3
     bib_identifier, bib_item = bl[1], bl[bl[1]]
@@ -43,7 +43,7 @@ def test_io_from_file():
 
 
 def test_io_from_list():
-    lookup_result = bl(_SAMPLE_INPUTS)
+    lookup_result = bl(_SAMPLE_INPUTS, timeout=1000)
     assert lookup_result == _EXPECTED_OUTPUTS
     assert len(bl) == 3
     bl.save(bl[0])

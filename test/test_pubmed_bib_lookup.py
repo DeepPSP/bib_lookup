@@ -21,8 +21,8 @@ bl = bib_lookup.BibLookup()
 
 def test_pubmed_bib_lookup():
     for pmid, lookup_result in pubmed_examples.items():
-        bib_string = bl(pmid)
-        assert bib_string == lookup_result
+        bib_string = bl(pmid, timeout=1000)
+        assert bib_string == lookup_result, f"{pmid} mismatch"
 
 
 if __name__ == "__main__":
