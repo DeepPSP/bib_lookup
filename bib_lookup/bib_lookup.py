@@ -151,8 +151,16 @@ class BibLookup(ReprMixin):
                 default ["author", "title", "journal", "booktitle"],
                 case insensitive,
             "arxiv2doi": bool,
-                default False,
+                default True,
                 whether to convert arXiv ID to DOI to look up
+            "format": str,
+                default "bibtex", case insensitive,
+                format of the final output,
+                only "bibtex" format lookup results will be saved in internal cache
+            "style": str,
+                default "apa", case insensitive,
+                style of the final output,
+                valid only when "format" is "text"
             "timeout": float,
                 default 6.0,
                 timeout for requests
@@ -224,7 +232,14 @@ class BibLookup(ReprMixin):
 
         self.ignore_errors = kwargs.get("ignore_errors", False)
         self.timeout = kwargs.get("timeout", 6.0)
-        self._arxiv2doi = kwargs.get("arxiv2doi", False)
+        self._arxiv2doi = kwargs.get("arxiv2doi", True)
+        self._format = kwargs.get("format", "bibtex").lower()
+        if self._format != "bibtex" and not self._arxiv2doi:
+            warnings.warn(
+                f"format {self._format} is supported only when `arxiv2doi` is True. `arxiv2doi` is set to True."
+            )
+            self._arxiv2doi = True
+        self._style = kwargs.get("style", "apa").lower()
         self.verbose = kwargs.get("verbose", 0)
         self.print_result = kwargs.get("print_result", False)
         self._ordering = kwargs.get(
@@ -237,6 +252,21 @@ class BibLookup(ReprMixin):
         self.__err_color = "red"
         self.__err_fontsize = "large"
 
+        self.__doi_format_headers = {  # from habanero
+            "rdf-xml": "application/rdf+xml",
+            "turtle": "text/turtle",
+            "text": "text/x-bibliography",
+            "ris": "application/x-research-info-systems",
+            "bibtex": "application/x-bibtex",
+            "crossref-xml": "application/vnd.crossref.unixref+xml",
+            "datacite-xml": "application/vnd.datacite.datacite+xml",
+            "bibentry": "application/x-bibtex",
+            "crossref-tdm": "application/vnd.crossref.unixsd+xml",
+        }
+        assert (
+            self._format in self.__doi_format_headers
+        ), f"format must be one of {list(self.__doi_format_headers)}, but got {self._format}"
+
         self.__exceptional_doi_domains = ["cnki"]
 
     def __call__(
@@ -246,10 +276,12 @@ class BibLookup(ReprMixin):
         ignore_fields: Optional[Union[str, Sequence[str]]] = None,
         label: Optional[Union[str, Sequence[str]]] = None,
         arxiv2doi: Optional[bool] = None,
-        verbose: Optional[int] = None,
         print_result: Optional[bool] = None,
         timeout: Optional[float] = None,
         ignore_errors: Optional[bool] = None,
+        format: Optional[str] = None,
+        style: Optional[str] = None,
+        verbose: Optional[int] = None,
     ) -> Union[str, type(None)]:
         """
         Parameters
@@ -270,9 +302,6 @@ class BibLookup(ReprMixin):
         arxiv2doi: bool, optional,
             whether to convert arXiv ID to DOI to look up,
             if specified, `self._arxiv2doi` is ignored
-        verbose: int, optional,
-            verbosity level,
-            if specified, `self.verbose` is ignored
         print_result: bool, optional,
             whether to print the final output,
             if specified, `self.print_result` is ignored
@@ -282,6 +311,15 @@ class BibLookup(ReprMixin):
         ignore_errors: bool, optional,
             whether to ignore errors,
             if specified, `self.ignore_errors` is ignored
+        format: str, optional,
+            format of the final output,
+            if specified, `self._format` is ignored,
+        style: str, optional,
+            style of the final output,
+            if specified, `self._style` is ignored,
+        verbose: int, optional,
+            verbosity level,
+            if specified, `self.verbose` is ignored
 
         Returns
         -------
@@ -295,6 +333,8 @@ class BibLookup(ReprMixin):
             self.verbose = verbose
         print_result = self.print_result if print_result is None else print_result
         ignore_errors = self.ignore_errors if ignore_errors is None else ignore_errors
+        format = self._format if format is None else format
+        style = self._style if style is None else style
         if isinstance(identifier, Path):
             identifier = [
                 line for line in identifier.read_text().splitlines() if len(line) > 0
@@ -305,10 +345,12 @@ class BibLookup(ReprMixin):
                 ignore_fields,
                 label,
                 arxiv2doi,
-                verbose,
                 print_result,
                 timeout,
                 ignore_errors,
+                format,
+                style,
+                verbose,
             )
         if isinstance(identifier, str):
             if Path(identifier).exists():
@@ -318,10 +360,12 @@ class BibLookup(ReprMixin):
                     ignore_fields,
                     label,
                     arxiv2doi,
-                    verbose,
                     print_result,
                     timeout,
                     ignore_errors,
+                    format,
+                    style,
+                    verbose,
                 )
         elif isinstance(identifier, Sequence):
             assert all(
@@ -343,10 +387,12 @@ class BibLookup(ReprMixin):
                         ignore_fields,
                         label[idx],
                         arxiv2doi,
-                        verbose,
                         print_result,
                         timeout,
                         ignore_errors,
+                        format,
+                        style,
+                        verbose,
                     )
                 return
             else:
@@ -357,10 +403,12 @@ class BibLookup(ReprMixin):
                         ignore_fields,
                         label[idx],
                         arxiv2doi,
-                        verbose,
                         print_result,
                         timeout,
                         ignore_errors,
+                        format,
+                        style,
+                        verbose,
                     )
                     for idx, item in enumerate(identifier)
                 ).strip("\n")
@@ -370,8 +418,12 @@ class BibLookup(ReprMixin):
             )
 
         category, feed_content, idtf = self._obtain_feed_content(
-            identifier, arxiv2doi, timeout
+            identifier, arxiv2doi, format, style, timeout
         )
+        if category != "doi" and format not in ["bibentry", "bibtex"]:
+            warnings.warn(
+                f"format `{format}` is not supported for `{category}`, thus ignored"
+            )
         if category == "doi":
             res = self._handle_doi(feed_content)
         elif category == "pm":
@@ -385,7 +437,7 @@ class BibLookup(ReprMixin):
 
         res = self._handle_network_error(res)
 
-        if res not in self.lookup_errors:
+        if res not in self.lookup_errors and format in ["bibtex", "bibentry"]:
             try:
                 res = self._to_bib_item(res, idtf, align, ignore_fields, label)
                 self.__cached_lookup_results[identifier] = res
@@ -414,6 +466,8 @@ class BibLookup(ReprMixin):
         self,
         identifier: str,
         arxiv2doi: Optional[bool] = None,
+        format: Optional[str] = None,
+        style: Optional[str] = None,
         timeout: Optional[float] = None,
     ) -> Tuple[str, dict, str]:
         """
@@ -425,6 +479,12 @@ class BibLookup(ReprMixin):
         arxiv2doi: bool, optional,
             whether to convert arXiv ID to DOI to look up,
             if specified, `self._arxiv2doi` is ignored
+        format: str, optional,
+            format of the final output,
+            if specified, `self._format` is ignored,
+        style: str, optional,
+            style of the final output,
+            if specified, `self._style` is ignored,
         timeout: float, optional,
             timeout for the network request,
             if specified, `self.timeout` is ignored
@@ -441,6 +501,8 @@ class BibLookup(ReprMixin):
         """
         idtf = identifier.lower().strip()
         _arxiv2doi = self._arxiv2doi if arxiv2doi is None else arxiv2doi
+        _format = self._format if format is None else format
+        _style = self._style if style is None else style
         fc = {"timeout": self.timeout if timeout is None else timeout}
         if re.search(self.doi_pattern, idtf):
             idtf = re.sub(
@@ -448,11 +510,16 @@ class BibLookup(ReprMixin):
                 "",
                 idtf,
             ).strip("/")
+            _type = f"{self.__doi_format_headers[_format]}; charset=utf-8"
+            if _format == "text":
+                _type = f"{_type}; style = {style}"
+            headers = {"Accept": _type}
             url = self.__URL__["doi"] + idtf
             fc.update(
                 {
                     "url": url,
-                    "headers": {"Accept": "application/x-bibtex; charset=utf-8"},
+                    "headers": headers,
+                    "allow_redirects": True,
                 }
             )
             category = "doi"
@@ -500,7 +567,7 @@ class BibLookup(ReprMixin):
 
     def _handle_doi(self, feed_content: dict) -> str:
         """
-        handle a DOI query using POST
+        handle a DOI query using POST method
 
         Parameters
         ----------
@@ -526,7 +593,7 @@ class BibLookup(ReprMixin):
 
     def _handle_pm(self, feed_content: dict) -> str:
         """
-        handle a PubMed query using POST
+        handle a PubMed query using POST method
 
         Parameters
         ----------
@@ -564,7 +631,7 @@ class BibLookup(ReprMixin):
 
     def _handle_arxiv(self, feed_content: dict) -> Union[str, Dict[str, str]]:
         """
-        handle a arXiv query using GET
+        handle a arXiv query using GET method
 
         Parameters
         ----------
@@ -790,6 +857,14 @@ class BibLookup(ReprMixin):
     @property
     def ordering(self) -> List[str]:
         return self._ordering
+
+    @property
+    def format(self) -> str:
+        return self._format
+
+    @property
+    def style(self) -> str:
+        return self._style
 
     def debug(self) -> NoReturn:
         self.verbose = 2
