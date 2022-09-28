@@ -17,7 +17,7 @@ import warnings
 from pathlib import Path
 from collections import OrderedDict
 from string import punctuation
-from typing import Union, Optional, Tuple, List, Sequence, Dict, NoReturn
+from typing import Union, Optional, Tuple, List, Sequence, Dict
 
 import requests
 import feedparser
@@ -52,7 +52,8 @@ else:
 
 
 class BibLookup(ReprMixin):
-    """finished, continuous improving,
+    """
+    The look-up class for Bib entries.
 
     Example
     -------
@@ -129,7 +130,7 @@ class BibLookup(ReprMixin):
         output_file: Optional[Union[str, Path]] = None,
         email: Optional[str] = None,
         **kwargs,
-    ) -> NoReturn:
+    ) -> None:
         """
         Parameters
         ----------
@@ -866,7 +867,7 @@ class BibLookup(ReprMixin):
     def style(self) -> str:
         return self._style
 
-    def debug(self) -> NoReturn:
+    def debug(self) -> None:
         self.verbose = 2
 
     def save(
@@ -874,7 +875,7 @@ class BibLookup(ReprMixin):
         identifiers: Union[int, str, Sequence[str], Sequence[int]] = None,
         output_file: Optional[Union[str, Path]] = None,
         skip_existing: Union[bool, str] = True,
-    ) -> NoReturn:
+    ) -> None:
         """
         save bib items corresponding to the identifiers to the output file.
 
@@ -1022,9 +1023,7 @@ class BibLookup(ReprMixin):
             return bib_items, line_numbers
         return bib_items
 
-    def pop(
-        self, identifiers: Union[int, str, Sequence[str], Sequence[int]]
-    ) -> NoReturn:
+    def pop(self, identifiers: Union[int, str, Sequence[str], Sequence[int]]) -> None:
         """
         remove the bib corresponding to the identifiers from the cache
 
@@ -1048,12 +1047,12 @@ class BibLookup(ReprMixin):
         for i in identifiers:
             self.__cached_lookup_results.pop(i, None)
 
-    def clear_cache(self) -> NoReturn:
+    def clear_cache(self) -> None:
         """helper function to clear the cached bib items"""
         for item in list(self):
             self.pop(item)
 
-    def print(self) -> NoReturn:
+    def print(self) -> None:
         """print the bib items in the cache"""
         print(self.get_cache(string_format=True))
 

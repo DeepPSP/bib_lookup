@@ -81,7 +81,7 @@ def main():
     )
     parser.add_argument(
         "identifiers",
-        nargs="*",
+        nargs=argparse.ZERO_OR_MORE,
         type=str,
         help="DOI, PMID or arXiv ID (URL) to look up.",
     )
@@ -115,7 +115,7 @@ def main():
     )
     parser.add_argument(
         "--ignore-fields",
-        nargs="*",
+        nargs=argparse.ZERO_OR_MORE,
         type=str,
         default=["url"],
         help="List of fields to ignore.",
@@ -130,7 +130,7 @@ def main():
     parser.add_argument(
         "--ordering",
         type=str,
-        nargs="*",
+        nargs=argparse.ZERO_OR_MORE,
         default=["author", "title", "journal", "booktitle"],
         help="Order of the fields in the output.",
         dest="ordering",

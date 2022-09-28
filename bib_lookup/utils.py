@@ -4,7 +4,7 @@
 import re
 from pathlib import Path
 from enum import Enum
-from typing import List, Optional, NoReturn, Any, Union
+from typing import List, Optional, Any, Union
 
 try:
     from IPython import get_ipython
@@ -55,7 +55,6 @@ def is_notebook() -> bool:
 
 def default_class_repr(c: object, align: str = "center", depth: int = 1) -> str:
     """
-
     Parameters
     ----------
     c: object,
@@ -129,7 +128,6 @@ def color_text(
     text: str, color: Optional[str] = None, method: str = "ansi", **kwargs: Any
 ) -> str:
     """
-
     Parameters
     ----------
     text: str,
@@ -197,7 +195,6 @@ def md_text(
     font_family: Optional[str] = None,
 ) -> str:
     """
-
     Parameters
     ----------
     text: str,
@@ -236,7 +233,7 @@ def md_text(
     return md_str
 
 
-def printmd(md_str: str) -> NoReturn:
+def printmd(md_str: str) -> None:
     """
     printing bold, colored, etc., text
 

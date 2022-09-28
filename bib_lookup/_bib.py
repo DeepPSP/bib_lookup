@@ -9,16 +9,14 @@ import calendar
 import re
 from time import strptime
 from collections import OrderedDict
-from typing import NoReturn, Optional, Union, Sequence
+from typing import Optional, Union, Sequence
 
 import pandas as pd
 
 
 class BibItem(object):
     """
-
     A class representing a bibtex item (entry)
-
     """
 
     __name__ = "BibItem"
@@ -31,9 +29,8 @@ class BibItem(object):
         label: Optional[str] = None,
         align: str = "middle",
         check_fields: bool = False,
-    ) -> NoReturn:
+    ) -> None:
         """
-
         Parameters
         ----------
         identifier : str,
@@ -94,7 +91,7 @@ class BibItem(object):
     def label(self) -> str:
         return self.__label
 
-    def __normalize_fields(self, check_fields: bool = False) -> NoReturn:
+    def __normalize_fields(self, check_fields: bool = False) -> None:
         """
         convert month to number if applicable,
         remove redundant curly braces
@@ -132,7 +129,7 @@ class BibItem(object):
         for k, v in self.fields.items():
             self.__setattr__(k, v)
 
-    def check_required_fields(self) -> NoReturn:
+    def check_required_fields(self) -> None:
         required_fields = DF_BIB_ENTRY_TYPES[
             DF_BIB_ENTRY_TYPES["entry_type"] == self.entry_type
         ].iloc[0]["required_fields"]
@@ -188,7 +185,7 @@ class BibItem(object):
 
     __repr__ = __str__
 
-    def help(self, entries_or_fields: Union[str, Sequence[str]]) -> NoReturn:
+    def help(self, entries_or_fields: Union[str, Sequence[str]]) -> None:
         """ """
         if isinstance(entries_or_fields, str):
             entries_or_fields = [entries_or_fields]
@@ -206,7 +203,6 @@ class BibItem(object):
 
     def __eq__(self, other: "BibItem", strict: bool = False) -> bool:
         """
-
         Parameters
         ----------
         other : BibItem
