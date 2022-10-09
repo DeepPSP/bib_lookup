@@ -15,20 +15,20 @@ It is an updated version of
 
 <!-- toc -->
 
-- [bib_lookup](#bib_lookup)
-  - [Installation](#installation)
-  - [Dependencies](#dependencies)
-  - [Basic Usage Examples](#basic-usage-examples)
-  - [Command-line Usage](#command-line-usage)
-  - [<a name="append-to-file"></a> Output (Append) to a `.bib` File](#-output-append-to-a-bib-file)
-  - [arXiv to DOI](#arxiv-to-doi)
-  - [Bib Items Checking](#bib-items-checking)
-  - [<a name="simplify-file"></a> Simplify a `.bib` File](#-simplify-a-bib-file)
-  - [TODO](#todo)
-  - [WARNING](#warning)
-  - [Biblatex Cheetsheet](#biblatex-cheetsheet)
-  - [Citation](#citation)
-  - [References](#references)
+- [Installation](#installation)
+- [Dependencies](#dependencies)
+- [Basic Usage Examples](#basic-usage-examples)
+- [Command-line Usage](#command-line-usage)
+- [Output (Append) to a `.bib` File](#append-to-file)
+- [arXiv to DOI](#arxiv-to-doi)
+- [Bib Items Checking](#bib-items-checking)
+- [Simplify a `.bib` File](#simplify-file)
+- [`CitationMixin` class](#citation-mixin)
+- [TODO](#todo)
+- [WARNING](#warning)
+- [Biblatex Cheetsheet](#biblatex-cheetsheet)
+- [Citation](#citation)
+- [References](#references)
 
 <!-- tocstop -->
 
@@ -235,6 +235,24 @@ Sometimes one wants a clean bib without bib items that are not cited, then one c
 ```
 
 :point_right: [Back to TOC](#bib_lookup)
+
+</details>
+
+##  <a name="citation-mixin"></a> `CitationMixin` class
+
+<details>
+<summary>Click to expand!</summary>
+
+One can inherit the `CitationMixin` class to have the method `get_citation` for any class,
+in which case one only needs to provide a `self.doi`. For example:
+
+```python
+from bib_lookup import CitationMixin
+
+class SomeClass(CitationMixin):
+
+    doi = "10.23919/cinc53138.2021.9662801"  # can also be a list
+```
 
 </details>
 
