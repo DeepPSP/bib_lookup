@@ -27,7 +27,10 @@ class SomeClass(bib_lookup.CitationMixin):
 
 
 def test_citation_mixin():
-    df_system_cache = pd.read_csv(bib_lookup.CitationMixin.citation_cache)
+    if bib_lookup.CitationMixin.citation_cache.exists():
+        df_system_cache = pd.read_csv(bib_lookup.CitationMixin.citation_cache)
+    else:
+        df_system_cache = None
     df_cache_before_update.to_csv(bib_lookup.CitationMixin.citation_cache, index=False)
 
     obj = SomeClass()
@@ -36,7 +39,8 @@ def test_citation_mixin():
         df_cache_after_update
     )
 
-    df_system_cache.to_csv(bib_lookup.CitationMixin.citation_cache, index=False)
+    if df_system_cache is not None:
+        df_system_cache.to_csv(bib_lookup.CitationMixin.citation_cache, index=False)
 
 
 if __name__ == "__main__":
