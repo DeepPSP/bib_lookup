@@ -14,11 +14,12 @@ doi_examples = {
 
 
 bl = bib_lookup.BibLookup()
+bl.debug()
 
 
 def test_doi_bib_lookup():
     for doi, lookup_result in doi_examples.items():
-        bib_string = bl(doi, timeout=1000)
+        bib_string = bl(doi, timeout=1000, verbose=3)
         assert bib_string == lookup_result, f"{doi} mismatch"
 
         assert bib_lookup.bib_lookuper(doi, timeout=1000) is None

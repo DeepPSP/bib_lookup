@@ -237,7 +237,8 @@ class BibLookup(ReprMixin):
         self._format = kwargs.get("format", "bibtex").lower()
         if self._format != "bibtex" and not self._arxiv2doi:
             warnings.warn(
-                f"format {self._format} is supported only when `arxiv2doi` is True. `arxiv2doi` is set to True."
+                f"format `{self._format}` is supported only when `arxiv2doi` is True. `arxiv2doi` is set to True.",
+                RuntimeWarning,
             )
             self._arxiv2doi = True
         self._style = kwargs.get("style", "apa").lower()
@@ -415,7 +416,7 @@ class BibLookup(ReprMixin):
                 ).strip("\n")
         else:
             raise TypeError(
-                f"identifier must be a string or a sequence of strings, but got {identifier}"
+                f"identifier must be a string or a sequence of strings, but got {identifier}."
             )
 
         category, feed_content, idtf = self._obtain_feed_content(
@@ -423,7 +424,8 @@ class BibLookup(ReprMixin):
         )
         if category != "doi" and format not in ["bibentry", "bibtex"]:
             warnings.warn(
-                f"format `{format}` is not supported for `{category}`, thus ignored"
+                f"format `{format}` is not supported for `{category}`, thus ignored.",
+                RuntimeWarning,
             )
         if category == "doi":
             res = self._handle_doi(feed_content)
@@ -555,7 +557,8 @@ class BibLookup(ReprMixin):
                 return self._obtain_feed_content(idtf)
         else:
             warnings.warn(
-                "unrecognized indentifier (none of doi, pmid, pmcid, pmurl, arxiv)"
+                "unrecognized indentifier (none of doi, pmid, pmcid, pmurl, arxiv).",
+                RuntimeWarning,
             )
             category, fc = "error", {}
         if self.verbose > 1:

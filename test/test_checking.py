@@ -1,4 +1,9 @@
+"""
+"""
+
 from pathlib import Path
+
+import pytest
 
 import bib_lookup
 
@@ -27,3 +32,20 @@ def test_checking():
 
 def test_repr():
     assert repr(bl) == str(bl) == bl_repr_str
+
+
+def test_warnings():
+    with pytest.warns(
+        RuntimeWarning,
+        match="format `text` is supported only when `arxiv2doi` is True. `arxiv2doi` is set to True",
+    ):
+        bl = bib_lookup.BibLookup(format="text", arxiv2doi=False)
+    with pytest.warns(
+        RuntimeWarning, match="format `text` is not supported for `pm`, thus ignored"
+    ):
+        bl("PMID: 35344711")
+    with pytest.warns(
+        RuntimeWarning,
+        match="unrecognized indentifier \\(none of doi, pmid, pmcid, pmurl, arxiv\\)",
+    ):
+        bl("none: xxxxx")

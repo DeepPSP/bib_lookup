@@ -136,7 +136,7 @@ class CitationMixin(object):
         citation = citation.strip("\n ")
         if citation == "" and self.doi is not None:
             citation = "\n".join(doi)
-            warnings.warn("Lookup failed, defaults to the DOI(s).")
+            warnings.warn("Lookup failed, defaults to the DOI(s).", RuntimeWarning)
             if print_result:
                 print(citation)
         if not print_result:
