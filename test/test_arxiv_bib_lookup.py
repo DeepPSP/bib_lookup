@@ -1,11 +1,7 @@
-try:
-    import bib_lookup
-except ModuleNotFoundError:
-    from pathlib import Path
-    import sys
+"""
+"""
 
-    sys.path.insert(0, str(Path(__file__).parent.parent.resolve()))
-    import bib_lookup
+import bib_lookup
 
 
 arXiv_examples = {
@@ -23,7 +19,3 @@ def test_arxiv_bib_lookup():
     for arXiv_id, lookup_result in arXiv_examples.items():
         bib_string = bl(arXiv_id, arxiv2doi=False, timeout=1000)
         assert bib_string == lookup_result, f"{arXiv_id} mismatch"
-
-
-if __name__ == "__main__":
-    test_arxiv_bib_lookup()

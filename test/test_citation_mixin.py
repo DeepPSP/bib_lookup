@@ -2,13 +2,7 @@ from pathlib import Path
 
 import pandas as pd
 
-try:
-    import bib_lookup
-except ModuleNotFoundError:
-    import sys
-
-    sys.path.insert(0, str(Path(__file__).parent.parent.resolve()))
-    import bib_lookup
+import bib_lookup
 
 
 _CWD = Path(__file__).resolve().parent
@@ -41,7 +35,3 @@ def test_citation_mixin():
 
     if df_system_cache is not None:
         df_system_cache.to_csv(bib_lookup.CitationMixin.citation_cache, index=False)
-
-
-if __name__ == "__main__":
-    test_citation_mixin()

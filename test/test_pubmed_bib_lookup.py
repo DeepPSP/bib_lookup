@@ -1,11 +1,7 @@
-try:
-    import bib_lookup
-except ModuleNotFoundError:
-    from pathlib import Path
-    import sys
+"""
+"""
 
-    sys.path.insert(0, str(Path(__file__).parent.parent.resolve()))
-    import bib_lookup
+import bib_lookup
 
 
 pubmed_examples = {
@@ -23,7 +19,3 @@ def test_pubmed_bib_lookup():
     for pmid, lookup_result in pubmed_examples.items():
         bib_string = bl(pmid, timeout=1000)
         assert bib_string == lookup_result, f"{pmid} mismatch"
-
-
-if __name__ == "__main__":
-    test_pubmed_bib_lookup()

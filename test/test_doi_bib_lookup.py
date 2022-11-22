@@ -1,11 +1,7 @@
-try:
-    import bib_lookup
-except ModuleNotFoundError:
-    from pathlib import Path
-    import sys
+"""
+"""
 
-    sys.path.insert(0, str(Path(__file__).parent.parent.resolve()))
-    import bib_lookup
+import bib_lookup
 
 
 doi_examples = {
@@ -25,6 +21,4 @@ def test_doi_bib_lookup():
         bib_string = bl(doi, timeout=1000)
         assert bib_string == lookup_result, f"{doi} mismatch"
 
-
-if __name__ == "__main__":
-    test_doi_bib_lookup()
+        assert bib_lookup.bib_lookuper(doi, timeout=1000) is None

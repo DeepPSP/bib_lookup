@@ -1,13 +1,10 @@
+"""
+"""
+
 import os
 from pathlib import Path
 
-try:
-    import bib_lookup
-except ModuleNotFoundError:
-    import sys
-
-    sys.path.insert(0, str(Path(__file__).parent.parent.resolve()))
-    import bib_lookup
+import bib_lookup
 
 
 _CWD = Path(__file__).absolute().parent
@@ -51,8 +48,3 @@ def test_io_from_list():
     bl.save()
     assert _OUTPUT_FILE.read_text().strip(" \n") == _EXPECTED_OUTPUTS
     os.remove(_OUTPUT_FILE)
-
-
-if __name__ == "__main__":
-    test_io_from_file()
-    test_io_from_list()
