@@ -17,7 +17,25 @@ class SomeClass(bib_lookup.CitationMixin):
 
     @property
     def doi(self):
-        return ["10.1142/s1005386718000305"]
+        return ["10.1088/1361-6579/ac9451"]
+
+
+class AnotherClass(bib_lookup.CitationMixin):
+    def __init__(self):
+        pass
+
+    @property
+    def doi(self):
+        return ["10.5281/ZENODO.6435017"]
+
+
+class YetAnotherClass(bib_lookup.CitationMixin):
+    def __init__(self):
+        pass
+
+    @property
+    def doi(self):
+        return None
 
 
 def test_citation_mixin():
@@ -28,6 +46,7 @@ def test_citation_mixin():
     df_cache_before_update.to_csv(bib_lookup.CitationMixin.citation_cache, index=False)
 
     obj = SomeClass()
+    assert obj.get_citation() is not None
     obj.update_cache()
     assert pd.read_csv(bib_lookup.CitationMixin.citation_cache).equals(
         df_cache_after_update
@@ -35,3 +54,10 @@ def test_citation_mixin():
 
     if df_system_cache is not None:
         df_system_cache.to_csv(bib_lookup.CitationMixin.citation_cache, index=False)
+
+    obj = AnotherClass()
+    assert obj.get_citation() is not None
+    assert obj.get_citation(print_result=True) is None
+
+    obj = YetAnotherClass()
+    assert obj.get_citation() == ""
