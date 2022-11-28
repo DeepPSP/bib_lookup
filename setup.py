@@ -17,6 +17,7 @@ extras["test"] = [
     "flake8",
     "pytest",
     "pytest-xdist",
+    "pytest-cov",
 ]
 extras["dev"] = extras["test"]
 
