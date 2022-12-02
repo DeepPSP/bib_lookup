@@ -14,6 +14,10 @@ _CWD = Path(__file__).absolute().parent
 
 _INPUT_FILE = _CWD / "sample-files" / "invalid_items.bib"
 
+_LARGE_DATABASE_FILE = _CWD / "sample-files" / "large_database.bib"
+
+_SOURCE_FILE = _CWD / "sample-files" / "sample-source.tex"
+
 _OUTPUT_FILE = _CWD / "tmp" / "output.bib"
 
 
@@ -55,3 +59,96 @@ def test_warnings():
         match="unrecognized `indentifier` \\(none of 'doi', 'pmid', 'pmcid', 'pmurl', 'arxiv'\\)",
     ):
         default_bl("none: xxxxx")
+
+
+def test_errors():
+    with pytest.raises(
+        TypeError,
+        match="`identifier` must be a string or a sequence of strings, but got `.+`",
+    ):
+        default_bl(1)
+
+    with pytest.raises(
+        TypeError, match="`index` should be an integer or a string, not `.+`"
+    ):
+        default_bl[1.0]
+    with pytest.raises(AssertionError, match="`.+` not found"):
+        default_bl["not-exist"]
+
+    with pytest.raises(FileExistsError, match="Output file \042.+\042 already exists"):
+        bib_lookup.BibLookup.simplify_bib_file(
+            tex_sources=_SOURCE_FILE,
+            bib_file=_LARGE_DATABASE_FILE,
+            output_file=_OUTPUT_FILE,
+        )
+
+    with pytest.raises(
+        AssertionError,
+        match="`align` must be one of \\['middle', 'left', 'left-middle', 'left_middle'\\], but got `xxx`",
+    ):
+        default_bl("10.1088/1361-6579/ac9451", align="xxx")
+
+    with pytest.raises(
+        AssertionError,
+        match="`output_file` must be a .bib file, but got `.+`",
+    ):
+        bib_lookup.BibLookup(output_file=_CWD / "tmp" / "output.txt")
+
+    with pytest.raises(
+        AssertionError,
+        match="`format` must be one of `.+`, but got `.+`",
+    ):
+        bib_lookup.BibLookup(ignore_fields=1)
+
+    with pytest.raises(
+        AssertionError,
+        match="`identifier` must be a string or a sequence of strings, but got `.+`",
+    ):
+        default_bl([1])
+
+    with pytest.raises(
+        AssertionError,
+        match="`label` must be a sequence of strings of the same length as `identifier`",
+    ):
+        default_bl(["10.1088/1361-6579/ac9451"], label=["xxx", "yyy"])
+    with pytest.raises(
+        AssertionError,
+        match="`label` must be a sequence of strings of the same length as `identifier`",
+    ):
+        default_bl(["10.1088/1361-6579/ac9451"], label=[1])
+    with pytest.raises(
+        AssertionError,
+        match="`label` must be a sequence of strings of the same length as `identifier`",
+    ):
+        default_bl(["10.1088/1361-6579/ac9451"], label="xxx")
+
+    with pytest.raises(AssertionError, match="`output_file` is not specified"):
+        bl = bib_lookup.BibLookup()
+        bl("10.1088/1361-6579/ac9451")
+        bl.save()
+
+    with pytest.raises(
+        AssertionError, match="`output_file` must be a .bib file, but got `.+`"
+    ):
+        default_bl.save(output_file=_CWD / "tmp" / "output.txt")
+
+    with pytest.raises(
+        AssertionError,
+        match="`identifiers` must be a string \\(or an integer\\) or a sequence of strings \\(or integers\\)",
+    ):
+        default_bl.save(identifiers=1.2)
+
+    with pytest.raises(
+        AssertionError,
+        match="`identifiers` must be a string \\(or an integer\\) or a sequence of strings \\(or integers\\)",
+    ):
+        default_bl.pop(1.2)
+
+    with pytest.raises(AssertionError, match="`bib_file` is not specified"):
+        bl = bib_lookup.BibLookup()
+        bl.read_bib_file()
+
+    with pytest.raises(
+        AssertionError, match="`bib_file` must be a .bib file, but got `.+`"
+    ):
+        default_bl.read_bib_file(bib_file=_CWD / "tmp" / "output.txt")

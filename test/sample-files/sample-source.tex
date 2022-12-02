@@ -1,0 +1,41 @@
+\documentclass{article}
+
+\usepackage{fontspec}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\hypersetup{
+    colorlinks=true,
+    linkcolor=blue,
+    filecolor=magenta,
+    urlcolor=cyan,
+}
+
+\usepackage{amsmath,amsfonts,amssymb,mathrsfs}
+\usepackage[backend=biber,style=gb7714-2015]{biblatex}
+\addbibresource[location=local]{large_database.bib}
+
+\title{bib\_lookup}
+\author{WEN Hao}
+\date{}
+
+\setlength{\parskip}{1em}
+
+\begin{document}
+
+\maketitle
+
+\section{Introduction}
+
+A place to store all the bib references used in my research, e.g. \cite{Wen_cpsc2021,torch_ecg_paper,Kang_2022_cinc2021_iop,wen_cinc2021,Pang_2021_SpineParseNet,kiyasseh2021clocs}
+
+BibLookup \cite{bib_lookup}.
+
+$$\operatorname{prox}_{\rho f}(v) = \argmin_x \{f(x) + \dfrac{\rho}{2} \lVert x-v \rVert_2^2\}$$
+
+$$\argmin_x \mathcal{L}_{\rho}(x, x_0, \lambda) = \argmin_x \{f(x) + \langle \lambda, x-x_0 \rangle + \dfrac{\rho}{2} \lVert x-x_0 \rVert_2^2\}$$
+
+
+\printbibliography[heading=bibliography]
+
+
+\end{document}

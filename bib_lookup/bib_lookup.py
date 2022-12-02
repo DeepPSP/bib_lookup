@@ -268,7 +268,7 @@ class BibLookup(ReprMixin):
         }
         assert (
             self._format in self.__doi_format_headers
-        ), f"format must be one of {list(self.__doi_format_headers)}, but got {self._format}"
+        ), f"`format` must be one of `{list(self.__doi_format_headers)}`, but got `{self._format}`"
 
         self.__exceptional_doi_domains = ["cnki"]
 
@@ -1093,7 +1093,7 @@ class BibLookup(ReprMixin):
         if isinstance(index, int):
             return list(self.__cached_lookup_results)[index]
         elif isinstance(index, str):
-            assert index in self.__cached_lookup_results, f"{index} not found"
+            assert index in self.__cached_lookup_results, f"`{index}` not found"
             return self.__cached_lookup_results[index]
         else:
             raise TypeError(
