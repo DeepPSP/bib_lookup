@@ -7,8 +7,8 @@ import bib_lookup
 
 _CWD = Path(__file__).resolve().parent
 
-df_cache_before_update = pd.read_csv(_CWD / "cache-before-update.csv")
-df_cache_after_update = pd.read_csv(_CWD / "cache-after-update.csv")
+df_cache_before_update = pd.read_csv(_CWD / "sample-files" / "cache-before-update.csv")
+df_cache_after_update = pd.read_csv(_CWD / "sample-files" / "cache-after-update.csv")
 
 
 class SomeClass(bib_lookup.CitationMixin):

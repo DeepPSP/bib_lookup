@@ -9,13 +9,13 @@ import bib_lookup
 
 _CWD = Path(__file__).absolute().parent
 
-_SAMPLE_INPUT_FILE = _CWD / "sample_input.txt"
+_SAMPLE_INPUT_FILE = _CWD / "sample-files" / "sample_input.txt"
 _SAMPLE_INPUTS = _SAMPLE_INPUT_FILE.read_text().splitlines()
-_EXPECTED_OUTPUT_FILE = _CWD / "expected_output.bib"
+_EXPECTED_OUTPUT_FILE = _CWD / "sample-files" / "expected_output.bib"
 _EXPECTED_OUTPUTS = _EXPECTED_OUTPUT_FILE.read_text().strip(" \n")
-_OUTPUT_FILE = _CWD / "test_output.bib"
+_OUTPUT_FILE = _CWD / "sample-files" / "test_output.bib"
 
-_LARGE_DATABASE_FILE = _CWD / "large_database.bib"
+_LARGE_DATABASE_FILE = _CWD / "sample-files" / "large_database.bib"
 
 
 bl = bib_lookup.BibLookup(output_file=_OUTPUT_FILE)

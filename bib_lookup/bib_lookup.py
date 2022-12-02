@@ -176,14 +176,14 @@ class BibLookup(ReprMixin):
             "left",
             "left-middle",
             "left_middle",
-        ], f"align must be one of 'middle', 'left', 'left-middle', 'left_middle', but got {self.align}"
+        ], f"`align` must be one of ['middle', 'left', 'left-middle', 'left_middle'], but got `{self.align}`"
         self.output_file = (
             Path(output_file).resolve() if output_file is not None else None
         )
         if self.output_file is not None:
             assert (
                 self.output_file.suffix == ".bib"
-            ), f"output_file must be a .bib file, but got {self.output_file}"
+            ), f"`output_file` must be a .bib file, but got `{self.output_file}`"
             self.output_file.parent.mkdir(parents=True, exist_ok=True)
         self.__cached_lookup_results = OrderedDict()
         self.email = email
@@ -191,12 +191,6 @@ class BibLookup(ReprMixin):
             self._ignore_fields = [ignore_fields.lower()]
         else:
             self._ignore_fields = [k.lower() for k in ignore_fields]
-        assert self.align in [
-            "middle",
-            "left",
-            "left-middle",
-            "left_middle",
-        ]
         colon = "[\\s]*:[\\s]*"
         # NOTE when applying `re.search`, all strings are converted to lower cases
         # DOI examples:
@@ -210,7 +204,10 @@ class BibLookup(ReprMixin):
         # "http://www.ncbi.nlm.nih.gov/pubmed/22331878"
         self.__pmid_pattern_prefix = f"pmid{colon}|pmcid{colon}"  # and pmcid
         # self.__pmid_pattern = f"^(?:{self.__pmid_pattern_prefix})?(?:\\d+|pmc\\d+(?:\\.\\d+)?)$"
-        self.__pmurl_pattern_prefix = "(?:https?:\\/\\/)?(?:pubmed\\.ncbi\\.nlm\\.nih\\.gov\\/|www\\.ncbi\\.nlm\\.nih\\.gov\\/pubmed\\/)"
+        self.__pmurl_pattern_prefix = (
+            "(?:https?:\\/\\/)?(?:pubmed\\.ncbi\\.nlm\\.nih"
+            "\\.gov\\/|www\\.ncbi\\.nlm\\.nih\\.gov\\/pubmed\\/)"
+        )
         # self.__pmurl_pattern = f"^(?:{self.__pmurl_pattern_prefix})?(?:\\d+|pmc\\d+(?:\\.\\d+)?)(?:\\/)?$"
         self.__pm_pattern_prefix = (
             f"{self.__pmurl_pattern_prefix}|{self.__pmid_pattern_prefix}"
@@ -223,7 +220,10 @@ class BibLookup(ReprMixin):
         self.__arxiv_pattern_prefix = (
             f"((?:(?:(?:https?:\\/\\/)?arxiv.org\\/)?abs\\/)|(arxiv{colon}))"
         )
-        self.__arxiv_pattern = f"^(?:{self.__arxiv_pattern_prefix})?(?:([\\w\\-]+\\/\\d+)|(\\d+\\.\\d+(v(\\d+))?))$"
+        self.__arxiv_pattern = (
+            f"^(?:{self.__arxiv_pattern_prefix})?"
+            "(?:([\\w\\-]+\\/\\d+)|(\\d+\\.\\d+(v(\\d+))?))$"
+        )
         # self.__arxiv_pattern_old = f"^(?:{self.__arxiv_pattern_prefix})?[\\w\\-]+\\/\\d+$"
         self.__default_err = "Not Found"
         self.__network_err = "Network Error"
@@ -237,7 +237,8 @@ class BibLookup(ReprMixin):
         self._format = kwargs.get("format", "bibtex").lower()
         if self._format != "bibtex" and not self._arxiv2doi:
             warnings.warn(
-                f"format `{self._format}` is supported only when `arxiv2doi` is True. `arxiv2doi` is set to True.",
+                f"format `{self._format}` is supported only when `arxiv2doi` is True. "
+                "`arxiv2doi` is set to True.",
                 RuntimeWarning,
             )
             self._arxiv2doi = True
@@ -372,13 +373,13 @@ class BibLookup(ReprMixin):
         elif isinstance(identifier, Sequence):
             assert all(
                 [isinstance(i, str) for i in identifier]
-            ), f"identifier must be a string or a sequence of strings, but got {identifier}"
+            ), f"`identifier` must be a string or a sequence of strings, but got `{identifier}`"
             if label is not None:
                 assert (
                     not isinstance(label, str)
                     and len(label) == len(identifier)
                     and all([isinstance(i, str) for i in label])
-                ), "label must be a sequence of strings of the same length as identifier"
+                ), "`label` must be a sequence of strings of the same length as `identifier`"
             else:
                 label = [None] * len(identifier)
             if print_result:
@@ -416,7 +417,7 @@ class BibLookup(ReprMixin):
                 ).strip("\n")
         else:
             raise TypeError(
-                f"identifier must be a string or a sequence of strings, but got {identifier}."
+                f"`identifier` must be a string or a sequence of strings, but got `{identifier}`."
             )
 
         category, feed_content, idtf = self._obtain_feed_content(
@@ -557,7 +558,7 @@ class BibLookup(ReprMixin):
                 return self._obtain_feed_content(idtf)
         else:
             warnings.warn(
-                "unrecognized indentifier (none of doi, pmid, pmcid, pmurl, arxiv).",
+                "unrecognized `indentifier` (none of 'doi', 'pmid', 'pmcid', 'pmurl', 'arxiv').",
                 RuntimeWarning,
             )
             category, fc = "error", {}
@@ -592,7 +593,7 @@ class BibLookup(ReprMixin):
         except requests.RequestException:
             res = self.network_err
         if self.verbose > 3:
-            print_func(f"via _handle_doi, fetched content = {res}")
+            print_func(f"via `_handle_doi`, fetched content = {res}")
         return res
 
     def _handle_pm(self, feed_content: dict) -> str:
@@ -732,7 +733,7 @@ class BibLookup(ReprMixin):
             "left",
             "left-middle",
             "left_middle",
-        ], f"align must be one of 'middle', 'left', 'left-middle', 'left_middle', but got {_align}"
+        ], f"`align` must be one of ['middle', 'left', 'left-middle', 'left_middle'], but got `{_align}`"
         if isinstance(res, str):
             lines = [
                 line.strip()
@@ -776,7 +777,7 @@ class BibLookup(ReprMixin):
 
         # if label is provided, overwrite the label in the header
         if label:
-            assert isinstance(label, str), "label must be a string"
+            assert isinstance(label, str), "`label` must be a string"
             header_dict["label"] = label
 
         # all field names to lower case,
@@ -902,11 +903,11 @@ class BibLookup(ReprMixin):
 
         """
         _output_file = output_file or self.output_file
-        assert _output_file is not None, "output_file is not specified"
+        assert _output_file is not None, "`output_file` is not specified"
         _output_file = Path(_output_file).resolve()
         assert (
             _output_file.suffix == ".bib"
-        ), f"output_file must be a .bib file, but got {_output_file}"
+        ), f"`output_file` must be a .bib file, but got `{_output_file}`"
         _output_file.parent.mkdir(parents=True, exist_ok=True)
 
         if identifiers is None:
@@ -921,7 +922,7 @@ class BibLookup(ReprMixin):
             identifiers = [self[i] for i in identifiers]
         assert isinstance(identifiers, Sequence) and all(
             [isinstance(i, str) for i in identifiers]
-        ), "identifiers must be a string (or an integer) or a sequence of strings (or integers)"
+        ), "`identifiers` must be a string (or an integer) or a sequence of strings (or integers)"
         identifiers = [i for i in identifiers if i in self.__cached_lookup_results]
 
         # check if the bib item is already existed in the output file
@@ -946,7 +947,7 @@ class BibLookup(ReprMixin):
 
         if len(identifiers) == 0:
             print_func(
-                f"no bib item is saved to {process_text(str(_output_file), self.__info_color)} "
+                f"no bib item is saved to `{process_text(str(_output_file), self.__info_color)}` "
                 "because all bib items are already existed in the output file, "
                 "or the given identifiers are not found in the cache"
             )
@@ -959,7 +960,7 @@ class BibLookup(ReprMixin):
             )
 
         print_func(
-            f"Bib items written to {process_text(str(_output_file), self.__info_color)}"
+            f"Bib items written to `{process_text(str(_output_file), self.__info_color)}`"
         )
 
         # remove saved bib items from the cache
@@ -991,11 +992,11 @@ class BibLookup(ReprMixin):
 
         """
         _bib_file = bib_file or self.output_file
-        assert _bib_file is not None, "bib_file is not specified"
+        assert _bib_file is not None, "`bib_file` is not specified"
         _bib_file = Path(_bib_file).resolve()
         assert (
             _bib_file.suffix == ".bib"
-        ), f"bib_file must be a .bib file, but got {_bib_file}"
+        ), f"`bib_file` must be a .bib file, but got `{_bib_file}`"
         if not _bib_file.exists():
             return []
         bib_items = []
@@ -1046,7 +1047,7 @@ class BibLookup(ReprMixin):
             identifiers = [self[i] for i in identifiers]
         assert isinstance(identifiers, Sequence) and all(
             [isinstance(i, str) for i in identifiers]
-        ), "identifiers must be a string (or an integer) or a sequence of strings (or integers)"
+        ), "`identifiers` must be a string (or an integer) or a sequence of strings (or integers)"
         for i in identifiers:
             self.__cached_lookup_results.pop(i, None)
 
@@ -1095,8 +1096,8 @@ class BibLookup(ReprMixin):
             assert index in self.__cached_lookup_results, f"{index} not found"
             return self.__cached_lookup_results[index]
         else:
-            raise ValueError(
-                f"index should be an integer or a string, not {type(index)}"
+            raise TypeError(
+                f"`index` should be an integer or a string, not `{type(index)}`"
             )
 
     def __len__(self) -> int:

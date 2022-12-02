@@ -10,16 +10,22 @@ import bib_lookup
 
 _CWD = Path(__file__).absolute().parent
 
-_INPUT_FILE = _CWD / "invalid_items.bib"
+(_CWD / "tmp").mkdir(exist_ok=True)
+
+_INPUT_FILE = _CWD / "sample-files" / "invalid_items.bib"
+
+_OUTPUT_FILE = _CWD / "tmp" / "output.bib"
 
 
-bl = bib_lookup.BibLookup(
-    output_file=_CWD / "output.bib", email="someone@gmail.com", ignore_fields="doi"
+default_bl = bib_lookup.BibLookup(
+    output_file=_OUTPUT_FILE, email="someone@gmail.com", ignore_fields="doi"
 )
+default_bl("10.1088/1361-6579/ac9451")
+
 
 bl_repr_str = f"""BibLookup(
     align         = 'middle',
-    output_file   = {repr(_CWD / "output.bib")},
+    output_file   = {repr(_OUTPUT_FILE)},
     ignore_fields = ['doi']
 )"""
 
@@ -31,21 +37,21 @@ def test_checking():
 
 
 def test_repr():
-    assert repr(bl) == str(bl) == bl_repr_str
+    assert repr(default_bl) == str(default_bl) == bl_repr_str
 
 
 def test_warnings():
     with pytest.warns(
         RuntimeWarning,
-        match="format `text` is supported only when `arxiv2doi` is True. `arxiv2doi` is set to True",
+        match="format `text` is supported only when `arxiv2doi` is True\\. `arxiv2doi` is set to True",
     ):
-        bl = bib_lookup.BibLookup(format="text", arxiv2doi=False)
+        bib_lookup.BibLookup(format="text", arxiv2doi=False)
     with pytest.warns(
         RuntimeWarning, match="format `text` is not supported for `pm`, thus ignored"
     ):
-        bl("PMID: 35344711")
+        default_bl("PMID: 35344711")
     with pytest.warns(
         RuntimeWarning,
-        match="unrecognized indentifier \\(none of doi, pmid, pmcid, pmurl, arxiv\\)",
+        match="unrecognized `indentifier` \\(none of 'doi', 'pmid', 'pmcid', 'pmurl', 'arxiv'\\)",
     ):
-        bl("none: xxxxx")
+        default_bl("none: xxxxx")

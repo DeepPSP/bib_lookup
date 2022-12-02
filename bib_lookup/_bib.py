@@ -57,23 +57,21 @@ class BibItem(object):
         self.__entry_type = entry_type.lower()
         assert (
             self.entry_type in BIB_ENTRY_TYPES
-        ), f"{self.entry_type} is not a valid entry type"
+        ), f"`{self.entry_type}` is not a valid entry type"
         self.__fields = fields
         assert isinstance(
             self.__fields, OrderedDict
-        ), f"fields must be OrderedDict, but got {type(self.__fields)}"
+        ), f"`fields` must be `OrderedDict`, but got `{type(self.__fields)}`"
         self.__double_braces_flags = dict()
         self.__normalize_fields(check_fields)
         self.__label = label  # TODO: consider how to add label when it's None
         if self.label is None:
             self.__label = self.identifier
         self.align = align
-        assert self.align in [
-            "middle",
-            "left",
-            "left-middle",
-            "left_middle",
-        ], f"align must be one of 'middle', 'left', 'left-middle', 'left_middle', but got {self.align}"
+        assert self.align in ["middle", "left", "left-middle", "left_middle"], (
+            "`align` must be one of ['middle', 'left', 'left-middle', 'left_middle'], "
+            f"but got `{self.align}`"
+        )
 
     @property
     def identifier(self) -> str:
@@ -137,7 +135,7 @@ class BibItem(object):
             # "xx|yy" means "xx or yy"
             # "xx+|yy" means "xx and/or yy"
             check_num = sum([rf in self.__fields for rf in re.findall("\\w+", item)])
-            if re.search("\\+", item):
+            if re.search("[\\+\\|]", item):
                 assert check_num in [
                     1,
                     2,
@@ -185,18 +183,19 @@ class BibItem(object):
 
     __repr__ = __str__
 
-    def help(self, entries_or_fields: Union[str, Sequence[str]]) -> None:
+    @staticmethod
+    def help(entries_or_fields: Union[str, Sequence[str]]) -> None:
         """ """
         if isinstance(entries_or_fields, str):
             entries_or_fields = [entries_or_fields]
         assert isinstance(
             entries_or_fields, Sequence
-        ), f"entries_or_fields must be a sequence, but got {type(entries_or_fields)}"
+        ), f"`entries_or_fields` must be of type `str` or a sequence, but got `{type(entries_or_fields)}`"
         newline = "\n"
         for e in entries_or_fields:
             assert (
                 e in BIB_ENTRY_TYPES or e in BIB_FIELDS
-            ), f"{e} is not a valid entry type or field name"
+            ), f"`{e}` is not a valid entry type or field name"
             print(
                 f"{e}:{newline}    {BIB_ENTRY_TYPES[e] if e in BIB_ENTRY_TYPES else BIB_FIELDS[e]}{newline}"
             )
