@@ -20,4 +20,3 @@ def test_arxiv_bib_lookup():
         bib_string = bl(arXiv_id, arxiv2doi=False, timeout=1000)
         assert bib_string == lookup_result, f"{arXiv_id} mismatch"
     bib_string = bl(arXiv_id, arxiv2doi=True, timeout=1000, verbose=10)
-    assert bib_string == lookup_result, f"{arXiv_id} mismatch"
