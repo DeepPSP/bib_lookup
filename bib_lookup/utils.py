@@ -30,8 +30,7 @@ def is_notebook() -> bool:
 
     Returns
     -------
-    bool,
-        whether the code is running in a notebook
+    bool, whether the code is running in a notebook
 
     Modified from
     https://stackoverflow.com/questions/15411967/how-can-i-check-if-code-is-executed-in-the-ipython-notebook
@@ -177,13 +176,13 @@ def color_text(
         elif color == "warning":
             color = _ANSI_ESCAPE_CODES.WARNING.value
         else:
-            raise ValueError(f"unknown text color {color}")
+            raise ValueError(f"unknown text color `{color}`")
 
         return color + text + _ANSI_ESCAPE_CODES.STOP.value
     elif method == "file":
         return "[[" + text + "]]"
     else:
-        raise ValueError(f"unknown text color method {method}")
+        raise ValueError(f"unknown text color method `{method}`")
 
 
 def md_text(
@@ -220,7 +219,7 @@ def md_text(
         the markdown text
 
     """
-    assert method in ["html", "md", "markdown"]
+    assert method in ["html", "md", "markdown"], f"unknown method `{method}`"
     color_style = f"color: {color}" if color is not None else ""
     font_family_style = (
         f"font-family: '{font_family}'" if font_family is not None else ""

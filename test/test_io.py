@@ -7,7 +7,7 @@ from pathlib import Path
 import bib_lookup
 
 
-_CWD = Path(__file__).absolute().parent
+_CWD = Path(__file__).resolve().parent
 
 _SAMPLE_INPUT_FILE = _CWD / "sample-files" / "sample_input.txt"
 _SAMPLE_INPUTS = _SAMPLE_INPUT_FILE.read_text().splitlines()

@@ -8,7 +8,7 @@ import pytest
 import bib_lookup
 
 
-_CWD = Path(__file__).absolute().parent
+_CWD = Path(__file__).resolve().parent
 
 (_CWD / "tmp").mkdir(exist_ok=True)
 

@@ -18,6 +18,7 @@ extras["test"] = [
     "pytest",
     "pytest-xdist",
     "pytest-cov",
+    "IPython",
 ]
 extras["dev"] = extras["test"]
 
