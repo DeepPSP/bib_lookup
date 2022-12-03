@@ -51,6 +51,7 @@ def test_color_text():
 def test_md_text():
     md_text("test")
     md_text("test", color="green")
+    md_text("test", color=("red", "green", "blue"))
     md_text("test", color="red", method="html")
     md_text("test", color="yellow", bold=True)
     md_text("test", color="blue", font_size=20)

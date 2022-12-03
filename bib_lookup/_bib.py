@@ -9,7 +9,7 @@ import calendar
 import re
 from time import strptime
 from collections import OrderedDict
-from typing import Optional, Union, Sequence
+from typing import Optional, Union, Any, Sequence, Set
 
 import pandas as pd
 
@@ -29,6 +29,7 @@ class BibItem(object):
         label: Optional[str] = None,
         align: str = "middle",
         check_fields: bool = False,
+        **kwargs: Any,
     ) -> None:
         """
         Parameters
@@ -72,6 +73,9 @@ class BibItem(object):
             "`align` must be one of ['middle', 'left', 'left-middle', 'left_middle'], "
             f"but got `{self.align}`"
         )
+        self.__strict_eq_fields = set(
+            kwargs.get("strict_eq_fields", ["author", "title", "journal"])
+        )
 
     @property
     def identifier(self) -> str:
@@ -88,6 +92,10 @@ class BibItem(object):
     @property
     def label(self) -> str:
         return self.__label
+
+    @property
+    def strict_eq_fields(self) -> Set[str]:
+        return self.__strict_eq_fields
 
     def __normalize_fields(self, check_fields: bool = False) -> None:
         """
@@ -208,8 +216,10 @@ class BibItem(object):
             the other BibItem to compare with
         strict : bool, default False
             whether to compare the fields strictly,
-            if False, only entry_type and label will be compared;
-            if True, entry_type, title, first author will be compared
+            if False, only `entry_type` and `label` will be compared;
+            if True, `entry_type` and fields in `self.strict_eq_fields`
+            (`author`, `title`, `journal` by default) will be compared,
+            while `label` will NOT be compared.
 
         Examples
         --------
@@ -254,7 +264,37 @@ class BibItem(object):
                 return False
             else:
                 return True
-        check_again = 2  # "title" and "author"
+        check_again = len(self.strict_eq_fields)  # "title", "author", and "journal"
+        _implemented = {"title", "author", "journal"}
+        assert set(self.strict_eq_fields).issubset(_implemented), (
+            f"`strict_eq_fields` must be a subset of `{_implemented}`, "
+            f"but got `{set(self.strict_eq_fields)}`."
+            "Currently, strict comparison using field(s) "
+            f"`{_implemented - set(self.strict_eq_fields)}` is not implemented."
+        )
+        if "title" in self.strict_eq_fields:
+            if self.__compare_title(other) is False:
+                return False
+            else:
+                check_again -= 1
+        if "author" in self.strict_eq_fields:
+            if self.__compare_author(other) is False:
+                return False
+            else:
+                check_again -= 1
+        if "journal" in self.strict_eq_fields:
+            if self.__compare_journal(other) is False:
+                return False
+            else:
+                check_again -= 1
+        if check_again == 0:
+            # `label` is NOT checked in strict mode
+            # if self.label != other.label:
+            #     return False
+            return True
+        return False
+
+    def __compare_title(self, other: "BibItem") -> bool:
         if sum([hasattr(self, "title"), hasattr(other, "title")]) == 1:
             return False
         if hasattr(self, "title") and hasattr(other, "title"):
@@ -264,10 +304,10 @@ class BibItem(object):
             other_title = re.sub(
                 "\\s+", " ", re.sub("[^\\w\\s]", " ", other.title).lower().strip()
             )
-            if title != other_title:
-                return False
-        else:
-            check_again -= 1
+            return title == other_title
+        return True  # both do not have `title` field
+
+    def __compare_author(self, other: "BibItem") -> bool:
         if sum([hasattr(self, "author"), hasattr(other, "author")]) == 1:
             return False
         if hasattr(self, "author") and hasattr(other, "author"):
@@ -283,14 +323,21 @@ class BibItem(object):
                     other.author.split("and")[0].strip().split(),
                 )
             )[-1]
-            if first_author != other_first_author:
-                return False
-        else:
-            check_again -= 1
-        if check_again == 0:
-            if self.label != other.label:
-                return False
-        return True
+            return first_author == other_first_author
+        return True  # both do not have `author` field
+
+    def __compare_journal(self, other: "BibItem") -> bool:
+        if sum([hasattr(self, "journal"), hasattr(other, "journal")]) == 1:
+            return False
+        if hasattr(self, "journal") and hasattr(other, "journal"):
+            journal = re.sub(
+                "\\s+", " ", re.sub("[^\\w\\s]", " ", self.journal).lower().strip()
+            )
+            other_journal = re.sub(
+                "\\s+", " ", re.sub("[^\\w\\s]", " ", other.journal).lower().strip()
+            )
+            return journal == other_journal
+        return True  # both do not have `journal` field
 
 
 BIB_ENTRY_TYPES = {
