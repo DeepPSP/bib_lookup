@@ -1187,7 +1187,7 @@ class BibLookup(ReprMixin):
             the path of the simplified bib file in string format
 
         """
-        if isinstance(tex_sources, str):
+        if isinstance(tex_sources, (str, Path)):
             tex_sources = [tex_sources]
         tex_sources = [Path(tex_source) for tex_source in tex_sources]
         bib_file = Path(bib_file)

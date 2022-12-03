@@ -15,7 +15,7 @@ from bib_lookup.utils import (
 
 _SAMPLE_DIR = Path(__file__).resolve().parent / "sample-files"
 
-_TMP_DIR = Path(__file__).resolve().parent[1] / "tmp"
+_TMP_DIR = Path(__file__).resolve().parents[1] / "tmp"
 
 
 def test_color_text():
@@ -35,11 +35,16 @@ def test_color_text():
         ct = color_text("test", color=color, method="html")
         ct = color_text("test", color=color, method="file")
 
+    with pytest.raises(
+        TypeError, match="Cannot color text with provided color of type `.+`"
+    ):
+        ct = color_text("test", color=1)
+
     with pytest.raises(ValueError, match="unknown text color `xxx`"):
         ct = color_text("test", color="xxx")
 
     with pytest.raises(ValueError, match="unknown text color method `xxx`"):
-        ct = color_text("test", method="xxx")
+        ct = color_text("test", color="red", method="xxx")
 
 
 def test_md_text():
@@ -50,8 +55,8 @@ def test_md_text():
     md_text("test", color="blue", font_size=20)
     md_text("test", color="purple", font_family="monospace")
 
-    with pytest.raises(ValueError, match="unknown method `xxx`"):
-        md_text("test", method="xxx")
+    with pytest.raises(AssertionError, match="unknown method `xxx`"):
+        md_text("test", color="red", method="xxx")
 
 
 def test_printmd():

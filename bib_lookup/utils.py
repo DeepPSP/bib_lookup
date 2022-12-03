@@ -149,7 +149,9 @@ def color_text(
     if color is None:
         return text
     if not isinstance(color, (str, tuple)):
-        raise TypeError(f"Cannot color text with provided color of type {type(color)}")
+        raise TypeError(
+            f"Cannot color text with provided color of type `{type(color)}`"
+        )
     if isinstance(color, tuple):
         if len(color) > 1:
             text = color_text(text, color[1:], method)
