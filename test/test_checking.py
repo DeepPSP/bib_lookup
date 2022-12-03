@@ -44,6 +44,27 @@ def test_repr():
     assert repr(default_bl) == str(default_bl) == bl_repr_str
 
 
+def test_properties():
+    assert isinstance(default_bl.style, str)
+    assert isinstance(default_bl.format, str)
+    assert isinstance(default_bl.pubmed_pattern, str)
+    assert isinstance(default_bl.pubmed_pattern_prefix, str)
+    assert isinstance(default_bl.doi_pattern, str)
+    assert isinstance(default_bl.doi_pattern_prefix, str)
+    assert isinstance(default_bl.arxiv_pattern, str)
+    assert isinstance(default_bl.arxiv_pattern_prefix, str)
+    assert isinstance(default_bl.bib_header_pattern, str)
+    assert isinstance(default_bl.default_err, str)
+    assert isinstance(default_bl.network_err, str)
+    assert isinstance(default_bl.timeout_err, str)
+    assert isinstance(default_bl.lookup_errors, list) and all(
+        isinstance(err, str) for err in default_bl.lookup_errors
+    )
+    assert isinstance(default_bl.ignore_fields, list) and all(
+        isinstance(field, str) for field in default_bl.ignore_fields
+    )
+
+
 def test_warnings():
     with pytest.warns(
         RuntimeWarning,

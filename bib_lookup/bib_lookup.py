@@ -848,7 +848,7 @@ class BibLookup(ReprMixin):
         return self.__network_err
 
     @property
-    def timeout_err(self) -> int:
+    def timeout_err(self) -> str:
         return self.__timeout_err
 
     @property
