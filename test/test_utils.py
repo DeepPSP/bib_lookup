@@ -16,6 +16,7 @@ from bib_lookup.utils import (
 _SAMPLE_DIR = Path(__file__).resolve().parent / "sample-files"
 
 _TMP_DIR = Path(__file__).resolve().parents[1] / "tmp"
+_TMP_DIR.mkdir(exist_ok=True)
 
 
 def test_color_text():
@@ -79,7 +80,7 @@ def test_gather_tex_source_files_in_one():
     ret = gather_tex_source_files_in_one(entry_file)
     assert ret.splitlines()[0] == entry_file.read_text().splitlines()[0]
 
-    output_file = _TMP_DIR / "sample-source.tex"
+    output_file = _TMP_DIR / "sample-source-in-one.tex"
     if output_file.exists():
         output_file.unlink()
     ret = gather_tex_source_files_in_one(
