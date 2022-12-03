@@ -7,6 +7,7 @@ and from https://www.openoffice.org/bibliographic/bibtex-defs.html
 
 import calendar
 import re
+import warnings
 from time import strptime
 from collections import OrderedDict
 from typing import Optional, Union, Any, Sequence, Set
@@ -267,22 +268,37 @@ class BibItem(object):
         check_again = len(self.strict_eq_fields)  # "title", "author", and "journal"
         _implemented = {"title", "author", "journal"}
         assert set(self.strict_eq_fields).issubset(_implemented), (
-            f"`strict_eq_fields` must be a subset of `{_implemented}`, "
+            f"`self.strict_eq_fields` must be a subset of `{_implemented}`, "
             f"but got `{set(self.strict_eq_fields)}`."
             "Currently, strict comparison using field(s) "
             f"`{_implemented - set(self.strict_eq_fields)}` is not implemented."
         )
-        if "title" in self.strict_eq_fields:
+        assert set(other.strict_eq_fields).issubset(_implemented), (
+            f"`other.strict_eq_fields` must be a subset of `{_implemented}`, "
+            f"but got `{set(other.strict_eq_fields)}`."
+            "Currently, strict comparison using field(s) "
+            f"`{_implemented - set(other.strict_eq_fields)}` is not implemented."
+        )
+        if self.strict_eq_fields != other.strict_eq_fields:
+            warnings.warn(
+                "`strict_eq_fields` are not the same in the two BibItems, "
+                "using the union of the two as the comparison fields.",
+                RuntimeWarning,
+            )
+            strict_eq_fields = set(self.strict_eq_fields) | set(other.strict_eq_fields)
+        else:
+            strict_eq_fields = self.strict_eq_fields
+        if "title" in strict_eq_fields:
             if self.__compare_title(other) is False:
                 return False
             else:
                 check_again -= 1
-        if "author" in self.strict_eq_fields:
+        if "author" in strict_eq_fields:
             if self.__compare_author(other) is False:
                 return False
             else:
                 check_again -= 1
-        if "journal" in self.strict_eq_fields:
+        if "journal" in strict_eq_fields:
             if self.__compare_journal(other) is False:
                 return False
             else:

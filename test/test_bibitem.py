@@ -90,6 +90,44 @@ class TestBibItem:
             assert bibitem_1.__eq__(self.bibitem, strict=True)
             assert self.bibitem.__eq__(bibitem_1, strict=True)
 
+        with pytest.raises(
+            AssertionError, match="`self.strict_eq_fields` must be a subset of `.+`"
+        ):
+            bibitem_1 = BibItem(
+                identifier=self.identifier,
+                entry_type=self.entry_type,
+                fields=tmp,
+                label="xxx",
+                strict_eq_fields=["year"],
+            )
+            bibitem_1.__eq__(self.bibitem, strict=True)
+
+        with pytest.raises(
+            AssertionError, match="`other.strict_eq_fields` must be a subset of `.+`"
+        ):
+            bibitem_1 = BibItem(
+                identifier=self.identifier,
+                entry_type=self.entry_type,
+                fields=tmp,
+                label="xxx",
+                strict_eq_fields=["year"],
+            )
+            self.bibitem.__eq__(bibitem_1, strict=True)
+
+        with pytest.warns(
+            RuntimeWarning,
+            match="`strict_eq_fields` are not the same in the two BibItems",
+        ):
+            bibitem_1 = BibItem(
+                identifier=self.identifier,
+                entry_type=self.entry_type,
+                fields=tmp,
+                label="xxx",
+                strict_eq_fields=["title", "author"],
+            )
+            bibitem_1.__eq__(self.bibitem, strict=True)
+            self.bibitem.__eq__(bibitem_1, strict=True)
+
     def test_help(self):
         for item in itertools.chain(BIB_ENTRY_TYPES, BIB_FIELDS):
             BibItem.help(item)
