@@ -40,7 +40,7 @@ def test_io_from_file():
     assert len(bl) == 0
     bl.save()
     _OUTPUT_FILE_1.unlink()
-    
+
     bib_items = bl.read_bib_file(_LARGE_DATABASE_FILE, cache=True)
     assert len(bib_items) == len(bl) == 608
     bl.clear_cache()
@@ -78,7 +78,9 @@ def test_simplify_bib_file():
         bib_file=_LARGE_DATABASE_FILE,
         output_file=None,
     )
-    output_file = _LARGE_DATABASE_FILE.parent / (_LARGE_DATABASE_FILE.stem + "_simplified.bib")
+    output_file = _LARGE_DATABASE_FILE.parent / (
+        _LARGE_DATABASE_FILE.stem + "_simplified.bib"
+    )
     assert output_file.is_file()
     output_file.unlink()
     del output_file
