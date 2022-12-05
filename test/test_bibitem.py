@@ -69,6 +69,20 @@ class TestBibItem:
             assert not bibitem_1.__eq__(self.bibitem, strict=True)
             assert not self.bibitem.__eq__(bibitem_1, strict=True)
 
+        tmp = self.fields.copy()
+        for field in ["title", "author", "journal"]:
+            tmp.pop(field)
+        bibitem_1 = BibItem(
+            identifier=self.identifier,
+            entry_type=self.entry_type,
+            fields=tmp,
+            label="xxx",
+        )
+        assert bibitem_1 == self.bibitem
+        assert self.bibitem == bibitem_1
+        assert not bibitem_1.__eq__(self.bibitem, strict=True)
+        assert not self.bibitem.__eq__(bibitem_1, strict=True)
+
         for field in [
             "year",
             "month",

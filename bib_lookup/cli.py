@@ -42,7 +42,6 @@ def required_length(nmin: int, nmax: int) -> argparse.Action:
 
 def str2bool(v: Union[str, bool]) -> bool:
     """
-
     converts a "boolean" value possibly in the format of str to bool
 
     Parameters
@@ -72,10 +71,7 @@ def str2bool(v: Union[str, bool]) -> bool:
 
 
 def main():
-    """
-    Command-line interface for the bib_lookup package.
-
-    """
+    """Command-line interface for the bib_lookup package."""
     parser = argparse.ArgumentParser(
         description="Look up a BibTeX entry from a DOI identifier, PMID (URL) or arXiv ID (URL)."
     )

@@ -16,9 +16,7 @@ import pandas as pd
 
 
 class BibItem(object):
-    """
-    A class representing a bibtex item (entry)
-    """
+    """A class representing a bibtex item (entry)"""
 
     __name__ = "BibItem"
 
@@ -265,6 +263,8 @@ class BibItem(object):
                 return False
             else:
                 return True
+
+        # strict comparison
         check_again = len(self.strict_eq_fields)  # "title", "author", and "journal"
         _implemented = {"title", "author", "journal"}
         assert set(self.strict_eq_fields).issubset(_implemented), (
@@ -288,6 +288,13 @@ class BibItem(object):
             strict_eq_fields = set(self.strict_eq_fields) | set(other.strict_eq_fields)
         else:
             strict_eq_fields = self.strict_eq_fields
+
+        # if either has empty `strict_eq_fields`, then return False
+        if sum(hasattr(self, f) for f in strict_eq_fields) == 0:
+            return False
+        if sum(hasattr(other, f) for f in strict_eq_fields) == 0:
+            return False
+
         if "title" in strict_eq_fields:
             if self.__compare_title(other) is False:
                 return False
