@@ -290,8 +290,9 @@ class BibLookup(ReprMixin):
         Parameters
         ----------
         identifier: Path or str or sequence of str,
-            identifier of a publication,
-            can be DOI, PMID (or url), PMCID (or url), arXiv id, etc.
+            identifier of publication(s),
+            can be DOI, PMID (or url), PMCID (or url), arXiv id, etc.;
+            or path to a file containing identifiers
         align: str, optional,
             alignment of the final output, case insensitive,
             if specified, `self.align` is ignored

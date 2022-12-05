@@ -23,6 +23,7 @@ def test_doi_bib_lookup():
         assert bib_string == lookup_result, f"{doi} mismatch"
 
         assert bib_lookup.bib_lookuper(doi, timeout=1000, ignore_fields="doi") is None
-        assert bl(doi, timeout=1000, format="text") is None
+
+        assert bl(doi, timeout=1000, format="text") is not None
 
     assert bl(list(doi_examples), timeout=1000, print_result=True, verbose=10) is None
