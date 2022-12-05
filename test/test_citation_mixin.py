@@ -55,10 +55,18 @@ def test_citation_mixin():
         df_system_cache.to_csv(bib_lookup.CitationMixin.citation_cache, index=False)
 
     assert obj.get_citation() is not None
+    assert obj.get_citation(format="text") is not None
+    assert obj.get_citation(lookup=False) is not None
+    assert obj.get_citation(print_result=True) is None
+    assert obj.get_citation(lookup=False, print_result=True) is None
 
     obj = AnotherClass()
     assert obj.get_citation() is not None
     assert obj.get_citation(print_result=True) is None
+    obj.update_cache(doi="10.1142/s1005386718000305")
+
+    if obj.citation_cache.exists():
+        obj.citation_cache.unlink()
 
     obj = YetAnotherClass()
     assert obj.get_citation() == ""

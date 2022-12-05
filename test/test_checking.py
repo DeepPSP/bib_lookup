@@ -14,10 +14,6 @@ _CWD = Path(__file__).resolve().parent
 
 _INPUT_FILE = _CWD / "sample-files" / "invalid_items.bib"
 
-_LARGE_DATABASE_FILE = _CWD / "sample-files" / "large_database.bib"
-
-_SOURCE_FILE = _CWD / "sample-files" / "sample-source.tex"
-
 _OUTPUT_FILE = _CWD / "tmp" / "output.bib"
 
 
@@ -96,16 +92,6 @@ def test_errors():
     with pytest.raises(AssertionError, match="`.+` not found"):
         default_bl["not-exist"]
 
-    with pytest.raises(FileExistsError, match="Output file \042.+\042 already exists"):
-        if not _OUTPUT_FILE.exists():
-            _OUTPUT_FILE.touch()
-        BibLookup.simplify_bib_file(
-            tex_sources=_SOURCE_FILE,
-            bib_file=_LARGE_DATABASE_FILE,
-            output_file=_OUTPUT_FILE,
-        )
-        _OUTPUT_FILE.unlink()
-
     # with pytest.raises(
     #     AssertionError,
     #     match="`align` must be one of \\['middle', 'left', 'left-middle', 'left_middle'\\], but got `xxx`",
@@ -176,3 +162,25 @@ def test_errors():
         AssertionError, match="`bib_file` must be a .bib file, but got `.+`"
     ):
         default_bl.read_bib_file(bib_file=_CWD / "tmp" / "output.txt")
+
+    with pytest.raises(
+        AssertionError,
+        match="`label` must be a string",
+    ):
+        default_bl._to_bib_item(
+            res=dict(
+                title="A Novel Deep Learning Package for Electrocardiography Research",
+                author="Hao Wen and Jingsu Kang",
+                journal="Physiological Measurement",
+                year=2022,
+                month=11,
+                publisher="IOP Publishing",
+                volume=43,
+                number=11,
+                pages=115006,
+            ),
+            identifier="10.1088/1361-6579/ac9451",
+            label=1,
+        )
+
+    assert default_bl("none: xxxxx", ignore_errors=True, verbose=5) == ""
