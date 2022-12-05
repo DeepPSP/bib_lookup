@@ -1,6 +1,8 @@
 """
 """
 
+from collections import OrderedDict
+
 import bib_lookup
 
 
@@ -27,3 +29,10 @@ def test_doi_bib_lookup():
         assert bl(doi, timeout=1000, format="text") is not None
 
     assert bl(list(doi_examples), timeout=1000, print_result=True, verbose=10) is None
+
+    assert bl("doi: xxx/xxx") == bl.default_err
+
+    bl.print()
+
+    assert isinstance(bl.get_cache(), OrderedDict)
+    assert isinstance(bl.get_cache(string_format=True), str)

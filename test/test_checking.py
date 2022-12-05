@@ -163,22 +163,28 @@ def test_errors():
     ):
         default_bl.read_bib_file(bib_file=_CWD / "tmp" / "output.txt")
 
+    field_dict = dict(
+        title="A Novel Deep Learning Package for Electrocardiography Research",
+        author="Hao Wen and Jingsu Kang",
+        journal="Physiological Measurement",
+        year=2022,
+        month=11,
+        publisher="IOP Publishing",
+        volume=43,
+        number=11,
+        pages=115006,
+    )
+    default_bl._to_bib_item(
+        res=field_dict,
+        identifier="10.1088/1361-6579/ac9451",
+        label="xxx",
+    )
     with pytest.raises(
         AssertionError,
         match="`label` must be a string",
     ):
         default_bl._to_bib_item(
-            res=dict(
-                title="A Novel Deep Learning Package for Electrocardiography Research",
-                author="Hao Wen and Jingsu Kang",
-                journal="Physiological Measurement",
-                year=2022,
-                month=11,
-                publisher="IOP Publishing",
-                volume=43,
-                number=11,
-                pages=115006,
-            ),
+            res=field_dict,
             identifier="10.1088/1361-6579/ac9451",
             label=1,
         )

@@ -82,6 +82,16 @@ class TestBibItem:
         assert self.bibitem == bibitem_1
         assert not bibitem_1.__eq__(self.bibitem, strict=True)
         assert not self.bibitem.__eq__(bibitem_1, strict=True)
+        bibitem_2 = BibItem(
+            identifier=self.identifier,
+            entry_type=self.entry_type,
+            fields=tmp,
+            label="xxx",
+        )
+        assert bibitem_1 != bibitem_2
+        assert bibitem_2 != bibitem_1
+        assert not bibitem_1.__eq__(bibitem_2, strict=True)
+        assert not bibitem_2.__eq__(bibitem_1, strict=True)
 
         for field in [
             "year",

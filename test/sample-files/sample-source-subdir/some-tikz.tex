@@ -1,0 +1,36 @@
+\begin{figure}
+\centering
+\begin{tikzpicture}
+\coordinate (xk) at (1.2, 0.9);
+\node at ([xshift=-8, yshift=4]xk) {{\smaller$x^k$}};
+\coordinate (p1) at (2.55, 1.45);
+\coordinate (xk1) at (3.8, 1.6);
+\node at ([xshift=35, yshift=4]xk1) {{\smaller$x^{k+1} = \Pi_{K\cap H_{\le}^k}(x^k)$}};
+\path[dotted, thick] (xk) edge (xk1);
+\coordinate (proj) at (6.5, 0.9);
+\node at ([xshift=35, yshift=4]proj) {{\smaller$\Pi_K \left( x^k - F(x^k) \right)$}};
+\draw[ultra thick] (0, 0) to [curve through = {(xk) . . (p1) .. (xk1) . . (proj)}] (8, -0.2);
+\draw[fill] (xk) circle [radius=2pt];
+\draw[fill] (xk1) circle [radius=2pt];
+\draw[fill] (proj) circle [radius=2pt];
+\coordinate (zk) at (5, 0.9);
+\node at ([xshift=1, yshift=-8]zk) {{\smaller$z^{k}$}};
+\draw[fill] (zk) circle [radius=2pt];
+\path[draw, thick] (xk) -- (proj);
+\draw[shorten <= -70, very thin, dashed] (xk1) to (zk);
+\draw[shorten >= -60, thick] (xk1) to (zk);
+\path[draw, -latex', thick] (zk) -- (4.4, -0.1);
+\node at (4.9, -0.1) {{\smaller$F(z^k)$}};
+\node at (0.9, 0.2) {$K$};
+\node at (7.1, -0.4) {{\smaller$K\cap H_{\le}^k$}};
+\coordinate (p2) at ($(xk1)!(xk)!(zk)$);
+\draw[fill, red] (p1) circle [radius=1.5pt];
+\draw[fill, red] (p2) circle [radius=1.5pt];
+\path[dotted, red, thick] (xk) edge (p2);
+\path[dotted, red, thick] (p1) edge (p2);
+\node[red] at ([xshift=30, yshift=4]p2) {\smaller\xcancel{$w^{k} = \Pi_{H^k} (x^k)$}};
+\end{tikzpicture}
+\vspace{-1.5em}
+\caption{HPA Iteration.}
+\label{fig:hpa_var_iter}
+\end{figure}
