@@ -35,6 +35,7 @@ def test_color_text():
         ct = color_text("test", color=color)
         ct = color_text("test", color=color, method="html")
         ct = color_text("test", color=color, method="file")
+    ct = color_text("test", color=("red", "green", "blue"))
 
     with pytest.raises(
         TypeError, match="Cannot color text with provided color of type `.+`"
@@ -93,6 +94,18 @@ def test_gather_tex_source_files_in_one():
         output_file.read_text().splitlines()[0]
         == entry_file.read_text().splitlines()[0]
     )
+
+    default_output_file = entry_file.parent / f"{entry_file.stem}_in_one.tex"
+    assert not default_output_file.exists()
+    ret = gather_tex_source_files_in_one(entry_file, write_file=True)
+    assert ret == str(default_output_file)
+    assert default_output_file.is_file()
+    assert (
+        default_output_file.read_text().splitlines()[0]
+        == entry_file.read_text().splitlines()[0]
+    )
+    default_output_file.unlink()
+    del default_output_file
 
     with pytest.raises(
         ValueError,

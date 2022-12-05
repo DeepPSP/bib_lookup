@@ -29,7 +29,7 @@ class AnotherClass(bib_lookup.CitationMixin):
         return ["10.1088/1361-6579/ac9451", "10.5281/ZENODO.6435017"]
 
 
-class YetAnotherClass(bib_lookup.CitationMixin):
+class YetAnotherClass(bib_lookup.CitationMixin, bib_lookup.utils.ReprMixin):
     def __init__(self):
         pass
 
@@ -70,3 +70,4 @@ def test_citation_mixin():
 
     obj = YetAnotherClass()
     assert obj.get_citation() == ""
+    assert str(obj) == repr(obj) == "YetAnotherClass"

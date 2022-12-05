@@ -1105,7 +1105,7 @@ class BibLookup(ReprMixin):
         return len(self.__cached_lookup_results)
 
     def extra_repr_keys(self) -> List[str]:
-        return ["align", "output_file", "ignore_fields"]
+        return ["align", "output_file", "ignore_fields"] + super().extra_repr_keys()
 
     def check_bib_file(self, bib_file: Union[str, Path]) -> List[int]:
         """
