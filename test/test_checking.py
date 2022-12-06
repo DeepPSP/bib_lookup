@@ -163,7 +163,9 @@ def test_errors():
     ):
         default_bl.read_bib_file(bib_file=_CWD / "tmp" / "output.txt")
 
-    field_dict = dict(
+    feed_dict = dict(
+        entry_type="article",
+        label="xxx",
         title="A Novel Deep Learning Package for Electrocardiography Research",
         author="Hao Wen and Jingsu Kang",
         journal="Physiological Measurement",
@@ -175,7 +177,7 @@ def test_errors():
         pages=115006,
     )
     default_bl._to_bib_item(
-        res=field_dict,
+        res=feed_dict,
         identifier="10.1088/1361-6579/ac9451",
         label="xxx",
     )
@@ -184,7 +186,7 @@ def test_errors():
         match="`label` must be a string",
     ):
         default_bl._to_bib_item(
-            res=field_dict,
+            res=feed_dict,
             identifier="10.1088/1361-6579/ac9451",
             label=1,
         )

@@ -48,7 +48,6 @@ class TestBibItem:
                 align=align,
                 check_fields=check_fields,
             )
-            print(bibitem_1)
             assert bibitem_1 == bibitem_1
             assert bibitem_1 != self.bibitem
             assert self.bibitem != bibitem_1
@@ -64,10 +63,34 @@ class TestBibItem:
                 fields=tmp,
                 label="xxx",
             )
+            bibitem_2 = BibItem(
+                identifier=self.identifier,
+                entry_type=self.entry_type,
+                fields=tmp,
+                label="yyy",
+            )
+            bibitem_3 = BibItem(
+                identifier=f"doi:{self.identifier}",
+                entry_type="unpublished",
+                fields=tmp,
+                label="xxx",
+            )
             assert bibitem_1 == self.bibitem
             assert self.bibitem == bibitem_1
             assert not bibitem_1.__eq__(self.bibitem, strict=True)
             assert not self.bibitem.__eq__(bibitem_1, strict=True)
+            assert bibitem_1 != bibitem_2
+            assert bibitem_2 != bibitem_1
+            assert bibitem_1.__eq__(bibitem_2, strict=True)
+            assert bibitem_2.__eq__(bibitem_1, strict=True)
+            assert bibitem_1 != bibitem_3
+            assert bibitem_3 != bibitem_1
+            assert not bibitem_1.__eq__(bibitem_3, strict=True)
+            assert not bibitem_3.__eq__(bibitem_1, strict=True)
+            assert bibitem_2 != bibitem_3
+            assert bibitem_3 != bibitem_2
+            assert not bibitem_2.__eq__(bibitem_3, strict=True)
+            assert not bibitem_3.__eq__(bibitem_2, strict=True)
 
         tmp = self.fields.copy()
         for field in ["title", "author", "journal"]:
@@ -88,8 +111,8 @@ class TestBibItem:
             fields=tmp,
             label="xxx",
         )
-        assert bibitem_1 != bibitem_2
-        assert bibitem_2 != bibitem_1
+        assert bibitem_1 == bibitem_2
+        assert bibitem_2 == bibitem_1
         assert not bibitem_1.__eq__(bibitem_2, strict=True)
         assert not bibitem_2.__eq__(bibitem_1, strict=True)
 
@@ -151,6 +174,8 @@ class TestBibItem:
             )
             bibitem_1.__eq__(self.bibitem, strict=True)
             self.bibitem.__eq__(bibitem_1, strict=True)
+
+        print(self.bibitem)
 
     def test_help(self):
         for item in itertools.chain(BIB_ENTRY_TYPES, BIB_FIELDS):

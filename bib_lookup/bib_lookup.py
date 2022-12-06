@@ -287,6 +287,8 @@ class BibLookup(ReprMixin):
         verbose: Optional[int] = None,
     ) -> Union[str, type(None)]:
         """
+        Look up publication(s) and return the result.
+
         Parameters
         ----------
         identifier: Path or str or sequence of str,
@@ -476,6 +478,8 @@ class BibLookup(ReprMixin):
         timeout: Optional[float] = None,
     ) -> Tuple[str, dict, str]:
         """
+        Obtain feed content using GET or POST
+
         Parameters
         ----------
         identifier: str,
@@ -697,6 +701,8 @@ class BibLookup(ReprMixin):
         label: Optional[str] = None,
     ) -> BibItem:
         """
+        convert a query result to a BibItem instance
+
         Parameters
         ----------
         res: str or dict,
@@ -1207,7 +1213,10 @@ class BibLookup(ReprMixin):
         cited_labels = set()
         _punctuation = "".join([s for s in punctuation if s not in "{}"])
         # citation pattern: https://fr.overleaf.com/learn/latex/Natbib_citation_styles
-        citation_pattern = f"\\\\cite(?:t|p|t\\*|p\\*|author|year)?(?:(?:\\[.+\\])?)?\\{{(?P<label>[\\w\\s{_punctuation}]+)\\}}"
+        citation_pattern = (
+            "\\\\cite(?:t|p|t\\*|p\\*|author|year)?(?:(?:\\[.+\\])?)?"
+            f"\\{{(?P<label>[\\w\\s{_punctuation}]+)\\}}"
+        )
         for tex_source in tex_sources:
             if tex_source.is_file():
                 for items in re.findall(citation_pattern, tex_source.read_text()):
