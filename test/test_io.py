@@ -21,6 +21,14 @@ _OUTPUT_FILE_2 = _CWD / "tmp" / "test_output_2.bib"
 _LARGE_DATABASE_FILE = _CWD / "sample-files" / "large_database.bib"
 
 _SOURCE_FILE = _CWD / "sample-files" / "sample-source.tex"
+_SOURCE_FILE_LIST = [_SOURCE_FILE]
+_SOURCE_FILE_LIST.extend(
+    [
+        _CWD / "sample-files" / f"sample-source-{item}.tex"
+        for item in ["sub1", "sub2", "sub2-1", "sub2-2"]
+    ]
+)
+_SOURCE_FILE_LIST.append(_CWD / "sample-files" / "sample-source-subdir")
 _SIMPLIFIED_OUTPUT_FILE = _CWD / "tmp" / "simplified_output.bib"
 
 
@@ -89,6 +97,14 @@ def test_simplify_bib_file():
         _SIMPLIFIED_OUTPUT_FILE.unlink()
     BibLookup.simplify_bib_file(
         tex_sources=_SOURCE_FILE,
+        bib_file=_LARGE_DATABASE_FILE,
+        output_file=_SIMPLIFIED_OUTPUT_FILE,
+    )
+
+    if _SIMPLIFIED_OUTPUT_FILE.exists():
+        _SIMPLIFIED_OUTPUT_FILE.unlink()
+    BibLookup.simplify_bib_file(
+        tex_sources=_SOURCE_FILE_LIST,
         bib_file=_LARGE_DATABASE_FILE,
         output_file=_SIMPLIFIED_OUTPUT_FILE,
     )

@@ -54,6 +54,8 @@ class TestBibItem:
             assert bibitem_1.__eq__(self.bibitem, strict=True)
             assert self.bibitem.__eq__(bibitem_1, strict=True)
 
+            print(self.bibitem)
+
         for field in ["title", "author", "journal"]:
             tmp = self.fields.copy()
             tmp.pop(field)
@@ -174,8 +176,6 @@ class TestBibItem:
             )
             bibitem_1.__eq__(self.bibitem, strict=True)
             self.bibitem.__eq__(bibitem_1, strict=True)
-
-        print(self.bibitem)
 
     def test_help(self):
         for item in itertools.chain(BIB_ENTRY_TYPES, BIB_FIELDS):
