@@ -55,6 +55,7 @@ class TestBibItem:
             assert self.bibitem.__eq__(bibitem_1, strict=True)
 
             print(self.bibitem)
+            assert str(self.bibitem) == repr(self.bibitem)
 
         for field in ["title", "author", "journal"]:
             tmp = self.fields.copy()
