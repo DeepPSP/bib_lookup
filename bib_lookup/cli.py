@@ -7,37 +7,7 @@ import argparse
 from pathlib import Path
 from typing import Union
 
-try:
-    from bib_lookup.bib_lookup import BibLookup
-except ImportError:
-    # https://gist.github.com/vaultah/d63cb4c86be2774377aa674b009f759a
-    import sys
-
-    level = 1
-    global __package__
-    file = Path(__file__).resolve()
-    parent, top = file.parent, file.parents[level]
-
-    sys.path.append(str(top))
-    try:
-        sys.path.remove(str(parent))
-    except ValueError:  # already removed
-        pass
-    __package__ = ".".join(parent.parts[len(top.parts) :])
-
-    from bib_lookup.bib_lookup import BibLookup
-
-
-def required_length(nmin: int, nmax: int) -> argparse.Action:
-    # https://stackoverflow.com/questions/4194948/python-argparse-is-there-a-way-to-specify-a-range-in-nargs
-    class RequiredLength(argparse.Action):
-        def __call__(self, parser, args, values, option_string=None):
-            if not nmin <= len(values) <= nmax:
-                msg = f"""argument "{self.dest}" requires between {nmin} and {nmax} arguments"""
-                raise argparse.ArgumentTypeError(msg)
-            setattr(args, self.dest, values)
-
-    return RequiredLength
+from bib_lookup.bib_lookup import BibLookup
 
 
 def str2bool(v: Union[str, bool]) -> bool:
