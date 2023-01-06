@@ -79,7 +79,7 @@ SAMPLE_INPUT_TXT = SAMPLE_DATA_DIR / "sample_input.txt"
 
 TMP_DIR = Path(__file__).resolve().parents[1] / "tmp"
 TMP_DIR.mkdir(exist_ok=True)
-OUTPUT_FILE = TMP_DIR / "cli_output.bib"
+OUTPUT_FILE = TMP_DIR / "test_cli_output.bib"
 
 
 def test_cli():

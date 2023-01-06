@@ -13,7 +13,7 @@ from bib_lookup.utils import (
 )
 
 
-_SAMPLE_DIR = Path(__file__).resolve().parent / "sample-files"
+_SAMPLE_DIR = Path(__file__).resolve().parents[1] / "sample-files"
 
 _TMP_DIR = Path(__file__).resolve().parents[1] / "tmp"
 _TMP_DIR.mkdir(exist_ok=True)

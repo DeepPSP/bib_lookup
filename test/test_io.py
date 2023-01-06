@@ -10,26 +10,26 @@ from bib_lookup import BibLookup
 
 _CWD = Path(__file__).resolve().parent
 
-_SAMPLE_INPUT_FILE = _CWD / "sample-files" / "sample_input.txt"
+_SAMPLE_INPUT_FILE = _CWD.parent / "sample-files" / "sample_input.txt"
 _SAMPLE_INPUTS = _SAMPLE_INPUT_FILE.read_text().splitlines()
-_EXPECTED_OUTPUT_FILE = _CWD / "sample-files" / "expected_output.bib"
+_EXPECTED_OUTPUT_FILE = _CWD.parent / "sample-files" / "expected_output.bib"
 _EXPECTED_OUTPUTS = _EXPECTED_OUTPUT_FILE.read_text().strip(" \n")
-_OUTPUT_FILE_1 = _CWD / "tmp" / "test_output_1.bib"
+_OUTPUT_FILE_1 = _CWD.parent / "tmp" / "test_io_output_1.bib"
 _OUTPUT_FILE_1.parent.mkdir(exist_ok=True)
-_OUTPUT_FILE_2 = _CWD / "tmp" / "test_output_2.bib"
+_OUTPUT_FILE_2 = _CWD.parent / "tmp" / "test_io_output_2.bib"
 
-_LARGE_DATABASE_FILE = _CWD / "sample-files" / "large_database.bib"
+_LARGE_DATABASE_FILE = _CWD.parent / "sample-files" / "large_database.bib"
 
-_SOURCE_FILE = _CWD / "sample-files" / "sample-source.tex"
+_SOURCE_FILE = _CWD.parent / "sample-files" / "sample-source.tex"
 _SOURCE_FILE_LIST = [_SOURCE_FILE]
 _SOURCE_FILE_LIST.extend(
     [
-        _CWD / "sample-files" / f"sample-source-{item}.tex"
+        _CWD.parent / "sample-files" / f"sample-source-{item}.tex"
         for item in ["sub1", "sub2", "sub2-1", "sub2-2"]
     ]
 )
-_SOURCE_FILE_LIST.append(_CWD / "sample-files" / "sample-source-subdir")
-_SIMPLIFIED_OUTPUT_FILE = _CWD / "tmp" / "simplified_output.bib"
+_SOURCE_FILE_LIST.append(_CWD.parent / "sample-files" / "sample-source-subdir")
+_SIMPLIFIED_OUTPUT_FILE = _CWD.parent / "tmp" / "test_io_simplified_output.bib"
 
 
 def test_io_from_file():

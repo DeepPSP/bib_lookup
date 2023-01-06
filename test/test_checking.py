@@ -10,11 +10,12 @@ from bib_lookup import BibLookup
 
 _CWD = Path(__file__).resolve().parent
 
-(_CWD / "tmp").mkdir(exist_ok=True)
+_INPUT_FILE = _CWD.parent / "sample-files" / "invalid_items.bib"
 
-_INPUT_FILE = _CWD / "sample-files" / "invalid_items.bib"
+_TMP_DIR = _CWD.parent / "tmp"
+_TMP_DIR.mkdir(exist_ok=True)
 
-_OUTPUT_FILE = _CWD / "tmp" / "output.bib"
+_OUTPUT_FILE = _TMP_DIR / "test_checking_output.bib"
 
 
 default_bl = BibLookup(
@@ -102,7 +103,7 @@ def test_errors():
         AssertionError,
         match="`output_file` must be a .bib file, but got `.+`",
     ):
-        BibLookup(output_file=_CWD / "tmp" / "output.txt")
+        BibLookup(output_file=_TMP_DIR / "output.txt")
 
     with pytest.raises(
         AssertionError,
@@ -140,7 +141,7 @@ def test_errors():
     with pytest.raises(
         AssertionError, match="`output_file` must be a .bib file, but got `.+`"
     ):
-        default_bl.save(output_file=_CWD / "tmp" / "output.txt")
+        default_bl.save(output_file=_TMP_DIR / "output.txt")
 
     with pytest.raises(
         AssertionError,
@@ -161,7 +162,7 @@ def test_errors():
     with pytest.raises(
         AssertionError, match="`bib_file` must be a .bib file, but got `.+`"
     ):
-        default_bl.read_bib_file(bib_file=_CWD / "tmp" / "output.txt")
+        default_bl.read_bib_file(bib_file=_TMP_DIR / "output.txt")
 
     feed_dict = dict(
         entry_type="article",
