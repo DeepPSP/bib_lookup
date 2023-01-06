@@ -91,6 +91,6 @@ def test_cli():
     exitcode, output_msg = execute_cmd(cmd)
     assert exitcode == 0
 
-    cmd = f"bib-lookup --input {str(SAMPLE_INPUT_TXT)} --output {str(OUTPUT_FILE)} --check_file y"
+    cmd = f"bib-lookup --input {str(SAMPLE_INPUT_TXT)} --output {str(OUTPUT_FILE)} --check-file y"
     exitcode, output_msg = execute_cmd(cmd)
     assert exitcode == 0
