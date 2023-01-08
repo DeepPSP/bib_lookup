@@ -67,8 +67,8 @@ class BibItem(object):
         self.__label = label  # TODO: consider how to add label when it's None
         if self.label is None:
             self.__label = self.identifier
-        self.align = align
-        assert self.align in ["middle", "left", "left-middle", "left_middle"], (
+        self.__align = align.lower()
+        assert self.__align in ["middle", "left", "left-middle", "left_middle"], (
             "`align` must be one of ['middle', 'left', 'left-middle', 'left_middle'], "
             f"but got `{self.align}`"
         )
@@ -93,8 +93,22 @@ class BibItem(object):
         return self.__label
 
     @property
+    def align(self) -> str:
+        return self.__align
+
+    @property
     def strict_eq_fields(self) -> Set[str]:
         return self.__strict_eq_fields
+
+    def set_alignment(self, align: str) -> None:
+        """
+        set the alignment of the fields for string representation
+        """
+        self.__align = align.lower()
+        assert self.__align in ["middle", "left", "left-middle", "left_middle"], (
+            "`align` must be one of ['middle', 'left', 'left-middle', 'left_middle'], "
+            f"but got `{self.align}`"
+        )
 
     def __normalize_fields(self, check_fields: bool = False) -> None:
         """

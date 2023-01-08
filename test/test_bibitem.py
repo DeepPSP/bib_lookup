@@ -183,6 +183,12 @@ class TestBibItem:
             BibItem.help(item)
             self.bibitem.help(item)
 
+    def test_set_alignment(self):
+        for align in ["left", "left-middle", "left_middle", "middle"]:
+            self.bibitem.set_alignment(align)
+            assert self.bibitem.align == align
+            assert str(self.bibitem) == repr(self.bibitem)
+
     def test_errors(self):
         with pytest.raises(AssertionError, match="`xxx` is not a valid entry type"):
             BibItem(identifier=self.identifier, entry_type="xxx", fields=self.fields)
@@ -244,3 +250,9 @@ class TestBibItem:
             AssertionError, match="`xxx` is not a valid entry type or field name"
         ):
             BibItem.help("xxx")
+
+        with pytest.raises(
+            AssertionError,
+            match="`align` must be one of \\['middle', 'left', 'left-middle', 'left_middle'\\], but got `xxx`",
+        ):
+            self.bibitem.set_alignment("xxx")
