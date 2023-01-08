@@ -109,9 +109,43 @@ def main():
     )
     parser.add_argument(
         "--arxiv2doi",
-        action="store_true",
+        type=str2bool,
+        default=True,
         help="Convert arXiv ID to DOI to look up.",
         dest="arxiv2doi",
+    )
+    parser.add_argument(
+        "--ignore-errors",
+        type=str2bool,
+        default=True,
+        help="Ignore errors when looking up",
+        dest="ignore_errors",
+    )
+    parser.add_argument(
+        "--timeout",
+        type=int,
+        default=6,
+        help="Ignore errors when looking up",
+        dest="timeout",
+    )
+    parser.add_argument(
+        "--format",
+        type=str,
+        help="Format of the output, can be 'bibtex' or 'text', etc., optional.",
+        dest="format",
+    )
+    parser.add_argument(
+        "--style",
+        type=str,
+        help="Style of the output, valid only when 'format' is 'text', optional.",
+        dest="style",
+    )
+    parser.add_argument(
+        "--verbose",
+        type=int,
+        default=0,
+        help="Verbosity level",
+        dest="verbose",
     )
 
     args = vars(parser.parse_args())
@@ -124,6 +158,18 @@ def main():
         else:
             check_file = str2bool(check_file)
 
+    kwargs = {}
+    if args["format"] is not None:
+        kwargs["format"] = args["format"]
+    if args["style"] is not None:
+        kwargs["style"] = args["style"]
+    if args["timeout"] is not None:
+        kwargs["timeout"] = args["timeout"]
+    if args["ignore_errors"] is not None:
+        kwargs["ignore_errors"] = args["ignore_errors"]
+    if args["verbose"] is not None:
+        kwargs["verbose"] = args["verbose"]
+
     bl = BibLookup(
         align=args["align"],
         ignore_fields=args["ignore_fields"],
@@ -131,7 +177,7 @@ def main():
         email=args["email"],
         ordering=args["ordering"],
         arxiv2doi=args["arxiv2doi"],
-        verbose=0,
+        **kwargs
     )
 
     if check_file is not None and isinstance(check_file, Path):

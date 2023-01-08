@@ -6,6 +6,10 @@ import collections
 from pathlib import Path
 from typing import Union, List, Tuple
 
+import pytest
+
+from bib_lookup.cli import str2bool
+
 
 def execute_cmd(
     cmd: Union[str, List[str]], raise_error: bool = True
@@ -73,11 +77,12 @@ def execute_cmd(
     return exitcode, output_msg
 
 
-SAMPLE_DATA_DIR = Path(__file__).resolve().parents[1] / "sample-files"
+PROJECT_DIR = Path(__file__).resolve().parents[1]
+SAMPLE_DATA_DIR = PROJECT_DIR / "sample-files"
 LARGE_DATABASE = SAMPLE_DATA_DIR / "large_database.bib"
 SAMPLE_INPUT_TXT = SAMPLE_DATA_DIR / "sample_input.txt"
 
-TMP_DIR = Path(__file__).resolve().parents[1] / "tmp"
+TMP_DIR = PROJECT_DIR / "tmp"
 TMP_DIR.mkdir(exist_ok=True)
 OUTPUT_FILE = TMP_DIR / "test_cli_output.bib"
 
@@ -87,10 +92,29 @@ def test_cli():
     exitcode, output_msg = execute_cmd(cmd)
     assert exitcode == 0
 
-    cmd = "bib-lookup 10.1109/CVPR.2016.90 10.1109/tpami.2019.2913372"
+    cmd = (
+        "bib-lookup 10.1109/CVPR.2016.90 10.1109/tpami.2019.2913372 "
+        "--ignore-errors true --timeout 10"
+    )
     exitcode, output_msg = execute_cmd(cmd)
     assert exitcode == 0
 
-    cmd = f"bib-lookup --input {str(SAMPLE_INPUT_TXT)} --output {str(OUTPUT_FILE)} --check-file y"
+    cmd = (
+        f"bib-lookup --input {str(SAMPLE_INPUT_TXT)} --output {str(OUTPUT_FILE)} "
+        "--check-file y --format text --style apa --timeout 10 --ignore-errors true --verbose 3"
+    )
     exitcode, output_msg = execute_cmd(cmd)
     assert exitcode == 0
+
+
+def test_str2bool():
+    for s in ("yes", "true", "t", "y", "1", "True", "Yes"):
+        assert str2bool(s) is True
+        assert str2bool(s.upper()) is True
+    for s in ("no", "false", "f", "n", "0", "False", "No"):
+        assert str2bool(s) is False
+        assert str2bool(s.upper()) is False
+    assert str2bool(True) is True
+    assert str2bool(False) is False
+    with pytest.raises(ValueError, match="Boolean value expected"):
+        str2bool("foo")
