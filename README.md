@@ -267,7 +267,8 @@ class SomeClass(CitationMixin):
 3. try using google scholar api described in \[[4](#ref4)\] (unfortunately \[[4](#ref4)\] is charged);
 4. use `Flask` to write a simple browser-based UI;
 5. (:heavy_check_mark:) ~~check if the bib item is already existed in the output file, and skip saving it if so~~;
-6. since arXiv articles are now automatically assigned DOIs (ref. [this blog](https://blog.arxiv.org/2022/02/17/new-arxiv-articles-are-now-automatically-assigned-dois/)), consider converting arXiv identifiers to DOI indentifiers, and requesting from DOI. Currently, the request results are different, at least the entry type is change from `article` to `misc`.
+6. since arXiv articles are now automatically assigned DOIs (ref. [this blog](https://blog.arxiv.org/2022/02/17/new-arxiv-articles-are-now-automatically-assigned-dois/)), consider converting arXiv identifiers to DOI indentifiers, and requesting from DOI. Currently, the request results are different, at least the entry type is change from `article` to `misc`;
+7. make `__call__` method asynchronised using `asyncio` and `aiohttp` or `httpx`.
 
 :point_right: [Back to TOC](#bib_lookup)
 
