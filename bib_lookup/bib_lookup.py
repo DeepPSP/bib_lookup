@@ -89,10 +89,11 @@ class BibLookup(ReprMixin):
 
     TODO
     ----
-    1. add CLI support;
+    1. ~~add CLI support;~~
     2. use eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi for PubMed, as in [3];
     3. try using google scholar api described in [4] (unfortunately [4] is charged);
     4. use `Flask` to write a simple browser-based UI;
+    5. make `__call__` method asynchronised using `asyncio` and `aiohttp` or `httpx`;
 
     WARNING
     -------
@@ -271,6 +272,13 @@ class BibLookup(ReprMixin):
         ), f"`format` must be one of `{list(self.__doi_format_headers)}`, but got `{self._format}`"
 
         self.__exceptional_doi_domains = ["cnki"]
+
+        self.session = requests.Session()
+        for v in self.__URL__.values():
+            self.session.mount(
+                v.replace(v.split("/")[-1], ""),
+                requests.adapters.HTTPAdapter(pool_connections=20, max_retries=2),
+            )
 
     def __call__(
         self,
@@ -591,7 +599,7 @@ class BibLookup(ReprMixin):
 
         """
         try:
-            r = requests.post(**feed_content)
+            r = self.session.post(**feed_content)
             res = r.content.decode("utf-8")
         except requests.Timeout:
             res = self.timeout_err
@@ -617,7 +625,7 @@ class BibLookup(ReprMixin):
 
         """
         try:
-            r = requests.post(**feed_content)
+            r = self.session.post(**feed_content)
             if self.verbose > 1:
                 print_func(r.json())
             mid_res = r.json()["records"][0]
@@ -655,7 +663,7 @@ class BibLookup(ReprMixin):
 
         """
         try:
-            r = requests.get(**feed_content)
+            r = self.session.get(**feed_content)
         except requests.Timeout:
             res = self.timeout_err
             return res
