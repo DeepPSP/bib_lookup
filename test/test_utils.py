@@ -119,7 +119,7 @@ def test_gather_tex_source_files_in_one():
         )
 
     with pytest.raises(
-        ValueError,
+        FileExistsError,
         match=(
             "The output file exists. "
             "If you want to overwrite it, you should delete it manually first."

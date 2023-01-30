@@ -314,7 +314,7 @@ def gather_tex_source_files_in_one(
             "which is not allowed for security reasons."
         )
     if Path(output_file).exists():
-        raise ValueError(
+        raise FileExistsError(
             "The output file exists. "
             "If you want to overwrite it, you should delete it manually first."
         )

@@ -1,8 +1,8 @@
 """
 """
 
-import subprocess
 import collections
+import subprocess
 from pathlib import Path
 from typing import Union, List, Tuple
 
@@ -104,7 +104,29 @@ def test_cli():
         "--check-file y --timeout 10 --ignore-errors true --verbose 3"
     )
     exitcode, output_msg = execute_cmd(cmd)
-    assert exitcode == 0
+
+    tex_entry_file = SAMPLE_DATA_DIR / "sample-source.tex"
+    default_output_file = tex_entry_file.parent / f"{tex_entry_file.stem}_in_one.tex"
+    if default_output_file.exists():
+        default_output_file.unlink()
+    cmd = f"bib-lookup --gather {str(tex_entry_file)}"
+    exitcode, output_msg = execute_cmd(cmd)
+    assert default_output_file.exists()
+
+    # errors are printed
+    exitcode, output_msg = execute_cmd(cmd)
+    default_output_file.unlink()
+
+    cmd = f"bib-lookup 10.1109/CVPR.2016.90 --gather {str(tex_entry_file)}"
+    # warnings are printed
+    exitcode, output_msg = execute_cmd(cmd)
+    default_output_file.unlink()
+
+    tex_entry_file = SAMPLE_DATA_DIR / "not-exist.tex"
+    cmd = f"bib-lookup --gather {str(tex_entry_file)}"
+    # errors are printed
+    exitcode, output_msg = execute_cmd(cmd)
+    assert not (SAMPLE_DATA_DIR / "not-exist_in_one.tex").exists()
 
 
 def test_str2bool():

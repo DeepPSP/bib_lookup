@@ -4,6 +4,7 @@ Command-line interface for the bib_lookup package.
 """
 
 import argparse
+import warnings
 from pathlib import Path
 from typing import Union
 
@@ -147,8 +148,40 @@ def main():
         help="Verbosity level",
         dest="verbose",
     )
+    parser.add_argument(
+        "--gather",
+        type=str,
+        help="The entry .tex file to call `utils.gather_tex_source_files_in_one`",
+        dest="gather",
+    )
 
     args = vars(parser.parse_args())
+
+    if "gather" in args and args["gather"] is not None:
+        from bib_lookup.utils import gather_tex_source_files_in_one
+
+        entry_file = Path(args["gather"]).resolve()
+
+        if not entry_file.is_file() or entry_file.suffix != ".tex":
+            print(
+                f"File {args['gather']} is not a valid .tex file. Please check and try again."
+            )
+            return
+
+        if len(args["identifiers"]) > 0 or args["input_file"] is not None:
+            warnings.warn(
+                "Identifiers and input file are ignored when gathering .tex files.",
+                RuntimeWarning,
+            )
+
+        try:
+            gather_tex_source_files_in_one(args["gather"], write_file=True)
+        except FileExistsError:
+            print(
+                f"Output file for {args['gather']} already exists. "
+                "Please remove it first and try again."
+            )
+        return
 
     check_file = args["check_file"]
     if check_file is not None:
@@ -177,7 +210,7 @@ def main():
         email=args["email"],
         ordering=args["ordering"],
         arxiv2doi=args["arxiv2doi"],
-        **kwargs
+        **kwargs,
     )
 
     if check_file is not None and isinstance(check_file, Path):
