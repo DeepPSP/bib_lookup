@@ -12,22 +12,23 @@ from bib_lookup.bib_lookup import BibLookup
 
 
 def str2bool(v: Union[str, bool]) -> bool:
-    """
-    converts a "boolean" value possibly in the format of str to bool
+    """Converts a "boolean" value possibly in the format of str to bool.
+
+    Implementation from StackOverflow [#sa]_.
 
     Parameters
     ----------
-    v: str or bool,
-        the "boolean" value
+    v : str or bool
+        The "boolean" value.
 
     Returns
     -------
-    b: bool,
-        `v` in the format of bool
+    bool
+        `v` in the format of bool.
 
     References
     ----------
-    https://stackoverflow.com/questions/15008758/parsing-boolean-values-with-argparse
+    .. [#sa] https://stackoverflow.com/questions/15008758/parsing-boolean-values-with-argparse
 
     """
     if isinstance(v, bool):

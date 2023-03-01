@@ -16,7 +16,28 @@ import pandas as pd
 
 
 class BibItem(object):
-    """A class representing a bibtex item (entry)"""
+    """A class representing a bibtex item (entry).
+
+    Parameters
+    ----------
+    identifier : str
+        The unique identifier of the bibtex entry,
+        can be DOI, URL, arXiv ID, or any other unique identifier.
+    entry_type : str
+        Type of the bibtex entry,
+        can be one of the items in `BIB_ENTRY_TYPES`.
+    fields : OrderedDict
+        Fields of the bibtex entry,
+        can be one of the items in `BIB_FIELDS`.
+    label : str, optional
+        Label of the bibtex entry, can be any string.
+    align: {"middle", "left", "left-middle", "left_middle"}, optional
+        Alignment of the fields for string representation,
+        by default "middle", case insensitive.
+    check_fields : bool, default False
+        Whether to check if the bib item contains all required fields.
+
+    """
 
     __name__ = "BibItem"
 
@@ -30,29 +51,6 @@ class BibItem(object):
         check_fields: bool = False,
         **kwargs: Any,
     ) -> None:
-        """
-        Parameters
-        ----------
-        identifier : str,
-            the unique identifier of the bibtex entry,
-            can be DOI, URL, arXiv ID, or any other unique identifier
-        entry_type : str,
-            the type of the bibtex entry,
-            can be one of the items in `BIB_ENTRY_TYPES`
-        fields : OrderedDict,
-            the fields of the bibtex entry,
-            can be one of the items in `BIB_FIELDS`
-        label : str, optional,
-            the label of the bibtex entry,
-            can be any string
-        align: str, default "middle",
-            the alignment of the fields for string representation,
-            can be one of "middle", "left", "left-middle", "left_middle",
-            case insensitive
-        check_fields: bool, default False,
-            whether to check if the bib item contains all required fields,
-
-        """
         self.__identifier = identifier
         self.__entry_type = entry_type.lower()
         assert (
@@ -101,8 +99,17 @@ class BibItem(object):
         return self.__strict_eq_fields
 
     def set_alignment(self, align: str) -> None:
-        """
-        set the alignment of the fields for string representation
+        """Set the alignment of the fields for string representation.
+
+        Parameters
+        ----------
+        align : str
+            Alignment of the fields for string representation.
+
+        Returns
+        -------
+        None
+
         """
         self.__align = align.lower()
         assert self.__align in ["middle", "left", "left-middle", "left_middle"], (
@@ -111,15 +118,20 @@ class BibItem(object):
         )
 
     def __normalize_fields(self, check_fields: bool = False) -> None:
-        """
-        convert month to number if applicable,
-        remove redundant curly braces
-        convert all field names to lower case
+        """Normalize the fields of the bibtex entry.
+
+        Convert month to number if applicable;
+        remove redundant curly braces;
+        convert all field names to lower case.
 
         Parameters
         ----------
-        check_fields: bool, default False,
-            whether to check if the bib item contains all required fields,
+        check_fields : bool, default False
+            Whether to check if the bib item contains all required fields.
+
+        Returns
+        -------
+        None
 
         """
         field_dict = OrderedDict()
@@ -149,6 +161,7 @@ class BibItem(object):
             self.__setattr__(k, v)
 
     def check_required_fields(self) -> None:
+        """Check if the bib item contains all required fields."""
         required_fields = DF_BIB_ENTRY_TYPES[
             DF_BIB_ENTRY_TYPES["entry_type"] == self.entry_type
         ].iloc[0]["required_fields"]
@@ -206,7 +219,18 @@ class BibItem(object):
 
     @staticmethod
     def help(entries_or_fields: Union[str, Sequence[str]]) -> None:
-        """ """
+        """Help function for bibtex entry types and fields.
+
+        Parameters
+        ----------
+        entries_or_fields : str or Sequence[str]
+            The bibtex entry type or field name.
+
+        Returns
+        -------
+        None
+
+        """
         if isinstance(entries_or_fields, str):
             entries_or_fields = [entries_or_fields]
         assert isinstance(
@@ -222,14 +246,15 @@ class BibItem(object):
             )
 
     def __eq__(self, other: "BibItem", strict: bool = False) -> bool:
-        """
+        """Comparison method for `BibItem`.
+
         Parameters
         ----------
         other : BibItem
-            the other BibItem to compare with
+            The other `BibItem` to compare with.
         strict : bool, default False
-            whether to compare the fields strictly,
-            if False, only `entry_type` and `label` will be compared;
+            Whether to compare the fields strictly.
+            If False, only `entry_type` and `label` will be compared;
             if True, `entry_type` and fields in `self.strict_eq_fields`
             (`author`, `title`, `journal` by default) will be compared,
             while `label` will NOT be compared.

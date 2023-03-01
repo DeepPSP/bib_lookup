@@ -25,15 +25,22 @@ __all__ = [
 
 
 def is_notebook() -> bool:
-    """
-    check if the current environment is a notebook (Jupyter or Colab)
+    """Check if the current environment is a notebook (Jupyter or Colab).
+
+    Implementation adapted from [#sa]_.
+
+    Parameters
+    ----------
+    None
 
     Returns
     -------
-    bool, whether the code is running in a notebook
+    bool
+        Whether the code is running in a notebook
 
-    Modified from
-    https://stackoverflow.com/questions/15411967/how-can-i-check-if-code-is-executed-in-the-ipython-notebook
+    References
+    ----------
+    .. [#sa] https://stackoverflow.com/questions/15411967/how-can-i-check-if-code-is-executed-in-the-ipython-notebook
 
     """
     try:
@@ -53,20 +60,21 @@ def is_notebook() -> bool:
 
 
 def default_class_repr(c: object, align: str = "center", depth: int = 1) -> str:
-    """
+    """Default string representation of a class.
+
     Parameters
     ----------
-    c: object,
-        the object to be represented
-    align: str, default "center",
-        the alignment of the class arguments
-    depth: int, default 1,
-        the depth of the class arguments to display
+    c : object
+        The object to be represented.
+    align : str, default "center"
+        Alignment of the class arguments.
+    depth : int, default 1
+        Depth of the class arguments to display.
 
     Returns
     -------
-    str,
-        the representation of the class
+    str
+        The string representation of the class.
 
     """
     indent = 4 * depth * " "
@@ -92,7 +100,9 @@ def default_class_repr(c: object, align: str = "center", depth: int = 1) -> str:
 
 
 class ReprMixin(object):
-    """Mixin for enhanced __repr__ and __str__ methods."""
+    """Mixin class for enhanced
+    :meth:`__repr__` and :meth:`__str__` methods.
+    """
 
     def __repr__(self) -> str:
         return default_class_repr(self)
@@ -100,7 +110,7 @@ class ReprMixin(object):
     __str__ = __repr__
 
     def extra_repr_keys(self) -> List[str]:
-        """ """
+        """Extra keys for :meth:`__repr__` and :meth:`__str__`."""
         return []
 
 
@@ -126,24 +136,25 @@ class _ANSI_ESCAPE_CODES(Enum):
 def color_text(
     text: str, color: Optional[str] = None, method: str = "ansi", **kwargs: Any
 ) -> str:
-    """
+    """Color the text.
+
     Parameters
     ----------
-    text: str,
-        the text to be colored
-    color: str, optional,
-        the color of the text,
-        if None, the text will be printed in the default color
-    method: str, default "ansi",
-        the method to print the text,
-        can be "ansi", "html" or "file"
+    text : str
+        The text to be colored.
+    color : str, optional
+        The color of the text.
+        If is None, the text will be printed in the default color.
+    method : {"ansi", "html", "file"}, optional
+        The method to print the text, by default "ansi".
     kwargs: Any,
-        not used, to be consistent with the methods `md_text` and `printmd`
+        Not used, to be consistent with the methods
+        :func:`md_text` and :func:`printmd`.
 
     Returns
     -------
-    str,
-        the colored text
+    str
+        The colored text.
 
     """
     if color is None:
@@ -195,30 +206,30 @@ def md_text(
     font_size: Optional[Union[int, str]] = None,
     font_family: Optional[str] = None,
 ) -> str:
-    """
+    """Turn the text into markdown.
+
     Parameters
     ----------
-    text: str,
-        the text to be turned into markdown
-    color: str, optional,
-        the color of the text,
-        if None, the text will be printed in the default color
-    method: str, default "md",
-        not used, to be consistent with the methods `color_text`,
-        should be one of "html", "md" or "markdown"
-    bold: bool, default False,
-        whether to bold the text
-    font_size: int or str, optional,
-        the font size of the text
-        if None, the text will be printed in the default font size
-    font_family: str, optional,
-        the font family of the text
-        if None, the text will be printed in the default font family
+    text : str
+        The text to be turned into markdown.
+    color : str, optional
+        The color of the text.
+        If is None, the text will be printed in the default color.
+    method : {"html", "md", "markdown"}, default "md"
+        Not used, to be consistent with the methods :func:`color_text`.
+    bold : bool, default False
+        Whether to print the text in bold.
+    font_size : int or str, optional
+        Font size of the text.
+        If is None, the text will be printed in the default font size.
+    font_family : str, optional
+        Font family of the text.
+        If is None, the text will be printed in the default font family.
 
     Returns
     -------
-    md_str: str,
-        the markdown text
+    str
+        The markdown text.
 
     """
     assert method in ["html", "md", "markdown"], f"unknown method `{method}`"
@@ -235,16 +246,19 @@ def md_text(
 
 
 def printmd(md_str: str) -> None:
-    """
-    printing bold, colored, etc., text
-
-    Parameters
-    ----------
-    md_str: str,
-        string in the markdown style
+    """Print the markdown text.
 
     Modified from
     https://stackoverflow.com/questions/23271575/printing-bold-colored-etc-text-in-ipython-qtconsole
+
+    Parameters
+    ----------
+    md_str : str
+        String in the markdown style.
+
+    Returns
+    -------
+    None
 
     """
     try:
@@ -260,29 +274,29 @@ def gather_tex_source_files_in_one(
     write_file: bool = False,
     output_file: Optional[Union[str, Path]] = None,
 ) -> str:
-    """
-    gathers all the tex source files in one file.
-    This is useful when the entry file contains `input` commands
+    """Gathers all the tex source files in one file.
+
+    This function is useful when the entry file contains ``input`` commands
     to include other tex files,
-    and when the journal submission system does not support subdirectories
+    and when the journal submission system does not support subdirectories.
 
     Parameters
     ----------
-    entry_file: str or Path,
-        the entry file (usually the main.tex file)
-    write_file: bool, default False,
-        whether to write the tex source into a file
-        if False, the tex source will be returned
-    output_file: str or Path, optional,
-        the output file to write the tex source into
-        if None and `write_file` is True,
-        the output file will be the `{entry_file.stem}_{in_one}.tex`
+    entry_file : str or pathlib.Path
+        The entry file (usually the main.tex file).
+    write_file : bool, default False
+        Whether to write the tex source into a file.
+        If False, the tex source will be returned as a string.
+    output_file : str or pathlib.Path, optional
+        The output file to write the tex source into.
+        If is None and `write_file` is True,
+        the output file will be the ``{entry_file.stem}_{in_one}.tex``.
 
     Returns
     -------
-    str,
-        the tex source if `write_file` is False,
-        or the path to the output file if `write_file` is True
+    str
+        The tex source if `write_file` is False,
+        or the path to the output file if `write_file` is True.
 
     """
     input_pattern = "[\\w|\\/\\_\\-]+(?:\\.tex)?"

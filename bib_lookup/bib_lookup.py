@@ -29,6 +29,7 @@ from .utils import (
     color_text,
     md_text,
     printmd,
+    gather_tex_source_files_in_one,
     NETWORK_ERROR_MESSAGES,
 )
 
@@ -52,8 +53,53 @@ else:
 
 
 class BibLookup(ReprMixin):
-    """
-    The look-up class for Bib entries.
+    """The look-up class for Bib entries.
+
+    This package is inspired by [1]_ written in JavaScript. In addition to
+    the RESTful API provided by doi.org, arXiv also provides a RESTful API
+    as described in [2]_. This package also uses the RESTful API provided
+    by these providers to look up Bib entries. For knowledge of the bibtex,
+    please refer to [5]_ and [6]_.
+
+    Parameters
+    ----------
+    align : {"middle", "left", "left-middle", "left_middle"}, optional
+        Alignment of the final output,
+        by default "middle", case insensitive.
+    ignore_fields : str or Sequence[str], optional
+        Fields to be ignored in the final output,
+        case insensitive, by default ["url", "abstract"].
+    output_file : str or pathlib.Path, optional,
+        The file to save the lookup results.
+        Append mode is used if the file exists.
+    email : str, optional
+        Email for querying PubMed publications
+    kwargs : dict, optional
+        Additional key word arguments, including
+
+            - "verbose": int,
+              default 0, verbose level for printing.
+            - "ordering": sequence of str,
+              default ["author", "title", "journal", "booktitle"],
+              ordering of the fields in the final output,
+              case insensitive.
+            - "arxiv2doi": bool,
+              default True,
+              whether to convert arXiv ID to DOI to look up.
+            - "format": str,
+              default "bibtex", case insensitive,
+              format of the final output,
+              only "bibtex" format lookup results will be saved in internal cache.
+            - "style": str,
+              default "apa", case insensitive,
+              style of the final output,
+              valid only when "format" is "text".
+            - "timeout": float,
+              default 6.0,
+              timeout for requests.
+            - "ignore_errors": bool,
+              default False,
+              whether to ignore errors.
 
     Example
     -------
@@ -90,8 +136,8 @@ class BibLookup(ReprMixin):
     TODO
     ----
     1. ~~add CLI support;~~
-    2. use eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi for PubMed, as in [3];
-    3. try using google scholar api described in [4] (unfortunately [4] is charged);
+    2. use eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi for PubMed, as in [3]_;
+    3. try using google scholar api described in [4]_ (unfortunately [4]_ is charged);
     4. use `Flask` to write a simple browser-based UI;
     5. make `__call__` method asynchronised using `asyncio` and `aiohttp` or `httpx`;
 
@@ -108,12 +154,12 @@ class BibLookup(ReprMixin):
 
     References
     ----------
-    1. <a name="ref1"></a> https://github.com/davidagraf/doi2bib2
-    2. <a name="ref2"></a> https://arxiv.org/help/api
-    3. <a name="ref3"></a> https://github.com/mfcovington/pubmed-lookup/
-    4. <a name="ref4"></a> https://serpapi.com/google-scholar-cite-api
-    5. <a name="ref5"></a> https://www.bibtex.com/
-    6. <a name="ref6"></a> http://tug.ctan.org/info/biblatex-cheatsheet/biblatex-cheatsheet.pdf
+    .. [1] https://github.com/davidagraf/doi2bib2
+    .. [2] https://arxiv.org/help/api
+    .. [3] https://github.com/mfcovington/pubmed-lookup/
+    .. [4] https://serpapi.com/google-scholar-cite-api
+    .. [5] https://www.bibtex.com/
+    .. [6] http://tug.ctan.org/info/biblatex-cheatsheet/biblatex-cheatsheet.pdf
 
     """
 
@@ -127,50 +173,11 @@ class BibLookup(ReprMixin):
     def __init__(
         self,
         align: str = "middle",
-        ignore_fields: Union[str, Sequence[str]] = ["url"],
+        ignore_fields: Union[str, Sequence[str]] = ["url", "abstract"],
         output_file: Optional[Union[str, Path]] = None,
         email: Optional[str] = None,
         **kwargs,
     ) -> None:
-        """
-        Parameters
-        ----------
-        align: str, default "middle",
-            alignment of the final output, case insensitive,
-            can be one of "middle", "left", "left-middle", "left_middle"
-        ignore_fields: str or sequence of str, default ["url"],
-            fields to be ignored in the final output,
-            case insensitive
-        output_file: str or Path, optional,
-            the file to save the lookup results,
-            append mode is used if the file exists
-        email: str, optional,
-            email for querying PubMed publications
-        kwargs: additional key word arguments, including
-            "verbose": int,
-                default 0,
-            "ordering": sequence of str,
-                default ["author", "title", "journal", "booktitle"],
-                case insensitive,
-            "arxiv2doi": bool,
-                default True,
-                whether to convert arXiv ID to DOI to look up
-            "format": str,
-                default "bibtex", case insensitive,
-                format of the final output,
-                only "bibtex" format lookup results will be saved in internal cache
-            "style": str,
-                default "apa", case insensitive,
-                style of the final output,
-                valid only when "format" is "text"
-            "timeout": float,
-                default 6.0,
-                timeout for requests
-            "ignore_errors": bool,
-                default False,
-                whether to ignore errors
-
-        """
         self.align = align.lower()
         assert self.align in [
             "middle",
@@ -294,52 +301,52 @@ class BibLookup(ReprMixin):
         style: Optional[str] = None,
         verbose: Optional[int] = None,
     ) -> Union[str, type(None)]:
-        """
-        Look up publication(s) and return the result.
+        """Look up publication(s) and return the result.
 
         Parameters
         ----------
-        identifier: Path or str or sequence of str,
-            identifier of publication(s),
+        identifier : pathlib.Path or str or Sequence[str]
+            Identifier of publication(s),
             can be DOI, PMID (or url), PMCID (or url), arXiv id, etc.;
-            or path to a file containing identifiers
-        align: str, optional,
-            alignment of the final output, case insensitive,
-            if specified, `self.align` is ignored
-        ignore_fields: str or sequence of str, optional,
-            fields to be ignored in the final output,
-            case insensitive,
-            if specified, `self._ignore_fields` is ignored
-        label: str or sequence of str, optional,
-            label(s) of the publication(s),
-            if specified, the label(s) provided by the source is/are ignored
-        arxiv2doi: bool, optional,
-            whether to convert arXiv ID to DOI to look up,
-            if specified, `self._arxiv2doi` is ignored
-        print_result: bool, optional,
-            whether to print the final output,
-            if specified, `self.print_result` is ignored
-        timeout: float, optional,
-            timeout for the network request,
-            if specified, `self.timeout` is ignored
-        ignore_errors: bool, optional,
-            whether to ignore errors,
-            if specified, `self.ignore_errors` is ignored
-        format: str, optional,
-            format of the final output,
-            if specified, `self._format` is ignored,
-        style: str, optional,
-            style of the final output,
-            if specified, `self._style` is ignored,
-        verbose: int, optional,
-            verbosity level,
-            if specified, `self.verbose` is ignored
+            or path to a file containing identifiers.
+        align : str, optional
+            Alignment of the final output, case insensitive.
+            If specified, `self.align` is ignored.
+        ignore_fields : str or Sequence[str], optional
+            Fields to be ignored in the final output,
+            case insensitive.
+            If specified, `self._ignore_fields` is ignored.
+        label : str or Sequence[str], optional
+            Label(s) of the publication(s).
+            If specified, the label(s) provided by the source is/are ignored.
+        arxiv2doi : bool, optional
+            Whether to convert arXiv ID to DOI to look up.
+            If specified, `self._arxiv2doi` is ignored.
+        print_result : bool, optional
+            Whether to print the final output.
+            if specified, `self.print_result` is ignored.
+        timeout : float, optional
+            timeout for the network request.
+            If specified, `self.timeout` is ignored.
+        ignore_errors : bool, optional
+            Whether to ignore errors.
+            If specified, `self.ignore_errors` is ignored.
+        format : str, optional
+            Format of the final output.
+            If specified, `self._format` is ignored.
+        style : str, optional
+            Style of the final output.
+            If specified, `self._style` is ignored.
+        verbose : int, optional
+            Verbosity level for printing.
+            If specified, `self.verbose` is ignored.
 
         Returns
         -------
-        res: str or None,
-            the final output in the `str` format,
-            if `print_result` or `self.print_result` is True, return None
+        res : str or None
+            The final output in the ``str`` format;
+            if `print_result` or `self.print_result` is True,
+            the output is printed and ``None`` is returned.
 
         """
         original_verbose = self.verbose
@@ -485,35 +492,35 @@ class BibLookup(ReprMixin):
         style: Optional[str] = None,
         timeout: Optional[float] = None,
     ) -> Tuple[str, dict, str]:
-        """
-        Obtain feed content using GET or POST
+        """Obtain feed content using GET or POST method.
 
         Parameters
         ----------
-        identifier: str,
-            identifier of a publication,
-            can be DOI, PMID (or url), PMCID (or url), arXiv id,
-        arxiv2doi: bool, optional,
-            whether to convert arXiv ID to DOI to look up,
-            if specified, `self._arxiv2doi` is ignored
-        format: str, optional,
-            format of the final output,
-            if specified, `self._format` is ignored,
-        style: str, optional,
-            style of the final output,
-            if specified, `self._style` is ignored,
-        timeout: float, optional,
-            timeout for the network request,
-            if specified, `self.timeout` is ignored
+        identifier : str
+            Identifier of a publication,
+            can be DOI, PMID (or url), PMCID (or url), arXiv id.
+        arxiv2doi : bool, optional
+            Whether to convert arXiv ID to DOI to look up.
+            If specified, `self._arxiv2doi` is ignored.
+        format : str, optional
+            Format of the final output.
+            If specified, `self._format` is ignored.
+        style: str, optional
+            Style of the final output.
+            If specified, `self._style` is ignored.
+        timeout : float, optional
+            timeout for the network request.
+            If specified, `self.timeout` is ignored.
 
         Returns
         -------
-        category: str,
-            one of "doi", "pm", "arxiv"
-        fc: dict,
-            feed content to GET or POST
-        idtf: str,
-            simplified identifier of the publication,
+        category : {"doi", "pm", "arxiv", "error"}
+            Category of the identifier,
+            or "error" if the identifier is invalid.
+        fc : dict
+            Feed content for GET or POST method.
+        idtf : str
+            Simplified identifier of the publication.
 
         """
         idtf = identifier.lower().strip()
@@ -584,18 +591,17 @@ class BibLookup(ReprMixin):
         return category, fc, idtf
 
     def _handle_doi(self, feed_content: dict) -> str:
-        """
-        handle a DOI query using POST method
+        """Handle a DOI query using POST method.
 
         Parameters
         ----------
-        feed_content: dict,
-            the content to feed to POST
+        feed_content : dict
+            The content to feed to POST method.
 
         Returns
         -------
-        res: str,
-            decoded query result
+        res : str
+            Decoded query result.
 
         """
         try:
@@ -610,18 +616,17 @@ class BibLookup(ReprMixin):
         return res
 
     def _handle_pm(self, feed_content: dict) -> str:
-        """
-        handle a PubMed query using POST method
+        """Handle a PubMed query using POST method.
 
         Parameters
         ----------
-        feed_content: dict,
-            the content to feed to POST
+        feed_content : dict
+            The content to feed to POST method.
 
         Returns
         -------
-        res: str,
-            decoded query result
+        res : str
+            Decoded query result.
 
         """
         try:
@@ -648,18 +653,17 @@ class BibLookup(ReprMixin):
         return res
 
     def _handle_arxiv(self, feed_content: dict) -> Union[str, Dict[str, str]]:
-        """
-        handle a arXiv query using GET method
+        """Handle a arXiv query using GET method.
 
         Parameters
         ----------
-        feed_content: dict,
-            the content to feed to GET
+        feed_content : dict
+            The content to feed to GET method.
 
         Returns
         -------
-        res: dict,
-            decoded and parsed query result
+        res : dict or str
+            Decoded and parsed query result.
 
         """
         try:
@@ -693,7 +697,19 @@ class BibLookup(ReprMixin):
         return res
 
     def _handle_network_error(self, res: str) -> str:
-        """handle network error"""
+        """Handle network error.
+
+        Parameters
+        ----------
+        res : str
+            The query result.
+
+        Returns
+        -------
+        str
+            Error message.
+
+        """
         if "DOI Not Found" in res:
             return self.default_err
         elif any([item in res for item in NETWORK_ERROR_MESSAGES]):
@@ -708,32 +724,31 @@ class BibLookup(ReprMixin):
         ignore_fields: Optional[Union[str, Sequence[str]]] = None,
         label: Optional[str] = None,
     ) -> BibItem:
-        """
-        convert a query result to a BibItem instance
+        """Convert a query result to a :class:`BibItem` instance.
 
         Parameters
         ----------
-        res: str or dict,
-            result obtained via GET or POST,
-            or read from a file
-        identifier: str, optional,
-            identifier of a publication,
+        res : str or dict
+            Result obtained via GET or POST method,
+            or read from a file.
+        identifier : str, optional
+            Identifier of a publication,
             can be DOI, PMID (or url), PMCID (or url), arXiv id, etc.
-            if not provided, "label" from the result will be used as `identifier`
-        align: str, optional,
-            alignment of the final output, case insensitive,
-            if specified, `self.align` is ignored
-        ignore_fields: str or sequence of str, optional,
-            fields to be ignored in the final output,
-            case insensitive,
-            if specified, `self._ignore_fields` is ignored
-        label: str, optional,
-            label of the publication,
+            If not provided, "label" from the result will be used as `identifier`.
+        align : str, optional
+            Alignment of the final output, case insensitive.
+            If specified, `self.align` is ignored.
+        ignore_fields : str or Sequence[str], optional
+            Fields to be ignored in the final output,
+            case insensitive.
+            If specified, `self._ignore_fields` is ignored.
+        label : str, optional
+            Label of the publication.
 
         Returns
         -------
-        bib_item: BibItem,
-            a BibItem instance converted from `res`
+        bib_item : BibItem
+            A :class:`BibItem` instance converted from `res`.
 
         """
         if ignore_fields is None:
@@ -895,26 +910,27 @@ class BibLookup(ReprMixin):
         output_file: Optional[Union[str, Path]] = None,
         skip_existing: Union[bool, str] = True,
     ) -> None:
-        """
-        save bib items corresponding to the identifiers to the output file.
+        """Save bib items corresponding to the identifiers
+        to the output file.
 
         Parameters
         ----------
-        identifiers: int or str or sequence of int or sequence of str, optional,
-            the bib corresponding to the identifiers are to be saved,
-            defaults to all
-        output_file: str or Path, optional,
-            the output file, defaults to `self.output_file`
-            if specified, `self.output_file` is ignored
-        skip_existing: bool or str, default True,
-            can be True, False or "strict",
-            if True or "strict", skip existing bib items in the output file.
-            For "strict" comparison of instances of `BibItem`,
-            ref. the `BibItem.__eq__` method.
+        identifiers : int or str or Sequence[str] or Sequence[int], optional
+            The bib corresponding to the identifiers are to be saved,
+            defaults to all.
+        output_file : str or pathlib.Path, optional
+            The output file, defaults to `self.output_file`.
+            If specified, `self.output_file` is ignored.
+        skip_existing : {True, False, "strict"}, default True
+            Whether to skip existing bib items in the output file,
+            by default True.
+            If True or "strict", skip existing bib items in the output file.
+            For "strict" comparison of instances of :class:`BibItem`,
+            ref. the :meth:`BibItem.__eq__` method.
 
         WARNING
         -------
-        saved bib items will be removed from the cache
+        Saved bib items will be removed from the cache.
 
         """
         _output_file = output_file or self.output_file
@@ -988,22 +1004,21 @@ class BibLookup(ReprMixin):
         cache: bool = False,
         return_line_numbers: bool = False,
     ) -> Union[List[BibItem], Tuple[List[BibItem], List[int]]]:
-        """
-        Read bib file and return a list of bib items.
+        """Read bib file and return a list of bib items.
 
         Parameters
         ----------
-        bib_file: str or Path, optional,
-            the bib file, defaults to `self.output_file`
-        cache: bool, default False,
-            if True, cache the bib items
-        return_line_numbers: bool, default False,
-            if True, return a tuple of (bib items, line numbers)
+        bib_file : str or pathlib.Path, optional
+            The bib file to read, defaults to `self.output_file`.
+        cache : bool, default False
+            If True, cache the bib items.
+        return_line_numbers : bool, default False
+            If True, returns a tuple of ``(bib items, line numbers)``.
 
         Returns
         -------
-        bib_items: list of BibItem,
-            the list of bib items already existing in the bib file
+        bib_items : List[BibItem] or Tuple[List[BibItem], List[int]]
+            The list of bib items already existing in the bib file.
 
         """
         _bib_file = bib_file or self.output_file
@@ -1043,13 +1058,17 @@ class BibLookup(ReprMixin):
         return bib_items
 
     def pop(self, identifiers: Union[int, str, Sequence[str], Sequence[int]]) -> None:
-        """
-        remove the bib corresponding to the identifiers from the cache
+        """Remove the bib corresponding to the identifiers
+        from the cache.
 
         Parameters
         ----------
-        identifiers: int or str or sequence of int or sequence of str,
-            the identifiers to be removed from the cache
+        identifiers : int or str or  Sequence[str] or Sequence[int]
+            The identifiers to be removed from the cache.
+
+        Returns
+        -------
+        None
 
         """
         if isinstance(identifiers, int):
@@ -1067,29 +1086,28 @@ class BibLookup(ReprMixin):
             self.__cached_lookup_results.pop(i, None)
 
     def clear_cache(self) -> None:
-        """helper function to clear the cached bib items"""
+        """Helper function to clear the cached bib items."""
         for item in list(self):
             self.pop(item)
 
     def print(self) -> None:
-        """print the bib items in the cache"""
+        """Print the bib items in the cache."""
         print(self.get_cache(string_format=True))
 
     def get_cache(self, string_format: bool = False) -> Union[str, OrderedDict]:
-        """
-        get all bib items in the cache
+        """Get all bib items in the cache.
 
         Parameters
         ----------
-        string_format: bool, default False,
-            whether to return the bib items in string format,
-            or the ordered dict of cached instances of BibItem
+        string_format : bool, default False
+            Whether to return the bib items in string format,
+            or the ordered dict of cached instances of :class:`BibItem`.
 
         Returns
         -------
-        str or OrderedDict:
-            the bib items in string format,
-            or the ordered dict of cached instances of BibItem
+        str or OrderedDict
+            The bib items in string format,
+            or the ordered dict of cached instances of :class:`BibItem`.
 
         """
         if string_format:
@@ -1122,19 +1140,20 @@ class BibLookup(ReprMixin):
         return ["align", "output_file", "ignore_fields"] + super().extra_repr_keys()
 
     def check_bib_file(self, bib_file: Union[str, Path]) -> List[int]:
-        """
-        check if the bib items in a bib file are valid,
-        by checking if they have all the required fields
+        """Check if the bib items in a bib file are valid,
+
+        This is done
+        by checking if they have all the required fields.
 
         Parameters
         ----------
-        bib_file: str or Path,
-            the bib file to check
+        bib_file : str or pathlib.Path
+            The bib file to check.
 
         Returns
         -------
-        err_lines: list of int,
-            the starting line numbers of the invalid bib items
+        err_lines : List[int]
+            The starting line numbers of the invalid bib items.
 
         """
         _bib_file = Path(bib_file).resolve()
@@ -1183,23 +1202,27 @@ class BibLookup(ReprMixin):
         bib_file: Union[Path, str],
         output_file: Optional[Union[Path, str]] = None,
     ) -> str:
-        """
-        simplify a bib file by removing all the bib items that are not used in the tex sources
+        """Simplify a bib file by removing all the bib items
+        that are not used in the tex sources.
 
         Parameters
         ----------
-        tex_sources: str or Path or list of str or list of Path,
-            the tex sources to check
-        bib_file: str or Path,
-            the bib file to simplify
-        output_file: str or Path, optional,
-            the output file to save the simplified bib file
-            defaults to ``Path(bib_file).stem + "_simplified.bib"``
+        tex_sources : str or pathlib.Path or List[str] or List[pathlib.Path]
+            The tex sources to check.
+            If a single tex source file path is given,
+            it is considered as the entry file of the tex project,
+            and `gather_tex_source_files_in_one` will be called
+            to gather all the tex source files for simplification.
+        bib_file : str or pathlib.Path
+            The bib file to simplify.
+        output_file : str or pathlib.Path, optional
+            The output file to save the simplified bib file,
+            defaults to ``Path(bib_file).stem + "_simplified.bib"``.
 
         Returns
         -------
-        str:
-            the path of the simplified bib file in string format
+        str
+            The path of the simplified bib file in string format.
 
         """
         if isinstance(tex_sources, (str, Path)):
@@ -1222,11 +1245,17 @@ class BibLookup(ReprMixin):
         _punctuation = "".join([s for s in punctuation if s not in "{}"])
         # citation pattern: https://fr.overleaf.com/learn/latex/Natbib_citation_styles
         citation_pattern = (
-            "\\\\cite(?:t|p|t\\*|p\\*|author|year)?(?:(?:\\[.+\\])?)?"
+            "\\\\(?:paren)?cite(?:t|p|t\\*|p\\*|author|year)?(?:(?:\\[.+\\])?)?"
             f"\\{{(?P<label>[\\w\\s{_punctuation}]+)\\}}"
         )
         for tex_source in tex_sources:
-            if tex_source.is_file():
+            if tex_source.is_file() and len(tex_sources) == 1:
+                for items in re.findall(
+                    citation_pattern,
+                    gather_tex_source_files_in_one(tex_source, write_file=False),
+                ):
+                    cited_labels.update([item.strip() for item in items.split(",")])
+            elif tex_source.is_file():
                 for items in re.findall(citation_pattern, tex_source.read_text()):
                     cited_labels.update([item.strip() for item in items.split(",")])
             else:  # is a directory

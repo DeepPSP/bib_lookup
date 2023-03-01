@@ -36,30 +36,29 @@ class CitationMixin(object):
         timeout: Optional[float] = None,
         print_result: bool = False,
     ) -> Union[str, type(None)]:
-        """
+        """Get the bib citation(s) from the DOI(s).
+
         Parameters
         ----------
-        lookup: bool, default True,
-            whether to lookup the citations from the DOIs,
-            if False, will return (or print) the DOIs directly
-        format: str, optional,
-            format of the final output,
-            if specified, the default format ("bib") will be overrided
-        style: str, optional,
-            style of the final output,
-            if specified, the default style ("apa") will be overrided,
-            only valid when `format` is "text"
-        timeout: float, optional,
-            timeout for the lookup,
-            only valid when `lookup` is True,
-            if not specified, the default timeout (1.0) will be used
-        print_result: bool, default False,
-            whether to print the final output instead of returning it
+        lookup : bool, default True
+            Whether to look up the citation from the cache.
+        format : str, optional
+            The format of the citation. If not specified, the citation
+            will be returned in the default format (bibtex).
+        style : str, optional
+            The style of the citation. If not specified, the citation
+            will be returned in the default style (apa).
+            Valid only when `format` is ``"text"``.
+        timeout : float, optional
+            The timeout for the request.
+        print_result : bool, default False
+            Whether to print the citation.
 
         Returns
         -------
-        str, optional,
-            citation(s) of the database
+        str or None
+            bib citation(s) from the DOI(s),
+            or None if `print_result` is True.
 
         """
         self._bl.clear_cache()
@@ -143,14 +142,17 @@ class CitationMixin(object):
             return citation
 
     def update_cache(self, doi: Optional[Union[str, Sequence[str]]] = None) -> None:
-        """
-        Update the cache.
+        """Update the cache.
 
         Parameters
         ----------
-        doi: str or sequence of str, optional,
-            DOIs to update the cache,
-            if not specified, will update the whole cache
+        doi : str or Sequence[str], optional
+            DOIs to update the cache
+            If not specified, the whole cache will be updated.
+
+        Returns
+        -------
+        None
 
         """
         if self.citation_cache.exists():
