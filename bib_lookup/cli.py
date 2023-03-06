@@ -57,7 +57,7 @@ def main():
         "-a",
         "--align",
         type=str,
-        default="middle",
+        default=None,
         help="Alignment of the output text.",
         choices=["left", "middle", "left-middle"],
     )
@@ -85,7 +85,7 @@ def main():
         "--ignore-fields",
         nargs=argparse.ZERO_OR_MORE,
         type=str,
-        default=["url"],
+        default=None,
         help="List of fields to ignore.",
         dest="ignore_fields",
     )
@@ -99,7 +99,7 @@ def main():
         "--ordering",
         type=str,
         nargs=argparse.ZERO_OR_MORE,
-        default=["author", "title", "journal", "booktitle"],
+        default=None,
         help="Order of the fields in the output.",
         dest="ordering",
     )
@@ -192,27 +192,17 @@ def main():
         else:
             check_file = str2bool(check_file)
 
-    kwargs = {}
-    if args["format"] is not None:
-        kwargs["format"] = args["format"]
-    if args["style"] is not None:
-        kwargs["style"] = args["style"]
-    if args["timeout"] is not None:
-        kwargs["timeout"] = args["timeout"]
-    if args["ignore_errors"] is not None:
-        kwargs["ignore_errors"] = args["ignore_errors"]
-    if args["verbose"] is not None:
-        kwargs["verbose"] = args["verbose"]
+    # fmt: off
+    init_args = dict()
+    for k in [
+        "align", "ignore_fields", "output_file", "email", "ordering",
+        "arxiv2doi", "format", "style", "timeout", "ignore_errors", "verbose"
+    ]:
+        if args[k] is not None:
+            init_args[k] = args[k]
+    # fmt: on
 
-    bl = BibLookup(
-        align=args["align"],
-        ignore_fields=args["ignore_fields"],
-        output_file=args["output_file"],
-        email=args["email"],
-        ordering=args["ordering"],
-        arxiv2doi=args["arxiv2doi"],
-        **kwargs,
-    )
+    bl = BibLookup(**init_args)
 
     if check_file is not None and isinstance(check_file, Path):
         bl.check_bib_file(check_file)
