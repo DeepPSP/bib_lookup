@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import Union
 
 from bib_lookup.bib_lookup import BibLookup
+from bib_lookup.version import __version__ as bl_version
 
 
 def str2bool(v: Union[str, bool]) -> bool:
@@ -154,6 +155,12 @@ def main():
         type=str,
         help="The entry .tex file to call `utils.gather_tex_source_files_in_one`",
         dest="gather",
+    )
+    parser.add_argument(
+        "--version",
+        action="version",
+        version=f"bib_lookup {bl_version}",
+        help="Show the version number and exit.",
     )
 
     args = vars(parser.parse_args())
