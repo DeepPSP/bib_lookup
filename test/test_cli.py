@@ -128,6 +128,10 @@ def test_cli():
     exitcode, output_msg = execute_cmd(cmd)
     assert not (SAMPLE_DATA_DIR / "not-exist_in_one.tex").exists()
 
+    # output version info
+    cmd = "bib-lookup --version"
+    exitcode, output_msg = execute_cmd(cmd)
+
 
 def test_str2bool():
     for s in ("yes", "true", "t", "y", "1", "True", "Yes"):
