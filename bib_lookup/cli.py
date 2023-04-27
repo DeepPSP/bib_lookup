@@ -4,43 +4,19 @@ Command-line interface for the bib_lookup package.
 """
 
 import argparse
+import json
 import warnings
 from pathlib import Path
-from typing import Union
+
+import yaml
 
 from bib_lookup.bib_lookup import BibLookup
 from bib_lookup.version import __version__ as bl_version
-
-
-def str2bool(v: Union[str, bool]) -> bool:
-    """Converts a "boolean" value possibly in the format of str to bool.
-
-    Implementation from StackOverflow [#sa]_.
-
-    Parameters
-    ----------
-    v : str or bool
-        The "boolean" value.
-
-    Returns
-    -------
-    bool
-        `v` in the format of bool.
-
-    References
-    ----------
-    .. [#sa] https://stackoverflow.com/questions/15008758/parsing-boolean-values-with-argparse
-
-    """
-    if isinstance(v, bool):
-        b = v
-    elif v.lower() in ("yes", "true", "t", "y", "1"):
-        b = True
-    elif v.lower() in ("no", "false", "f", "n", "0"):
-        b = False
-    else:
-        raise ValueError("Boolean value expected.")
-    return b
+from bib_lookup.utils import str2bool
+from bib_lookup._const import (
+    CONFIG_FILE as _CONFIG_FILE,
+    DEFAULT_CONFIG as _DEFAULT_CONFIG,
+)
 
 
 def main():
@@ -162,8 +138,88 @@ def main():
         version=f"bib_lookup {bl_version}",
         help="Show the version number and exit.",
     )
+    parser.add_argument(
+        "--config",
+        type=str,
+        help=(
+            "Configuration for the bib_lookup package. "
+            "Can be path to a json or yaml file, "
+            "or a string in KEY=VALUE pairs separated by semicolons "
+            "enclosed by double quotes. "
+            "Can also be ``show`` to show the current configuration, "
+            "or ``reset`` to reset (delete) the user-defined "
+            "configuration file if it exists."
+        ),
+    )
 
     args = vars(parser.parse_args())
+
+    if "config" in args and args["config"] is not None:
+        if args["config"] == "show":
+            if not _CONFIG_FILE.is_file():
+                print("User-defined configuration file does not exist.")
+                print("Using default configurations:")
+                print(json.dumps(_DEFAULT_CONFIG, indent=4))
+            else:
+                user_config = json.loads(_CONFIG_FILE.read_text())
+                print("User-defined configurations:")
+                print(json.dumps(user_config, indent=4))
+                print("The rest default configurations:")
+                print(
+                    json.dumps(
+                        {
+                            k: v
+                            for k, v in _DEFAULT_CONFIG.items()
+                            if k not in user_config
+                        },
+                        indent=4,
+                    )
+                )
+            return
+        elif args["config"] == "reset":
+            if _CONFIG_FILE.is_file():
+                _CONFIG_FILE.unlink()
+                print("User-defined configuration file deleted.")
+            else:
+                print(
+                    "User-defined configuration file does not exist. No need to reset."
+                )
+            return
+        else:
+            if "=" in args["config"]:
+                config = dict(
+                    [kv.strip().split("=") for kv in args["config"].split(";")]
+                )
+            else:
+                assert Path(args["config"]).is_file(), (
+                    f"Configuration file ``{args['config']}`` does not exist. "
+                    "Please check and try again."
+                )
+                if Path(args["config"]).suffix == ".json":
+                    config = json.loads(Path(args["config"]).read_text())
+                elif Path(args["config"]).suffix in [".yaml", ".yml"]:
+                    config = yaml.safe_load(Path(args["config"]).read_text())
+                else:
+                    raise ValueError(
+                        f"Unknown configuration file type ``{Path(args['config']).suffix}``. "
+                        "Only json and yaml files are supported."
+                    )
+            # discard unknown keys
+            unknown_keys = set(config.keys()) - set(_DEFAULT_CONFIG.keys())
+            config = {k: v for k, v in config.items() if k in _DEFAULT_CONFIG}
+            # parse lists in the config
+            for k, v in config.items():
+                if isinstance(v, str) and v.startswith("[") and v.endswith("]"):
+                    config[k] = [vv.strip() for vv in v.strip("[]").split(",")]
+            if len(unknown_keys) > 0:
+                verb = "are" if len(unknown_keys) > 1 else "is"
+                warnings.warn(
+                    f"Unknown configuration keys ``{unknown_keys}`` {verb} discarded.",
+                    RuntimeWarning,
+                )
+            print(f"Setting configurations:\n{json.dumps(config, indent=4)}")
+            _CONFIG_FILE.write_text(json.dumps(config, indent=4))
+            return
 
     if "gather" in args and args["gather"] is not None:
         from bib_lookup.utils import gather_tex_source_files_in_one
