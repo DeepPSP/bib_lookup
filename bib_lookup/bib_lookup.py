@@ -32,6 +32,7 @@ from .utils import (
     color_text,
     md_text,
     printmd,
+    str2bool,
     gather_tex_source_files_in_one,
     NETWORK_ERROR_MESSAGES,
 )
@@ -251,9 +252,9 @@ class BibLookup(ReprMixin):
 
         self.__header_pattern = "^@(?P<entry_type>\\w+)\\{(?P<label>[^,]+)"
 
-        self.ignore_errors = bl_config["ignore_errors"]
-        self.timeout = bl_config["timeout"]
-        self._arxiv2doi = bl_config["arxiv2doi"]
+        self.ignore_errors = str2bool(bl_config["ignore_errors"])
+        self.timeout = float(bl_config["timeout"])
+        self._arxiv2doi = str2bool(bl_config["arxiv2doi"])
         self._format = bl_config["format"].lower()
         if self._format != "bibtex" and not self._arxiv2doi:
             warnings.warn(
@@ -263,8 +264,8 @@ class BibLookup(ReprMixin):
             )
             self._arxiv2doi = True
         self._style = bl_config["style"].lower()
-        self.verbose = bl_config["verbose"]
-        self.print_result = bl_config["print_result"]
+        self.verbose = int(bl_config["verbose"])
+        self.print_result = str2bool(bl_config["print_result"])
         self._ordering = bl_config["ordering"]
         self._ordering = [k.lower() for k in self._ordering]
         self._comment_pattern = re.compile(r"^%")

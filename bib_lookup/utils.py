@@ -19,6 +19,7 @@ __all__ = [
     "color_text",
     "md_text",
     "printmd",
+    "str2bool",
     "gather_tex_source_files_in_one",
     "NETWORK_ERROR_MESSAGES",
 ]
@@ -267,6 +268,39 @@ def printmd(md_str: str) -> None:
         display(Markdown(md_str))
     except ModuleNotFoundError:
         print(md_str)
+
+
+def str2bool(v: Union[str, bool, int, float]) -> bool:
+    """Converts a "boolean" value possibly in the format of str to bool.
+
+    Implementation from StackOverflow [#sa]_.
+
+    Parameters
+    ----------
+    v : str or bool or int or float
+        The "boolean" value.
+
+    Returns
+    -------
+    bool
+        `v` in the format of bool.
+
+    References
+    ----------
+    .. [#sa] https://stackoverflow.com/questions/15008758/parsing-boolean-values-with-argparse
+
+    """
+    if isinstance(v, bool):
+        b = v
+    elif isinstance(v, (int, float)):
+        b = bool(v)
+    elif v.lower() in ("yes", "true", "t", "y", "1"):
+        b = True
+    elif v.lower() in ("no", "false", "f", "n", "0"):
+        b = False
+    else:
+        raise ValueError("Boolean value expected.")
+    return b
 
 
 def gather_tex_source_files_in_one(
