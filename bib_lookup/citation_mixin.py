@@ -2,21 +2,17 @@
 """
 
 import warnings
-from pathlib import Path
 from typing import Optional, Union, Sequence
 
 import pandas as pd
 
 from .bib_lookup import BibLookup
+from ._const import CACHE_DIR
 
 
 __all__ = [
     "CitationMixin",
 ]
-
-
-_CACHE_DIR = Path("~").expanduser() / ".cache" / "bib-lookup"
-_CACHE_DIR.mkdir(parents=True, exist_ok=True)
 
 
 class CitationMixin(object):
@@ -26,7 +22,7 @@ class CitationMixin(object):
 
     _bl = BibLookup(timeout=1.0, ignore_errors=False)
 
-    citation_cache = _CACHE_DIR / "bib-lookup-cache.csv"
+    citation_cache = CACHE_DIR / "bib-lookup-cache.csv"
 
     def get_citation(
         self,
