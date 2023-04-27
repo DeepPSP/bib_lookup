@@ -79,12 +79,16 @@ def test_printmd():
 
 
 def test_str2bool():
-    for s in ("yes", "true", "t", "y", "1", "True", "Yes", 1, 1.2):
+    for s in ("yes", "true", "t", "y", "1", "True", "Yes"):
         assert str2bool(s) is True
         assert str2bool(s.upper()) is True
-    for s in ("no", "false", "f", "n", "0", "False", "No", 0, 0.0):
+    for s in ("no", "false", "f", "n", "0", "False", "No"):
         assert str2bool(s) is False
         assert str2bool(s.upper()) is False
+    for s in (1, 1.2):
+        assert str2bool(s) is True
+    for s in (0, 0.0):
+        assert str2bool(s) is False
     assert str2bool(True) is True
     assert str2bool(False) is False
     with pytest.raises(ValueError, match="Boolean value expected"):
