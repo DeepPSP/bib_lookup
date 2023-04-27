@@ -141,7 +141,7 @@ def test_cli():
     exitcode, output_msg = execute_cmd(cmd)  # reset the config
 
     # set config using KEY=VALUE pairs
-    cmd = """bib-lookup --config set "timeout=2.0;print_result=true;ignore_fields=['url','pdf'];hehe=1" """
+    cmd = """bib-lookup --config "timeout=2.0;print_result=true;ignore_fields=['url','pdf'];hehe=1" """
     exitcode, output_msg = execute_cmd(
         cmd
     )  # set the config, invalid key will be ignored
