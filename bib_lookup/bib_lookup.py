@@ -12,10 +12,12 @@ Requirements
 
 """
 
+import json
 import re
 import warnings
-from pathlib import Path
 from collections import OrderedDict
+from copy import deepcopy
+from pathlib import Path
 from string import punctuation
 from typing import Union, Optional, Tuple, List, Sequence, Dict
 
@@ -23,6 +25,7 @@ import requests
 import feedparser
 
 from ._bib import BibItem, DF_BIB_ENTRY_TYPES, BIB_FIELDS
+from ._const import CONFIG_FILE as _CONFIG_FILE, DEFAULT_CONFIG as _DEFAULT_CONFIG
 from .utils import (
     is_notebook,
     ReprMixin,
@@ -172,13 +175,20 @@ class BibLookup(ReprMixin):
 
     def __init__(
         self,
-        align: str = "middle",
-        ignore_fields: Union[str, Sequence[str]] = ["url", "abstract"],
+        align: Optional[str] = None,
+        ignore_fields: Optional[Union[str, Sequence[str]]] = None,
         output_file: Optional[Union[str, Path]] = None,
         email: Optional[str] = None,
         **kwargs,
     ) -> None:
-        self.align = align.lower()
+        bl_config = deepcopy(_DEFAULT_CONFIG)
+        if _CONFIG_FILE.exists():
+            # if config file exists, update current config
+            bl_config.update(json.loads(_CONFIG_FILE.read_text()))
+        # update current config with user-defined config
+        bl_config.update(kwargs)
+
+        self.align = (align or bl_config["align"]).lower()
         assert self.align in [
             "middle",
             "left",
@@ -194,7 +204,9 @@ class BibLookup(ReprMixin):
             ), f"`output_file` must be a .bib file, but got `{self.output_file}`"
             self.output_file.parent.mkdir(parents=True, exist_ok=True)
         self.__cached_lookup_results = OrderedDict()
-        self.email = email
+        self.email = email or bl_config["email"]
+        if ignore_fields is None:
+            ignore_fields = bl_config["ignore_fields"]
         if isinstance(ignore_fields, str):
             self._ignore_fields = [ignore_fields.lower()]
         else:
@@ -239,10 +251,10 @@ class BibLookup(ReprMixin):
 
         self.__header_pattern = "^@(?P<entry_type>\\w+)\\{(?P<label>[^,]+)"
 
-        self.ignore_errors = kwargs.get("ignore_errors", False)
-        self.timeout = kwargs.get("timeout", 6.0)
-        self._arxiv2doi = kwargs.get("arxiv2doi", True)
-        self._format = kwargs.get("format", "bibtex").lower()
+        self.ignore_errors = bl_config["ignore_errors"]
+        self.timeout = bl_config["timeout"]
+        self._arxiv2doi = bl_config["arxiv2doi"]
+        self._format = bl_config["format"].lower()
         if self._format != "bibtex" and not self._arxiv2doi:
             warnings.warn(
                 f"format `{self._format}` is supported only when `arxiv2doi` is True. "
@@ -250,12 +262,10 @@ class BibLookup(ReprMixin):
                 RuntimeWarning,
             )
             self._arxiv2doi = True
-        self._style = kwargs.get("style", "apa").lower()
-        self.verbose = kwargs.get("verbose", 0)
-        self.print_result = kwargs.get("print_result", False)
-        self._ordering = kwargs.get(
-            "ordering", ["title", "author", "journal", "booktitle"]
-        )
+        self._style = bl_config["style"].lower()
+        self.verbose = bl_config["verbose"]
+        self.print_result = bl_config["print_result"]
+        self._ordering = bl_config["ordering"]
         self._ordering = [k.lower() for k in self._ordering]
         self._comment_pattern = re.compile(r"^%")
 
