@@ -2,13 +2,14 @@
 """
 
 import collections
+import json
 import subprocess
 from pathlib import Path
 from typing import Union, List, Tuple
 
-import pytest
+import yaml
 
-from bib_lookup.cli import str2bool
+from bib_lookup._const import CONFIG_FILE as _CONFIG_FILE
 
 
 def execute_cmd(
@@ -132,15 +133,47 @@ def test_cli():
     cmd = "bib-lookup --version"
     exitcode, output_msg = execute_cmd(cmd)
 
+    # config file
+    cmd = "bib-lookup --config show"
+    assert not _CONFIG_FILE.exists()
+    exitcode, output_msg = execute_cmd(cmd)  # prints the default config
+    cmd = "bib-lookup --config reset"
+    exitcode, output_msg = execute_cmd(cmd)  # reset the config
 
-def test_str2bool():
-    for s in ("yes", "true", "t", "y", "1", "True", "Yes"):
-        assert str2bool(s) is True
-        assert str2bool(s.upper()) is True
-    for s in ("no", "false", "f", "n", "0", "False", "No"):
-        assert str2bool(s) is False
-        assert str2bool(s.upper()) is False
-    assert str2bool(True) is True
-    assert str2bool(False) is False
-    with pytest.raises(ValueError, match="Boolean value expected"):
-        str2bool("foo")
+    # set config using KEY=VALUE pairs
+    cmd = """bib-lookup --config set "timeout=2.0;print_result=true;ignore_fields=['url','pdf'];hehe=1" """
+    exitcode, output_msg = execute_cmd(
+        cmd
+    )  # set the config, invalid key will be ignored
+    assert _CONFIG_FILE.exists()
+    cmd = "bib-lookup --config show"
+    exitcode, output_msg = execute_cmd(cmd)  # prints the config
+    # delete config
+    cmd = "bib-lookup --config reset"
+    exitcode, output_msg = execute_cmd(cmd)  # reset the config
+    assert not _CONFIG_FILE.exists()
+
+    # set config from json file
+    new_config = {"timeout": 3.0, "print_result": False, "ignore_fields": ["url"]}
+    new_config_file = SAMPLE_DATA_DIR / "new_config.json"
+    new_config_file.write_text(json.dumps(new_config))
+    cmd = f"bib-lookup --config {str(new_config_file)}"
+    exitcode, output_msg = execute_cmd(cmd)  # set the config from file
+    cmd = "bib-lookup --config show"
+    exitcode, output_msg = execute_cmd(cmd)
+    assert _CONFIG_FILE.exists()
+    new_config_file.unlink()
+    # delete config
+    cmd = "bib-lookup --config reset"
+    exitcode, output_msg = execute_cmd(cmd)  # reset the config
+    assert not _CONFIG_FILE.exists()
+
+    # set config from yaml file
+    new_config_file = SAMPLE_DATA_DIR / "new_config.yaml"
+    new_config_file.write_text(yaml.dump(new_config))
+    cmd = f"bib-lookup --config {str(new_config_file)}"
+    exitcode, output_msg = execute_cmd(cmd)  # set the config from file
+    cmd = "bib-lookup --config show"
+    exitcode, output_msg = execute_cmd(cmd)  # prints the config
+    assert _CONFIG_FILE.exists()
+    new_config_file.unlink()
