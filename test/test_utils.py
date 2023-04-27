@@ -9,6 +9,7 @@ from bib_lookup.utils import (
     color_text,
     md_text,
     printmd,
+    str2bool,
     gather_tex_source_files_in_one,
 )
 
@@ -75,6 +76,19 @@ def test_printmd():
     printmd(text)
     text = md_text("test", color="purple", font_family="monospace")
     printmd(text)
+
+
+def test_str2bool():
+    for s in ("yes", "true", "t", "y", "1", "True", "Yes", 1, 1.2):
+        assert str2bool(s) is True
+        assert str2bool(s.upper()) is True
+    for s in ("no", "false", "f", "n", "0", "False", "No", 0, 0.0):
+        assert str2bool(s) is False
+        assert str2bool(s.upper()) is False
+    assert str2bool(True) is True
+    assert str2bool(False) is False
+    with pytest.raises(ValueError, match="Boolean value expected"):
+        str2bool("foo")
 
 
 def test_gather_tex_source_files_in_one():
