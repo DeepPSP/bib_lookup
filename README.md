@@ -117,6 +117,53 @@ After installation, one can use `bib-lookup` in the command line:
 bib-lookup 10.1109/CVPR.2016.90 10.23919/cinc53138.2021.9662801 --ignore-fields url doi -i path/to/input.txt -o path/to/output.bib
 ```
 
+View current version:
+
+```bash
+bib-lookup --version
+```
+
+View current configuration:
+
+```bash
+bib-lookup --config show
+```
+
+Remove current configuration:
+
+```bash
+bib-lookup --config reset
+```
+
+Set specific configuration:
+
+```bash
+bib-lookup --config "timeout=2.0;print_result=true;ignore_fields=['url','pdf']"
+```
+
+or from a `json` file or `yaml` file:
+
+```bash
+bib-lookup --config /path/to/config.json
+bib-lookup --config /path/to/config.yaml
+```
+
+Note that unrecognized fields will be ignored and warning messages will be printed. The following table lists all the available configuration options:
+
+| Option          | Type    | Default                                       | Description                                         |
+|-----------------|---------|-----------------------------------------------|-----------------------------------------------------|
+| `align`         | `str`   | `middle`                                      | Alignment of the bib item.                          |
+| `email`         | `str`   | `None`                                        | Email address to be used in the request.            |
+| `ignore_fields` | `list`  | `['url', 'pdf']`                              | Fields to be ignored in the output.                 |
+| `ignore_errors` | `bool`  | `False`                                       | Whether to ignore errors.                           |
+| `timeout`       | `float` | `6.0`                                         | Timeout in seconds for each request.                |
+| `arxiv2doi`     | `bool`  | `True`                                        | Whether to convert arXiv ID to DOI.                 |
+| `format`        | `str`   | `bibtex`                                      | Output format.                                      |
+| `style`         | `str`   | `apa`                                         | Citation style. Valid only when `format` is `text`. |
+| `verbose`       | `int`   | `0`                                           | Verbosity level.                                    |
+| `print_result`  | `bool`  | `False`                                       | Whether to print the result.                        |
+| `ordering`      | `list`  | `['title', 'author', 'journal', 'booktitle']` | Ordering of the fields.                             |
+
 :point_right: [Back to TOC](#bib_lookup)
 
 </details>
