@@ -43,8 +43,26 @@ jobs:
         name: ${{ env.ARTIFACT_NAME }}
         path: dist
 
+  github-release:
+    # github release and changelog
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Build Changelog
+        id: changelog
+        uses: mikepenz/release-changelog-builder-action@v3
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Create Release
+        id: create_release
+        uses: softprops/action-gh-release@v1
+        with:
+          body: ${{ steps.changelog.outputs.changelog }}
+
   pypi-publish:
-    # publishing is separate from building
+    # publishing is separated from building
     needs: build
     name: Upload release to PyPI
     runs-on: ubuntu-latest
