@@ -402,17 +402,18 @@ class BibItem(object):
         return True  # both do not have `journal` field
 
 
+# https://mirror.las.iastate.edu/tex-archive/macros/latex/contrib/biblatex/doc/biblatex.pdf
 BIB_ENTRY_TYPES = {
     # Material from journals, magazines & newspapers:
     "article": "journal, magazine or newspaper article",
     "periodical": "whole issue of a periodical",
     "suppperiodical": "supplemental material in periodical",
     # Material from single-authored or co-authored books:
-    "inbook": "book part with own title",
-    "suppbook": "supplemental material in book",
-    "bookinbook": "originally published as standalone book",
     "book": "single-volume book by author(s) of whole",
     "mvbook": "multi-volume book",
+    "inbook": "book part with own title",
+    "bookinbook": "originally published as standalone book",
+    "suppbook": "supplemental material in book",
     # Material from edited anthologies:
     "incollection": "contribution to anthology",
     "suppcollection": "supplemental material in anthology",
@@ -422,26 +423,47 @@ BIB_ENTRY_TYPES = {
     "inproceedings": "article in conference proceedings",
     "proceedings": "single-volume conference proceedings",
     "mvproceedings": "multi-volume conference proceedings",
+    "conference": "legacy alias for `inproceedings`",
     # Material from works of reference:
-    "inreference": "article in a reference work",
-    "reference": "single-volume work of reference",
     "mvreference": "multi-volume reference work",
+    "reference": "single-volume work of reference",
+    "inreference": "article in a reference work",
     # Material from technical & institutional publications:
     "manual": "technical or other documentation",
     "report": "institutional report or white paper",
+    "techreport": "report published by a school or other institution, usually numbered within a series",
     "patent": "patent or patent request",
     "thesis": "work completed to fulfil degree requirement",
     "phdthesis": "ph.D. thesis",
     "mastersthesis": "M.A. thesis",
     # Material from online, informal & other sources:
     "online": "inherently online source",
+    "electronic": "alias for `online`",
+    "www": "alias for `online`, provided for `jurabib` compatibility",
     "booklet": "informally published book",
     "unpublished": "work not formally published",
     "misc": "last resort (check manual first!)",
-    "software": "software",
+    "software": "computer software",
     # Special entries for database management:
+    "dataset": "a data set or a similar collection of (mostly) raw data",
     "set": "(static) entry ‘set’",
     "xdata": "data-container (cannot be cited)",
+    # non-standard types
+    "artwork": "works of the visual arts such as paintings, sculpture, and installations",
+    "audio": "audio recordings, typically on audio cd, dvd, audio cassette, or similar media",
+    "bibnote": "a note in the bibliography",
+    "commentary": "commentaries which have a status different from regular books, such as legal commentaries",
+    "image": "images, pictures, photographs, and similar media",
+    "jurisdiction": "court decisions, court recordings, and similar things",
+    "legislation": "laws, bills, legislative proposals, and similar things",
+    "legal": "legal documents such as treaties",
+    "letter": "personal correspondence such as letters, emails, memoranda, etc",
+    "movie": "motion pictures",
+    "music": "musical recordings, a more specific variant of the `audio` type",
+    "performance": "musical and theatrical performances as well as other works of the performing arts",
+    "review": "reviews of some other work",
+    "standard": "national and international standards issued by a standards body such as the International Organization for Standardization (ISO)",
+    "video": "audiovisual recordings, typically on DVD, VHS cassette, or similar media",
 }
 
 DF_BIB_ENTRY_TYPES = pd.DataFrame(
@@ -451,7 +473,7 @@ DF_BIB_ENTRY_TYPES = pd.DataFrame(
 _required_fields = {
     # https://www.openoffice.org/bibliographic/bibtex-defs.html
     # https://www.andy-roberts.net/res/writing/latex/bibentries.pdf
-    "article": ["author", "title", "journal", "year"],
+    "article": ["author", "title", "journal", "year|date"],
     "book": ["author|editor", "title", "publisher", "year"],
     "booklet": ["title"],
     "inbook": ["author|editor", "title", "chapter+|pages", "publisher", "year"],
@@ -481,8 +503,8 @@ _optional_fields = {
     "misc": ["author", "title", "howpublished", "month", "year", "note"],
     "phdthesis": ["type", "address", "month", "note"],
     "proceedings": ["editor", "volume|number", "series", "address", "month", "publisher", "organization", "note"],
-    "techreport": ["type", "number", "address", "month", "note"],
-    "unpublished": ["month", "year"],
+    "techreport": ["type", "number", "address", "month", "note", "key"],
+    "unpublished": ["month", "year", "key"],
 }
 # fmt: on
 DF_BIB_ENTRY_TYPES["required_fields"] = DF_BIB_ENTRY_TYPES.entry_type.apply(
