@@ -15,22 +15,22 @@ from bib_lookup._const import CONFIG_FILE as _CONFIG_FILE
 def execute_cmd(
     cmd: Union[str, List[str]], raise_error: bool = True
 ) -> Tuple[int, List[str]]:
-    """
-    execute shell command using `Popen`
+    """Execute shell command using `Popen`.
 
     Parameters
     ----------
-    cmd: str or list of str,
-        the shell command to be executed,
-        or a list of .sh files to be executed
-    raise_error: bool, default True,
-        if True, error will be raised when occured
+    cmd : str or list of str
+        Shell command to be executed,
+        or a list of .sh files to be executed.
+    raise_error : bool, default True
+        If True, error will be raised when occured.
 
     Returns
     -------
-    exitcode, output_msg: int, list of str,
-        exitcode: exit code returned by `Popen`
-        output_msg: outputs from `stdout` of `Popen`
+    exitcode : int
+        Exit code returned by `Popen`.
+    output_msg : list of str
+        Outputs from `stdout` of `Popen`.
 
     """
     shell_arg, executable_arg = True, None
