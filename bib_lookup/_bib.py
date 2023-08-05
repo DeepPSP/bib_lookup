@@ -293,7 +293,7 @@ class BibItem(object):
         True
 
         """
-        if type(other) != type(self):
+        if isinstance(other, type(self)):
             return False
         if self.entry_type != other.entry_type:
             return False
