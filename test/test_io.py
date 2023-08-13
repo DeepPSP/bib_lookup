@@ -50,7 +50,12 @@ def test_io_from_file():
     _OUTPUT_FILE_1.unlink()
 
     bib_items = bl.read_bib_file(_LARGE_DATABASE_FILE, cache=True)
-    assert len(bib_items) == len(bl) == 608
+    assert len(bib_items) == len(bl) == 609
+    special_item = [
+        item for item in bib_items if item.identifier == "dosovitskiy2021_vit"
+    ][0]
+    # make sure that "=" is not escaped in the url field after reading from file
+    assert special_item.url == "https://openreview.net/forum?id=YicbFdNTTy"
     bl.clear_cache()
     assert len(bl) == 0
 

@@ -788,7 +788,7 @@ class BibLookup(ReprMixin):
             field_dict = OrderedDict()
             for line in lines[1:-1]:
                 key, *val = line.strip().split("=")  # urls might contain "="
-                val = "".join(val)
+                val = "=".join(val)
                 if key.strip().lower() in BIB_FIELDS:
                     # field_dict[key.strip()] = val.strip(", ")
                     field_dict[key.strip()] = val
