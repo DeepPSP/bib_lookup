@@ -1,11 +1,11 @@
 # bib_lookup
 
-![pytest](https://github.com/DeepPSP/bib_lookup/actions/workflows/run-pytest.yml/badge.svg)
+[![pytest](https://github.com/DeepPSP/bib_lookup/actions/workflows/run-pytest.yml/badge.svg)](https://github.com/DeepPSP/bib_lookup/actions/workflows/run-pytest.yml)
 [![codecov](https://codecov.io/github/DeepPSP/bib_lookup/branch/master/graph/badge.svg?token=H1B26Q3XWX)](https://codecov.io/github/DeepPSP/bib_lookup)
-![PyPI](https://img.shields.io/pypi/v/bib_lookup?style=flat-square)
+[![PyPI](https://img.shields.io/pypi/v/bib_lookup?style=flat-square)](https://pypi.org/project/bib-lookup/)
 [![DOI](https://zenodo.org/badge/476130336.svg)](https://zenodo.org/badge/latestdoi/476130336)
-![downloads](https://img.shields.io/pypi/dm/bib-lookup?style=flat-square)
-![license](https://img.shields.io/github/license/DeepPSP/bib_lookup?style=flat-square)
+[![downloads](https://img.shields.io/pypi/dm/bib-lookup?style=flat-square)](https://pypistats.org/packages/bib-lookup)
+[![license](https://img.shields.io/github/license/DeepPSP/bib_lookup?style=flat-square)](LICENSE)
 
 A useful tool for looking up Bib entries using DOI, or pubmed ID (or URL), or arXiv ID (or URL).
 
