@@ -18,14 +18,9 @@ import sys
 from pathlib import Path
 
 import sphinx_rtd_theme
-
-try:
-    import stanford_theme
-except Exception:
-    stanford_theme = None
-
-import recommonmark  # noqa: F401
-from recommonmark.transform import AutoStructify
+import sphinx_theme
+import sphinx_book_theme
+import pydata_sphinx_theme
 
 
 project_root = Path(__file__).resolve().parents[2]
@@ -56,11 +51,11 @@ extensions = [
     "sphinx.ext.viewcode",
     "sphinx.ext.intersphinx",
     "sphinx.ext.mathjax",
+    "sphinx_design",
     "nbsphinx",
-    "recommonmark",
     # 'sphinx.ext.autosectionlabel',
     "sphinx_multiversion",
-    "sphinx_toolbox.collapse",
+    # "sphinx_toolbox.collapse",  # replaced by dropdown of sphinx_design
     # "numpydoc",
     "sphinxcontrib.tikz",
     "sphinxcontrib.pseudocode",
@@ -88,12 +83,12 @@ autodoc_default_options = {
 html_context = {
     "display_github": True,  # Integrate GitHub
     "github_user": "wenh06",  # Username
-    "github_repo": "fl-sim",  # Repo name
+    "github_repo": "bib_lookup",  # Repo name
     "github_version": "master",  # Version
     "conf_py_path": "/docs/source/",  # Path in the checkout to the docs root
 }
 
-html_sidebars = {"*": ["versions.html"]}
+# html_sidebars = {"*": ["versions.html"]}
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ["_templates"]
@@ -120,21 +115,44 @@ napoleon_custom_sections = [
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
-#
-# html_theme = "alabaster"
+_theme_name = "sphinx_book_theme"  # "pydata_sphinx_theme", "stanford_theme", etc.
 
-if stanford_theme:
+if _theme_name == "stanford_theme":
     html_theme = "stanford_theme"
-    html_theme_path = [stanford_theme.get_html_theme_path()]
-else:
+    html_theme_path = [sphinx_theme.get_html_theme_path("stanford-theme")]
+    html_theme_options = {
+        "collapse_navigation": False,
+        "display_version": True,
+    }
+elif _theme_name == "sphinx_rtd_theme":
     html_theme = "sphinx_rtd_theme"
     html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
-# htmlhelp_basename = "Recommonmarkdoc"
-
-html_theme_options = {
-    "collapse_navigation": False,
-    "display_version": True,
-}
+    html_theme_options = {
+        "collapse_navigation": False,
+        "display_version": True,
+    }
+elif _theme_name == "sphinx_book_theme":
+    html_theme = "sphinx_book_theme"
+    html_theme_path = [sphinx_book_theme.get_html_theme_path()]
+    html_theme_options = {
+        "repository_url": "https://github.com/DeepPSP/bib_lookup",
+        "use_repository_button": True,
+        "use_issues_button": True,
+        "use_edit_page_button": True,
+        "use_download_button": True,
+        "use_fullscreen_button": True,
+        "path_to_docs": "docs/source",
+        "repository_branch": "master",
+    }
+elif _theme_name == "pydata_sphinx_theme":
+    html_theme = "pydata_sphinx_theme"
+    html_theme_path = [pydata_sphinx_theme.get_html_theme_path()]
+    html_theme_options = {
+        "collapse_navigation": False,
+        "display_version": True,
+    }
+else:
+    raise ValueError(f"Unknown theme name: {_theme_name}")
 
 
 # Add any paths that contain custom static files (such as style sheets) here,
@@ -153,13 +171,4 @@ linkcheck_ignore = [
 
 
 def setup(app):
-    app.add_config_value(
-        "recommonmark_config",
-        {
-            "url_resolver": lambda url: github_doc_root + url,  # noqa: F821
-            "auto_toc_tree_section": "Contents",
-        },
-        True,
-    )
-    app.add_transform(AutoStructify)
     app.add_css_file("css/custom.css")

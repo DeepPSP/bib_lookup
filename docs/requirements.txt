@@ -1,13 +1,15 @@
-sphinx
+sphinx<7.0
 nbsphinx
 sphinx-theme
 pydata-sphinx-theme
-sphinx-autobuild
 sphinx-rtd-theme
+sphinx-book-theme
+sphinx-autobuild
 sphinx-markdown-tables
 sphinx-copybutton
 sphinx-multiversion
-sphinx-toolbox
+# sphinx-toolbox  # replaced by dropdown of sphinx_design
+sphinx-design
 sphinxcontrib-napoleon
 sphinxcontrib-tikz
 sphinxcontrib-bibtex
