@@ -19,24 +19,24 @@ from collections import OrderedDict
 from copy import deepcopy
 from pathlib import Path
 from string import punctuation
-from typing import Union, Optional, Tuple, List, Sequence, Dict
+from typing import Dict, List, Optional, Sequence, Tuple, Union
 
-import requests
 import feedparser
+import requests
 
-from ._bib import BibItem, DF_BIB_ENTRY_TYPES, BIB_FIELDS
-from ._const import CONFIG_FILE as _CONFIG_FILE, DEFAULT_CONFIG as _DEFAULT_CONFIG
+from ._bib import BIB_FIELDS, DF_BIB_ENTRY_TYPES, BibItem
+from ._const import CONFIG_FILE as _CONFIG_FILE
+from ._const import DEFAULT_CONFIG as _DEFAULT_CONFIG
 from .utils import (
-    is_notebook,
+    NETWORK_ERROR_MESSAGES,
     ReprMixin,
     color_text,
+    gather_tex_source_files_in_one,
+    is_notebook,
     md_text,
     printmd,
     str2bool,
-    gather_tex_source_files_in_one,
-    NETWORK_ERROR_MESSAGES,
 )
-
 
 __all__ = [
     "BibLookup",
@@ -196,13 +196,9 @@ class BibLookup(ReprMixin):
             "left-middle",
             "left_middle",
         ], f"`align` must be one of ['middle', 'left', 'left-middle', 'left_middle'], but got `{self.align}`"
-        self.output_file = (
-            Path(output_file).resolve() if output_file is not None else None
-        )
+        self.output_file = Path(output_file).resolve() if output_file is not None else None
         if self.output_file is not None:
-            assert (
-                self.output_file.suffix == ".bib"
-            ), f"`output_file` must be a .bib file, but got `{self.output_file}`"
+            assert self.output_file.suffix == ".bib", f"`output_file` must be a .bib file, but got `{self.output_file}`"
             self.output_file.parent.mkdir(parents=True, exist_ok=True)
         self.__cached_lookup_results = OrderedDict()
         self.email = email or bl_config["email"]
@@ -216,9 +212,7 @@ class BibLookup(ReprMixin):
         # NOTE when applying `re.search`, all strings are converted to lower cases
         # DOI examples:
         # "10.7555/JBR.28.20130191" (a counter example that several bib fields are missing)
-        self.__doi_pattern_prefix = (
-            "doi[\\s]*:[\\s]*|(?:https?:\\/\\/)?(?:dx\\.)?doi\\.org\\/"
-        )
+        self.__doi_pattern_prefix = "doi[\\s]*:[\\s]*|(?:https?:\\/\\/)?(?:dx\\.)?doi\\.org\\/"
         self.__doi_pattern = f"^(?:{self.__doi_pattern_prefix})?10\\..+\\/.+$"
         # PubMed examples:
         # "22331878" or
@@ -226,25 +220,15 @@ class BibLookup(ReprMixin):
         self.__pmid_pattern_prefix = f"pmid{colon}|pmcid{colon}"  # and pmcid
         # self.__pmid_pattern = f"^(?:{self.__pmid_pattern_prefix})?(?:\\d+|pmc\\d+(?:\\.\\d+)?)$"
         self.__pmurl_pattern_prefix = (
-            "(?:https?:\\/\\/)?(?:pubmed\\.ncbi\\.nlm\\.nih"
-            "\\.gov\\/|www\\.ncbi\\.nlm\\.nih\\.gov\\/pubmed\\/)"
+            "(?:https?:\\/\\/)?(?:pubmed\\.ncbi\\.nlm\\.nih" "\\.gov\\/|www\\.ncbi\\.nlm\\.nih\\.gov\\/pubmed\\/)"
         )
         # self.__pmurl_pattern = f"^(?:{self.__pmurl_pattern_prefix})?(?:\\d+|pmc\\d+(?:\\.\\d+)?)(?:\\/)?$"
-        self.__pm_pattern_prefix = (
-            f"{self.__pmurl_pattern_prefix}|{self.__pmid_pattern_prefix}"
-        )
-        self.__pm_pattern = (
-            f"^(?:{self.__pm_pattern_prefix})?(?:\\d+|pmc\\d+(?:\\.\\d+)?)(?:\\/)?$"
-        )
+        self.__pm_pattern_prefix = f"{self.__pmurl_pattern_prefix}|{self.__pmid_pattern_prefix}"
+        self.__pm_pattern = f"^(?:{self.__pm_pattern_prefix})?(?:\\d+|pmc\\d+(?:\\.\\d+)?)(?:\\/)?$"
         # arXiv examples:
         # "arXiv:1501.00001v1", "arXiv:cs/0012022"
-        self.__arxiv_pattern_prefix = (
-            f"((?:(?:(?:https?:\\/\\/)?arxiv.org\\/)?abs\\/)|(arxiv{colon}))"
-        )
-        self.__arxiv_pattern = (
-            f"^(?:{self.__arxiv_pattern_prefix})?"
-            "(?:([\\w\\-]+\\/\\d+)|(\\d+\\.\\d+(v(\\d+))?))$"
-        )
+        self.__arxiv_pattern_prefix = f"((?:(?:(?:https?:\\/\\/)?arxiv.org\\/)?abs\\/)|(arxiv{colon}))"
+        self.__arxiv_pattern = f"^(?:{self.__arxiv_pattern_prefix})?" "(?:([\\w\\-]+\\/\\d+)|(\\d+\\.\\d+(v(\\d+))?))$"
         # self.__arxiv_pattern_old = f"^(?:{self.__arxiv_pattern_prefix})?[\\w\\-]+\\/\\d+$"
         self.__default_err = "Not Found"
         self.__network_err = "Network Error"
@@ -258,8 +242,7 @@ class BibLookup(ReprMixin):
         self._format = bl_config["format"].lower()
         if self._format != "bibtex" and not self._arxiv2doi:
             warnings.warn(
-                f"format `{self._format}` is supported only when `arxiv2doi` is True. "
-                "`arxiv2doi` is set to True.",
+                f"format `{self._format}` is supported only when `arxiv2doi` is True. " "`arxiv2doi` is set to True.",
                 RuntimeWarning,
             )
             self._arxiv2doi = True
@@ -368,9 +351,7 @@ class BibLookup(ReprMixin):
         format = self._format if format is None else format
         style = self._style if style is None else style
         if isinstance(identifier, Path):
-            identifier = [
-                line for line in identifier.read_text().splitlines() if len(line) > 0
-            ]
+            identifier = [line for line in identifier.read_text().splitlines() if len(line) > 0]
             return self(
                 identifier,
                 align,
@@ -405,9 +386,7 @@ class BibLookup(ReprMixin):
             ), f"`identifier` must be a string or a sequence of strings, but got `{identifier}`"
             if label is not None:
                 assert (
-                    not isinstance(label, str)
-                    and len(label) == len(identifier)
-                    and all([isinstance(i, str) for i in label])
+                    not isinstance(label, str) and len(label) == len(identifier) and all([isinstance(i, str) for i in label])
                 ), "`label` must be a sequence of strings of the same length as `identifier`"
             else:
                 label = [None] * len(identifier)
@@ -445,13 +424,9 @@ class BibLookup(ReprMixin):
                     for idx, item in enumerate(identifier)
                 ).strip("\n")
         else:
-            raise TypeError(
-                f"`identifier` must be a string or a sequence of strings, but got `{identifier}`."
-            )
+            raise TypeError(f"`identifier` must be a string or a sequence of strings, but got `{identifier}`.")
 
-        category, feed_content, idtf = self._obtain_feed_content(
-            identifier, arxiv2doi, format, style, timeout
-        )
+        category, feed_content, idtf = self._obtain_feed_content(identifier, arxiv2doi, format, style, timeout)
         if category != "doi" and format not in ["bibentry", "bibtex"]:
             warnings.warn(
                 f"format `{format}` is not supported for `{category}`, thus ignored.",
@@ -463,9 +438,7 @@ class BibLookup(ReprMixin):
             res = self._handle_pm(feed_content)
         elif category == "arxiv":
             res = self._handle_arxiv(feed_content)
-        elif category == "error" or re.findall(
-            "|".join(self.__exceptional_doi_domains), idtf
-        ):
+        elif category == "error" or re.findall("|".join(self.__exceptional_doi_domains), idtf):
             res = self.default_err
 
         res = self._handle_network_error(res)
@@ -479,9 +452,7 @@ class BibLookup(ReprMixin):
 
         if self.verbose >= 1:
             if res in self.lookup_errors:
-                print_func(
-                    process_text(res, self.__err_color, font_size=self.__err_fontsize)
-                )
+                print_func(process_text(res, self.__err_color, font_size=self.__err_fontsize))
             else:
                 print(res)
         self.verbose = original_verbose
@@ -596,9 +567,7 @@ class BibLookup(ReprMixin):
         if self.verbose > 1:
             print_func(f"category = {process_text(category, self.__info_color)}")
             print_func(f"feed content = {fc}")
-            print_func(
-                f"simplified identifier = {process_text(idtf, self.__info_color)}"
-            )
+            print_func(f"simplified identifier = {process_text(idtf, self.__info_color)}")
         return category, fc, idtf
 
     def _handle_doi(self, feed_content: dict) -> str:
@@ -655,9 +624,7 @@ class BibLookup(ReprMixin):
         if self.verbose > 3:
             print_func(f"doi = {doi}")
         if doi:
-            _, feed_content, _ = self._obtain_feed_content(
-                doi, timeout=feed_content.get("timeout", None)
-            )
+            _, feed_content, _ = self._obtain_feed_content(doi, timeout=feed_content.get("timeout", None))
             res = self._handle_doi(feed_content)
         else:
             res = self.default_err
@@ -701,9 +668,7 @@ class BibLookup(ReprMixin):
         res["year"] = year
         res["month"] = parsed["published_parsed"].tm_mon
         res["journal"] = f"arXiv preprint arXiv:{arxiv_id}"
-        res[
-            "label"
-        ] = f"{parsed['authors'][0]['name'].split(' ')[-1].lower()}{year}_{arxiv_id}"
+        res["label"] = f"{parsed['authors'][0]['name'].split(' ')[-1].lower()}{year}_{arxiv_id}"
         res["entry_type"] = "article"
         return res
 
@@ -779,12 +744,9 @@ class BibLookup(ReprMixin):
             lines = [
                 line.strip()
                 for line in res.split("\n")
-                if len(line.strip()) > 0
-                and not re.match(self._comment_pattern, line.strip())
+                if len(line.strip()) > 0 and not re.match(self._comment_pattern, line.strip())
             ]
-            header_dict = list(re.finditer(self.bib_header_pattern, lines[0]))[
-                0
-            ].groupdict()
+            header_dict = list(re.finditer(self.bib_header_pattern, lines[0]))[0].groupdict()
             field_dict = OrderedDict()
             for line in lines[1:-1]:
                 key, *val = line.strip().split("=")  # urls might contain "="
@@ -797,24 +759,14 @@ class BibLookup(ReprMixin):
                     key = list(field_dict.keys())[-1]
                     field_dict[key] += f" {line.strip()}"
         elif isinstance(res, dict):
-            header_dict = {
-                k.strip(): str(v).strip(", ")
-                for k, v in res.items()
-                if k in ["entry_type", "label"]
-            }
+            header_dict = {k.strip(): str(v).strip(", ") for k, v in res.items() if k in ["entry_type", "label"]}
             field_dict = OrderedDict(
-                {
-                    k.strip(): str(v).strip(", ")
-                    for k, v in res.items()
-                    if k not in ["entry_type", "label"]
-                }
+                {k.strip(): str(v).strip(", ") for k, v in res.items() if k not in ["entry_type", "label"]}
             )
 
         # replace the "_" in title with "\_"
         if "title" in field_dict:
-            field_dict["title"] = (
-                field_dict["title"].replace("_", r"\_").replace(r"\\_", r"\_")
-            )
+            field_dict["title"] = field_dict["title"].replace("_", r"\_").replace(r"\\_", r"\_")
 
         # if label is provided, overwrite the label in the header
         if label:
@@ -823,11 +775,7 @@ class BibLookup(ReprMixin):
 
         # all field names to lower case,
         # and ignore the fields in the list `_ignore_fields`
-        field_dict = {
-            k.lower(): v
-            for k, v in field_dict.items()
-            if k.lower() not in _ignore_fields
-        }
+        field_dict = {k.lower(): v for k, v in field_dict.items() if k.lower() not in _ignore_fields}
 
         # re-order the fields according to the list `self.ordering`
         _ordering = self.ordering + [k for k in field_dict if k not in self.ordering]
@@ -947,9 +895,7 @@ class BibLookup(ReprMixin):
         _output_file = output_file or self.output_file
         assert _output_file is not None, "`output_file` is not specified"
         _output_file = Path(_output_file).resolve()
-        assert (
-            _output_file.suffix == ".bib"
-        ), f"`output_file` must be a .bib file, but got `{_output_file}`"
+        assert _output_file.suffix == ".bib", f"`output_file` must be a .bib file, but got `{_output_file}`"
         _output_file.parent.mkdir(parents=True, exist_ok=True)
 
         if identifiers is None:
@@ -958,9 +904,7 @@ class BibLookup(ReprMixin):
             identifiers = [self[identifiers]]
         elif isinstance(identifiers, str):
             identifiers = [identifiers]
-        elif isinstance(identifiers, Sequence) and all(
-            [isinstance(i, int) for i in identifiers]
-        ):
+        elif isinstance(identifiers, Sequence) and all([isinstance(i, int) for i in identifiers]):
             identifiers = [self[i] for i in identifiers]
         assert isinstance(identifiers, Sequence) and all(
             [isinstance(i, str) for i in identifiers]
@@ -977,10 +921,7 @@ class BibLookup(ReprMixin):
                     [
                         self[i].__eq__(
                             bib_item,
-                            strict=(
-                                isinstance(skip_existing, str)
-                                and skip_existing.lower() == "strict"
-                            ),
+                            strict=(isinstance(skip_existing, str) and skip_existing.lower() == "strict"),
                         )
                         for bib_item in existing_bib_items
                     ]
@@ -996,14 +937,9 @@ class BibLookup(ReprMixin):
             return
 
         with open(_output_file, "a") as f:
-            f.writelines(
-                "\n".join([str(self.__cached_lookup_results[i]) for i in identifiers])
-                + "\n"
-            )
+            f.writelines("\n".join([str(self.__cached_lookup_results[i]) for i in identifiers]) + "\n")
 
-        print_func(
-            f"Bib items written to `{process_text(str(_output_file), self.__info_color)}`"
-        )
+        print_func(f"Bib items written to `{process_text(str(_output_file), self.__info_color)}`")
 
         # remove saved bib items from the cache
         for i in identifiers:
@@ -1035,9 +971,7 @@ class BibLookup(ReprMixin):
         _bib_file = bib_file or self.output_file
         assert _bib_file is not None, "`bib_file` is not specified"
         _bib_file = Path(_bib_file).resolve()
-        assert (
-            _bib_file.suffix == ".bib"
-        ), f"`bib_file` must be a .bib file, but got `{_bib_file}`"
+        assert _bib_file.suffix == ".bib", f"`bib_file` must be a .bib file, but got `{_bib_file}`"
         if not _bib_file.exists():
             return []
         bib_items = []
@@ -1086,9 +1020,7 @@ class BibLookup(ReprMixin):
             identifiers = [self[identifiers]]
         elif isinstance(identifiers, str):
             identifiers = [identifiers]
-        elif isinstance(identifiers, Sequence) and all(
-            [isinstance(i, int) for i in identifiers]
-        ):
+        elif isinstance(identifiers, Sequence) and all([isinstance(i, int) for i in identifiers]):
             identifiers = [self[i] for i in identifiers]
         assert isinstance(identifiers, Sequence) and all(
             [isinstance(i, str) for i in identifiers]
@@ -1124,9 +1056,7 @@ class BibLookup(ReprMixin):
         if string_format:
             return "\n".join(
                 [
-                    f"% index: {idx}\n"
-                    + f"% identifier: {self[item].identifier}\n"
-                    + str(self[item])
+                    f"% index: {idx}\n" + f"% identifier: {self[item].identifier}\n" + str(self[item])
                     for idx, item in enumerate(self)
                 ]
             )
@@ -1140,9 +1070,7 @@ class BibLookup(ReprMixin):
             assert index in self.__cached_lookup_results, f"`{index}` not found"
             return self.__cached_lookup_results[index]
         else:
-            raise TypeError(
-                f"`index` should be an integer or a string, not `{type(index)}`"
-            )
+            raise TypeError(f"`index` should be an integer or a string, not `{type(index)}`")
 
     def __len__(self) -> int:
         return len(self.__cached_lookup_results)
@@ -1169,9 +1097,7 @@ class BibLookup(ReprMixin):
         """
         _bib_file = Path(bib_file).resolve()
         assert _bib_file.exists() and _bib_file.suffix == ".bib", "Not a valid Bib file"
-        bib_items, line_numbers = self.read_bib_file(
-            bib_file=bib_file, cache=False, return_line_numbers=True
-        )
+        bib_items, line_numbers = self.read_bib_file(bib_file=bib_file, cache=False, return_line_numbers=True)
         err_lines = set()
         for ln, bi in zip(line_numbers, bib_items):
             try:
@@ -1256,8 +1182,7 @@ class BibLookup(ReprMixin):
         _punctuation = "".join([s for s in punctuation if s not in "{}"])
         # citation pattern: https://fr.overleaf.com/learn/latex/Natbib_citation_styles
         citation_pattern = (
-            "\\\\(?:paren)?cite(?:t|p|t\\*|p\\*|author|year)?(?:(?:\\[.+\\])?)?"
-            f"\\{{(?P<label>[\\w\\s{_punctuation}]+)\\}}"
+            "\\\\(?:paren)?cite(?:t|p|t\\*|p\\*|author|year)?(?:(?:\\[.+\\])?)?" f"\\{{(?P<label>[\\w\\s{_punctuation}]+)\\}}"
         )
         for tex_source in tex_sources:
             if tex_source.is_file() and len(tex_sources) == 1:
@@ -1273,9 +1198,7 @@ class BibLookup(ReprMixin):
                 for tex_file in tex_source.rglob("*.tex"):
                     for items in re.findall(citation_pattern, tex_file.read_text()):
                         cited_labels.update([item.strip() for item in items.split(",")])
-        cited_identifiers = [
-            idtf for idtf in ref_bl if ref_bl[idtf].label in cited_labels
-        ]
+        cited_identifiers = [idtf for idtf in ref_bl if ref_bl[idtf].label in cited_labels]
 
         # write to output file
         ref_bl.save(cited_identifiers, output_file)

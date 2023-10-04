@@ -5,14 +5,7 @@ from pathlib import Path
 
 import pytest
 
-from bib_lookup.utils import (
-    color_text,
-    md_text,
-    printmd,
-    str2bool,
-    gather_tex_source_files_in_one,
-)
-
+from bib_lookup.utils import color_text, gather_tex_source_files_in_one, md_text, printmd, str2bool
 
 _SAMPLE_DIR = Path(__file__).resolve().parents[1] / "sample-files"
 
@@ -38,9 +31,7 @@ def test_color_text():
         ct = color_text("test", color=color, method="file")
     ct = color_text("test", color=("red", "green", "blue"))
 
-    with pytest.raises(
-        TypeError, match="Cannot color text with provided color of type `.+`"
-    ):
+    with pytest.raises(TypeError, match="Cannot color text with provided color of type `.+`"):
         ct = color_text("test", color=1)
 
     with pytest.raises(ValueError, match="unknown text color `xxx`"):
@@ -103,46 +94,28 @@ def test_gather_tex_source_files_in_one():
     output_file = _TMP_DIR / "sample-source-in-one.tex"
     if output_file.exists():
         output_file.unlink()
-    ret = gather_tex_source_files_in_one(
-        entry_file, write_file=True, output_file=output_file
-    )
+    ret = gather_tex_source_files_in_one(entry_file, write_file=True, output_file=output_file)
     assert ret == str(output_file)
     assert output_file.is_file()
-    assert (
-        output_file.read_text().splitlines()[0]
-        == entry_file.read_text().splitlines()[0]
-    )
+    assert output_file.read_text().splitlines()[0] == entry_file.read_text().splitlines()[0]
 
     default_output_file = entry_file.parent / f"{entry_file.stem}_in_one.tex"
     assert not default_output_file.exists()
     ret = gather_tex_source_files_in_one(entry_file, write_file=True)
     assert ret == str(default_output_file)
     assert default_output_file.is_file()
-    assert (
-        default_output_file.read_text().splitlines()[0]
-        == entry_file.read_text().splitlines()[0]
-    )
+    assert default_output_file.read_text().splitlines()[0] == entry_file.read_text().splitlines()[0]
     default_output_file.unlink()
     del default_output_file
 
     with pytest.raises(
         ValueError,
-        match=(
-            "The entry file and the output file are the same, "
-            "which is not allowed for security reasons."
-        ),
+        match=("The entry file and the output file are the same, " "which is not allowed for security reasons."),
     ):
-        gather_tex_source_files_in_one(
-            entry_file, write_file=True, output_file=entry_file
-        )
+        gather_tex_source_files_in_one(entry_file, write_file=True, output_file=entry_file)
 
     with pytest.raises(
         FileExistsError,
-        match=(
-            "The output file exists. "
-            "If you want to overwrite it, you should delete it manually first."
-        ),
+        match=("The output file exists. " "If you want to overwrite it, you should delete it manually first."),
     ):
-        gather_tex_source_files_in_one(
-            entry_file, write_file=True, output_file=output_file
-        )
+        gather_tex_source_files_in_one(entry_file, write_file=True, output_file=output_file)

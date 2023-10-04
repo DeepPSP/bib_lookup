@@ -2,9 +2,9 @@
 """
 
 import re
-from pathlib import Path
 from enum import Enum
-from typing import List, Optional, Any, Union
+from pathlib import Path
+from typing import Any, List, Optional, Union
 
 try:
     from IPython import get_ipython
@@ -134,9 +134,7 @@ class _ANSI_ESCAPE_CODES(Enum):
     STOP = "\033[0m"
 
 
-def color_text(
-    text: str, color: Optional[str] = None, method: str = "ansi", **kwargs: Any
-) -> str:
+def color_text(text: str, color: Optional[str] = None, method: str = "ansi", **kwargs: Any) -> str:
     """Color the text.
 
     Parameters
@@ -161,9 +159,7 @@ def color_text(
     if color is None:
         return text
     if not isinstance(color, (str, tuple)):
-        raise TypeError(
-            f"Cannot color text with provided color of type `{type(color)}`"
-        )
+        raise TypeError(f"Cannot color text with provided color of type `{type(color)}`")
     if isinstance(color, tuple):
         if len(color) > 1:
             text = color_text(text, color[1:], method)
@@ -235,9 +231,7 @@ def md_text(
     """
     assert method in ["html", "md", "markdown"], f"unknown method `{method}`"
     color_style = f"color: {color}" if color is not None else ""
-    font_family_style = (
-        f"font-family: '{font_family}'" if font_family is not None else ""
-    )
+    font_family_style = f"font-family: '{font_family}'" if font_family is not None else ""
     font_size_style = f"font-size: {str(font_size)}" if font_size is not None else ""
     span_style = "; ".join([color_style, font_size_style, font_family_style])
     md_str = f"""<span style="{span_style}">{text}</span>"""
@@ -349,23 +343,15 @@ def gather_tex_source_files_in_one(
         if len(input_items) == 0:
             break
         for item in input_items:
-            content = content.replace(
-                f"\\input{{{item}}}", (root / item).with_suffix(".tex").read_text()
-            )
+            content = content.replace(f"\\input{{{item}}}", (root / item).with_suffix(".tex").read_text())
     if not write_file:
         return content
     if output_file is None:
         output_file = root / f"{Path(entry_file).stem}_in_one.tex"
     if Path(entry_file).resolve() == Path(output_file).resolve():
-        raise ValueError(
-            "The entry file and the output file are the same, "
-            "which is not allowed for security reasons."
-        )
+        raise ValueError("The entry file and the output file are the same, " "which is not allowed for security reasons.")
     if Path(output_file).exists():
-        raise FileExistsError(
-            "The output file exists. "
-            "If you want to overwrite it, you should delete it manually first."
-        )
+        raise FileExistsError("The output file exists. " "If you want to overwrite it, you should delete it manually first.")
     Path(output_file).write_text(content, encoding="utf-8")
     return str(output_file)
 

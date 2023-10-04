@@ -1,11 +1,11 @@
 """
 """
 
-import setuptools
 from pathlib import Path
 
-from bib_lookup import __version__
+import setuptools
 
+from bib_lookup import __version__
 
 cwd = Path(__file__).absolute().parent
 
@@ -13,12 +13,13 @@ long_description = (cwd / "README.md").read_text(encoding="utf-8")
 
 extras = {}
 extras["test"] = [
-    "black==22.3.0",
+    "black==22.8.0",
     "flake8",
     "pytest",
     "pytest-xdist",
     "pytest-cov",
     "IPython",
+    "pre-commit",
 ]
 extras["dev"] = extras["test"]
 

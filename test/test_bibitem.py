@@ -6,7 +6,7 @@ from collections import OrderedDict
 
 import pytest
 
-from bib_lookup._bib import BibItem, BIB_ENTRY_TYPES, BIB_FIELDS
+from bib_lookup._bib import BIB_ENTRY_TYPES, BIB_FIELDS, BibItem
 
 
 class TestBibItem:
@@ -140,9 +140,7 @@ class TestBibItem:
             assert bibitem_1.__eq__(self.bibitem, strict=True)
             assert self.bibitem.__eq__(bibitem_1, strict=True)
 
-        with pytest.raises(
-            AssertionError, match="`self.strict_eq_fields` must be a subset of `.+`"
-        ):
+        with pytest.raises(AssertionError, match="`self.strict_eq_fields` must be a subset of `.+`"):
             bibitem_1 = BibItem(
                 identifier=self.identifier,
                 entry_type=self.entry_type,
@@ -152,9 +150,7 @@ class TestBibItem:
             )
             bibitem_1.__eq__(self.bibitem, strict=True)
 
-        with pytest.raises(
-            AssertionError, match="`other.strict_eq_fields` must be a subset of `.+`"
-        ):
+        with pytest.raises(AssertionError, match="`other.strict_eq_fields` must be a subset of `.+`"):
             bibitem_1 = BibItem(
                 identifier=self.identifier,
                 entry_type=self.entry_type,
@@ -193,9 +189,7 @@ class TestBibItem:
         with pytest.raises(AssertionError, match="`xxx` is not a valid entry type"):
             BibItem(identifier=self.identifier, entry_type="xxx", fields=self.fields)
 
-        with pytest.raises(
-            AssertionError, match="`fields` must be `OrderedDict`, but got `.+`"
-        ):
+        with pytest.raises(AssertionError, match="`fields` must be `OrderedDict`, but got `.+`"):
             BibItem(
                 identifier=self.identifier,
                 entry_type=self.entry_type,
@@ -213,9 +207,7 @@ class TestBibItem:
                 align="xxx",
             )
 
-        with pytest.raises(
-            AssertionError, match="required field \042.+\042 is missing"
-        ):
+        with pytest.raises(AssertionError, match="required field \042.+\042 is missing"):
             tmp = self.fields.copy()
             tmp.pop("title")
             tmp.pop("author")
@@ -246,9 +238,7 @@ class TestBibItem:
         ):
             BibItem.help(1)
 
-        with pytest.raises(
-            AssertionError, match="`xxx` is not a valid entry type or field name"
-        ):
+        with pytest.raises(AssertionError, match="`xxx` is not a valid entry type or field name"):
             BibItem.help("xxx")
 
         with pytest.raises(

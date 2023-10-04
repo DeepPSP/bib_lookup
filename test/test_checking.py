@@ -7,7 +7,6 @@ import pytest
 
 from bib_lookup import BibLookup
 
-
 _CWD = Path(__file__).resolve().parent
 
 _INPUT_FILE = _CWD.parent / "sample-files" / "invalid_items.bib"
@@ -18,9 +17,7 @@ _TMP_DIR.mkdir(exist_ok=True)
 _OUTPUT_FILE = _TMP_DIR / "test_checking_output.bib"
 
 
-default_bl = BibLookup(
-    output_file=_OUTPUT_FILE, email="someone@gmail.com", ignore_fields="doi"
-)
+default_bl = BibLookup(output_file=_OUTPUT_FILE, email="someone@gmail.com", ignore_fields="doi")
 default_bl("10.1088/1361-6579/ac9451")
 
 
@@ -54,12 +51,8 @@ def test_properties():
     assert isinstance(default_bl.default_err, str)
     assert isinstance(default_bl.network_err, str)
     assert isinstance(default_bl.timeout_err, str)
-    assert isinstance(default_bl.lookup_errors, list) and all(
-        isinstance(err, str) for err in default_bl.lookup_errors
-    )
-    assert isinstance(default_bl.ignore_fields, list) and all(
-        isinstance(field, str) for field in default_bl.ignore_fields
-    )
+    assert isinstance(default_bl.lookup_errors, list) and all(isinstance(err, str) for err in default_bl.lookup_errors)
+    assert isinstance(default_bl.ignore_fields, list) and all(isinstance(field, str) for field in default_bl.ignore_fields)
 
 
 def test_warnings():
@@ -68,9 +61,7 @@ def test_warnings():
         match="format `text` is supported only when `arxiv2doi` is True\\. `arxiv2doi` is set to True",
     ):
         BibLookup(format="text", arxiv2doi=False)
-    with pytest.warns(
-        RuntimeWarning, match="format `text` is not supported for `pm`, thus ignored"
-    ):
+    with pytest.warns(RuntimeWarning, match="format `text` is not supported for `pm`, thus ignored"):
         default_bl("PMID: 35344711", format="text")
     with pytest.warns(
         RuntimeWarning,
@@ -86,9 +77,7 @@ def test_errors():
     ):
         default_bl(1)
 
-    with pytest.raises(
-        TypeError, match="`index` should be an integer or a string, not `.+`"
-    ):
+    with pytest.raises(TypeError, match="`index` should be an integer or a string, not `.+`"):
         default_bl[1.0]
     with pytest.raises(AssertionError, match="`.+` not found"):
         default_bl["not-exist"]
@@ -138,9 +127,7 @@ def test_errors():
         bl("10.1088/1361-6579/ac9451")
         bl.save()
 
-    with pytest.raises(
-        AssertionError, match="`output_file` must be a .bib file, but got `.+`"
-    ):
+    with pytest.raises(AssertionError, match="`output_file` must be a .bib file, but got `.+`"):
         default_bl.save(output_file=_TMP_DIR / "output.txt")
 
     with pytest.raises(
@@ -159,9 +146,7 @@ def test_errors():
         bl = BibLookup()
         bl.read_bib_file()
 
-    with pytest.raises(
-        AssertionError, match="`bib_file` must be a .bib file, but got `.+`"
-    ):
+    with pytest.raises(AssertionError, match="`bib_file` must be a .bib file, but got `.+`"):
         default_bl.read_bib_file(bib_file=_TMP_DIR / "output.txt")
 
     feed_dict = dict(

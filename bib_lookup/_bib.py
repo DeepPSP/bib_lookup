@@ -8,9 +8,9 @@ and from https://www.openoffice.org/bibliographic/bibtex-defs.html
 import calendar
 import re
 import warnings
-from time import strptime
 from collections import OrderedDict
-from typing import Optional, Union, Any, Sequence, Set
+from time import strptime
+from typing import Any, Optional, Sequence, Set, Union
 
 import pandas as pd
 
@@ -53,13 +53,9 @@ class BibItem(object):
     ) -> None:
         self.__identifier = identifier
         self.__entry_type = entry_type.lower()
-        assert (
-            self.entry_type in BIB_ENTRY_TYPES
-        ), f"`{self.entry_type}` is not a valid entry type"
+        assert self.entry_type in BIB_ENTRY_TYPES, f"`{self.entry_type}` is not a valid entry type"
         self.__fields = fields
-        assert isinstance(
-            self.__fields, OrderedDict
-        ), f"`fields` must be `OrderedDict`, but got `{type(self.__fields)}`"
+        assert isinstance(self.__fields, OrderedDict), f"`fields` must be `OrderedDict`, but got `{type(self.__fields)}`"
         self.__double_braces_flags = dict()
         self.__normalize_fields(check_fields)
         self.__label = label  # TODO: consider how to add label when it's None
@@ -67,12 +63,9 @@ class BibItem(object):
             self.__label = self.identifier
         self.__align = align.lower()
         assert self.__align in ["middle", "left", "left-middle", "left_middle"], (
-            "`align` must be one of ['middle', 'left', 'left-middle', 'left_middle'], "
-            f"but got `{self.align}`"
+            "`align` must be one of ['middle', 'left', 'left-middle', 'left_middle'], " f"but got `{self.align}`"
         )
-        self.__strict_eq_fields = set(
-            kwargs.get("strict_eq_fields", ["author", "title", "journal"])
-        )
+        self.__strict_eq_fields = set(kwargs.get("strict_eq_fields", ["author", "title", "journal"]))
 
     @property
     def identifier(self) -> str:
@@ -113,8 +106,7 @@ class BibItem(object):
         """
         self.__align = align.lower()
         assert self.__align in ["middle", "left", "left-middle", "left_middle"], (
-            "`align` must be one of ['middle', 'left', 'left-middle', 'left_middle'], "
-            f"but got `{self.align}`"
+            "`align` must be one of ['middle', 'left', 'left-middle', 'left_middle'], " f"but got `{self.align}`"
         )
 
     def __normalize_fields(self, check_fields: bool = False) -> None:
@@ -143,9 +135,7 @@ class BibItem(object):
             v = str(v).strip(" ,")  # DO NOT strip "{}"
             self.__double_braces_flags[k] = False
             braces_count = 0
-            while all([v.startswith("{"), v.endswith("}")]) or all(
-                [v.startswith('"'), v.endswith('"')]
-            ):
+            while all([v.startswith("{"), v.endswith("}")]) or all([v.startswith('"'), v.endswith('"')]):
                 v = v[1:-1]
                 braces_count += 1
             if braces_count >= 2:
@@ -162,9 +152,7 @@ class BibItem(object):
 
     def check_required_fields(self) -> None:
         """Check if the bib item contains all required fields."""
-        required_fields = DF_BIB_ENTRY_TYPES[
-            DF_BIB_ENTRY_TYPES["entry_type"] == self.entry_type
-        ].iloc[0]["required_fields"]
+        required_fields = DF_BIB_ENTRY_TYPES[DF_BIB_ENTRY_TYPES["entry_type"] == self.entry_type].iloc[0]["required_fields"]
         for item in required_fields:
             # "xx|yy" means "xx or yy"
             # "xx+|yy" means "xx and/or yy"
@@ -189,30 +177,14 @@ class BibItem(object):
         # align the fields
         max_key_len = max([len(k) for k in field_dict.keys()])
         if self.align == "middle":
-            lines = (
-                [header]
-                + [
-                    f"{' '*(2+max_key_len-len(k))}{k} = {v}"
-                    for k, v in field_dict.items()
-                ]
-                + ["}"]
-            )
+            lines = [header] + [f"{' '*(2+max_key_len-len(k))}{k} = {v}" for k, v in field_dict.items()] + ["}"]
         elif self.align == "left":
-            lines = (
-                [header] + [f"{' '*2}{k} = {v}" for k, v in field_dict.items()] + ["}"]
-            )
+            lines = [header] + [f"{' '*2}{k} = {v}" for k, v in field_dict.items()] + ["}"]
         elif self.align in [
             "left-middle",
             "left_middle",
         ]:
-            lines = (
-                [header]
-                + [
-                    f"{' '*2}{k}{' '*(1+max_key_len-len(k))}= {v}"
-                    for k, v in field_dict.items()
-                ]
-                + ["}"]
-            )
+            lines = [header] + [f"{' '*2}{k}{' '*(1+max_key_len-len(k))}= {v}" for k, v in field_dict.items()] + ["}"]
         return "\n".join(lines)
 
     __repr__ = __str__
@@ -238,12 +210,8 @@ class BibItem(object):
         ), f"`entries_or_fields` must be of type `str` or a sequence, but got `{type(entries_or_fields)}`"
         newline = "\n"
         for e in entries_or_fields:
-            assert (
-                e in BIB_ENTRY_TYPES or e in BIB_FIELDS
-            ), f"`{e}` is not a valid entry type or field name"
-            print(
-                f"{e}:{newline}    {BIB_ENTRY_TYPES[e] if e in BIB_ENTRY_TYPES else BIB_FIELDS[e]}{newline}"
-            )
+            assert e in BIB_ENTRY_TYPES or e in BIB_FIELDS, f"`{e}` is not a valid entry type or field name"
+            print(f"{e}:{newline}    {BIB_ENTRY_TYPES[e] if e in BIB_ENTRY_TYPES else BIB_FIELDS[e]}{newline}")
 
     def __eq__(self, other: "BibItem", strict: bool = False) -> bool:
         """Comparison method for `BibItem`.
@@ -360,12 +328,8 @@ class BibItem(object):
         if sum([hasattr(self, "title"), hasattr(other, "title")]) == 1:
             return False
         if hasattr(self, "title") and hasattr(other, "title"):
-            title = re.sub(
-                "\\s+", " ", re.sub("[^\\w\\s]", " ", self.title).lower().strip()
-            )
-            other_title = re.sub(
-                "\\s+", " ", re.sub("[^\\w\\s]", " ", other.title).lower().strip()
-            )
+            title = re.sub("\\s+", " ", re.sub("[^\\w\\s]", " ", self.title).lower().strip())
+            other_title = re.sub("\\s+", " ", re.sub("[^\\w\\s]", " ", other.title).lower().strip())
             return title == other_title
         return True  # both do not have `title` field
 
@@ -392,12 +356,8 @@ class BibItem(object):
         if sum([hasattr(self, "journal"), hasattr(other, "journal")]) == 1:
             return False
         if hasattr(self, "journal") and hasattr(other, "journal"):
-            journal = re.sub(
-                "\\s+", " ", re.sub("[^\\w\\s]", " ", self.journal).lower().strip()
-            )
-            other_journal = re.sub(
-                "\\s+", " ", re.sub("[^\\w\\s]", " ", other.journal).lower().strip()
-            )
+            journal = re.sub("\\s+", " ", re.sub("[^\\w\\s]", " ", self.journal).lower().strip())
+            other_journal = re.sub("\\s+", " ", re.sub("[^\\w\\s]", " ", other.journal).lower().strip())
             return journal == other_journal
         return True  # both do not have `journal` field
 
@@ -466,9 +426,7 @@ BIB_ENTRY_TYPES = {
     "video": "audiovisual recordings, typically on DVD, VHS cassette, or similar media",
 }
 
-DF_BIB_ENTRY_TYPES = pd.DataFrame(
-    [(k, v) for k, v in BIB_ENTRY_TYPES.items()], columns=["entry_type", "description"]
-)
+DF_BIB_ENTRY_TYPES = pd.DataFrame([(k, v) for k, v in BIB_ENTRY_TYPES.items()], columns=["entry_type", "description"])
 # fmt: off
 _required_fields = {
     # https://www.openoffice.org/bibliographic/bibtex-defs.html
@@ -507,12 +465,8 @@ _optional_fields = {
     "unpublished": ["month", "year", "key"],
 }
 # fmt: on
-DF_BIB_ENTRY_TYPES["required_fields"] = DF_BIB_ENTRY_TYPES.entry_type.apply(
-    lambda x: _required_fields.get(x, [])
-)
-DF_BIB_ENTRY_TYPES["optional_fields"] = DF_BIB_ENTRY_TYPES.entry_type.apply(
-    lambda x: _optional_fields.get(x, [])
-)
+DF_BIB_ENTRY_TYPES["required_fields"] = DF_BIB_ENTRY_TYPES.entry_type.apply(lambda x: _required_fields.get(x, []))
+DF_BIB_ENTRY_TYPES["optional_fields"] = DF_BIB_ENTRY_TYPES.entry_type.apply(lambda x: _optional_fields.get(x, []))
 
 
 BIB_FIELDS = {
@@ -632,6 +586,4 @@ BIB_FIELDS = {
     "primaryclass": "primary class, e.g. cs.CV",
 }
 
-DF_BIB_FIELDS = pd.DataFrame(
-    [(k, v) for k, v in BIB_FIELDS.items()], columns=["field", "description"]
-)
+DF_BIB_FIELDS = pd.DataFrame([(k, v) for k, v in BIB_FIELDS.items()], columns=["field", "description"])

@@ -7,7 +7,6 @@ import pytest
 
 from bib_lookup import BibLookup
 
-
 _CWD = Path(__file__).resolve().parent
 
 _SAMPLE_INPUT_FILE = _CWD.parent / "sample-files" / "sample_input.txt"
@@ -23,10 +22,7 @@ _LARGE_DATABASE_FILE = _CWD.parent / "sample-files" / "large_database.bib"
 _SOURCE_FILE = _CWD.parent / "sample-files" / "sample-source.tex"
 _SOURCE_FILE_LIST = [_SOURCE_FILE]
 _SOURCE_FILE_LIST.extend(
-    [
-        _CWD.parent / "sample-files" / f"sample-source-{item}.tex"
-        for item in ["sub1", "sub2", "sub2-1", "sub2-2"]
-    ]
+    [_CWD.parent / "sample-files" / f"sample-source-{item}.tex" for item in ["sub1", "sub2", "sub2-1", "sub2-2"]]
 )
 _SOURCE_FILE_LIST.append(_CWD.parent / "sample-files" / "sample-source-subdir")
 _SIMPLIFIED_OUTPUT_FILE = _CWD.parent / "tmp" / "test_io_simplified_output.bib"
@@ -51,9 +47,7 @@ def test_io_from_file():
 
     bib_items = bl.read_bib_file(_LARGE_DATABASE_FILE, cache=True)
     assert len(bib_items) == len(bl) == 609
-    special_item = [
-        item for item in bib_items if item.identifier == "dosovitskiy2021_vit"
-    ][0]
+    special_item = [item for item in bib_items if item.identifier == "dosovitskiy2021_vit"][0]
     # make sure that "=" is not escaped in the url field after reading from file
     assert special_item.url == "https://openreview.net/forum?id=YicbFdNTTy"
     bl.clear_cache()
@@ -91,9 +85,7 @@ def test_simplify_bib_file():
         bib_file=_LARGE_DATABASE_FILE,
         output_file=None,
     )
-    output_file = _LARGE_DATABASE_FILE.parent / (
-        _LARGE_DATABASE_FILE.stem + "_simplified.bib"
-    )
+    output_file = _LARGE_DATABASE_FILE.parent / (_LARGE_DATABASE_FILE.stem + "_simplified.bib")
     assert output_file.is_file()
     output_file.unlink()
     del output_file

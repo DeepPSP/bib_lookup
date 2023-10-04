@@ -10,20 +10,16 @@ from pathlib import Path
 
 import yaml
 
+from bib_lookup._const import CONFIG_FILE as _CONFIG_FILE
+from bib_lookup._const import DEFAULT_CONFIG as _DEFAULT_CONFIG
 from bib_lookup.bib_lookup import BibLookup
-from bib_lookup.version import __version__ as bl_version
 from bib_lookup.utils import str2bool
-from bib_lookup._const import (
-    CONFIG_FILE as _CONFIG_FILE,
-    DEFAULT_CONFIG as _DEFAULT_CONFIG,
-)
+from bib_lookup.version import __version__ as bl_version
 
 
 def main():
     """Command-line interface for the bib_lookup package."""
-    parser = argparse.ArgumentParser(
-        description="Look up a BibTeX entry from a DOI identifier, PMID (URL) or arXiv ID (URL)."
-    )
+    parser = argparse.ArgumentParser(description="Look up a BibTeX entry from a DOI identifier, PMID (URL) or arXiv ID (URL).")
     parser.add_argument(
         "identifiers",
         nargs=argparse.ZERO_OR_MORE,
@@ -167,11 +163,7 @@ def main():
                 print("The rest default configurations:")
                 print(
                     json.dumps(
-                        {
-                            k: v
-                            for k, v in _DEFAULT_CONFIG.items()
-                            if k not in user_config
-                        },
+                        {k: v for k, v in _DEFAULT_CONFIG.items() if k not in user_config},
                         indent=4,
                     )
                 )
@@ -181,19 +173,14 @@ def main():
                 _CONFIG_FILE.unlink()
                 print("User-defined configuration file deleted.")
             else:
-                print(
-                    "User-defined configuration file does not exist. No need to reset."
-                )
+                print("User-defined configuration file does not exist. No need to reset.")
             return
         else:
             if "=" in args["config"]:
-                config = dict(
-                    [kv.strip().split("=") for kv in args["config"].split(";")]
-                )
+                config = dict([kv.strip().split("=") for kv in args["config"].split(";")])
             else:
                 assert Path(args["config"]).is_file(), (
-                    f"Configuration file ``{args['config']}`` does not exist. "
-                    "Please check and try again."
+                    f"Configuration file ``{args['config']}`` does not exist. " "Please check and try again."
                 )
                 if Path(args["config"]).suffix == ".json":
                     config = json.loads(Path(args["config"]).read_text())
@@ -227,9 +214,7 @@ def main():
         entry_file = Path(args["gather"]).resolve()
 
         if not entry_file.is_file() or entry_file.suffix != ".tex":
-            print(
-                f"File {args['gather']} is not a valid .tex file. Please check and try again."
-            )
+            print(f"File {args['gather']} is not a valid .tex file. Please check and try again.")
             return
 
         if len(args["identifiers"]) > 0 or args["input_file"] is not None:
@@ -241,10 +226,7 @@ def main():
         try:
             gather_tex_source_files_in_one(args["gather"], write_file=True)
         except FileExistsError:
-            print(
-                f"Output file for {args['gather']} already exists. "
-                "Please remove it first and try again."
-            )
+            print(f"Output file for {args['gather']} already exists. " "Please remove it first and try again.")
         return
 
     check_file = args["check_file"]
@@ -271,9 +253,7 @@ def main():
         bl.check_bib_file(check_file)
         return
     else:
-        assert (
-            len(args["identifiers"]) > 0 or args["input_file"] is not None
-        ), "No identifiers given."
+        assert len(args["identifiers"]) > 0 or args["input_file"] is not None, "No identifiers given."
 
     if len(args["identifiers"]) > 0:
         bl(args["identifiers"])

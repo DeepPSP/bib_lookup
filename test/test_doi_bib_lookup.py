@@ -5,7 +5,6 @@ from collections import OrderedDict
 
 import bib_lookup
 
-
 doi_examples = {
     "DOI: 10.1142/S1005386718000305": "@article{Wen_2018,\n      title = {Counting Multiplicities in a Hypersurface over Number Fields},\n     author = {Hao Wen and Chunhui Liu},\n    journal = {Algebra Colloquium},\n        doi = {10.1142/s1005386718000305},\n       year = {2018},\n      month = {8},\n  publisher = {World Scientific Pub Co Pte Lt},\n     volume = {25},\n     number = {03},\n      pages = {437--458}\n}",
     "10.1109/ICCVW.2019.00246": "@inproceedings{Cao_2019,\n      title = {{GCNet}: Non-Local Networks Meet Squeeze-Excitation Networks and Beyond},\n     author = {Yue Cao and Jiarui Xu and Stephen Lin and Fangyun Wei and Han Hu},\n  booktitle = {2019 {IEEE}/{CVF} International Conference on Computer Vision Workshop ({ICCVW})},\n        doi = {10.1109/iccvw.2019.00246},\n       year = {2019},\n      month = {10},\n  publisher = {{IEEE}}\n}",

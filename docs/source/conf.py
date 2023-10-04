@@ -17,11 +17,10 @@
 import sys
 from pathlib import Path
 
+import pydata_sphinx_theme
+import sphinx_book_theme
 import sphinx_rtd_theme
 import sphinx_theme
-import sphinx_book_theme
-import pydata_sphinx_theme
-
 
 project_root = Path(__file__).resolve().parents[2]
 src_root = project_root / "bib_lookup"

@@ -5,16 +5,14 @@ import collections
 import json
 import subprocess
 from pathlib import Path
-from typing import Union, List, Tuple
+from typing import List, Tuple, Union
 
 import yaml
 
 from bib_lookup._const import CONFIG_FILE as _CONFIG_FILE
 
 
-def execute_cmd(
-    cmd: Union[str, List[str]], raise_error: bool = True
-) -> Tuple[int, List[str]]:
+def execute_cmd(cmd: Union[str, List[str]], raise_error: bool = True) -> Tuple[int, List[str]]:
     """Execute shell command using `Popen`.
 
     Parameters
@@ -142,9 +140,7 @@ def test_cli():
 
     # set config using KEY=VALUE pairs
     cmd = """bib-lookup --config "timeout=2.0;print_result=true;ignore_fields=['url','pdf'];hehe=1" """
-    exitcode, output_msg = execute_cmd(
-        cmd
-    )  # set the config, invalid key will be ignored
+    exitcode, output_msg = execute_cmd(cmd)  # set the config, invalid key will be ignored
     assert _CONFIG_FILE.exists()
     cmd = "bib-lookup --config show"
     exitcode, output_msg = execute_cmd(cmd)  # prints the config

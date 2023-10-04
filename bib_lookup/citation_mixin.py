@@ -2,13 +2,12 @@
 """
 
 import warnings
-from typing import Optional, Union, Sequence
+from typing import Optional, Sequence, Union
 
 import pandas as pd
 
-from .bib_lookup import BibLookup
 from ._const import CACHE_DIR
-
+from .bib_lookup import BibLookup
 
 __all__ = [
     "CitationMixin",
@@ -111,16 +110,11 @@ class CitationMixin(object):
                 if format is None or format == self._bl.format:
                     # only cache bibtex format
                     new_citations = [
-                        item
-                        for item in new_citations
-                        if item["citation"] is not None
-                        and item["citation"].startswith("@")
+                        item for item in new_citations if item["citation"] is not None and item["citation"].startswith("@")
                     ]
                     df_new = pd.DataFrame(new_citations)
                     if len(df_new) > 0:
-                        df_new.to_csv(
-                            self.citation_cache, mode="a", header=False, index=False
-                        )
+                        df_new.to_csv(self.citation_cache, mode="a", header=False, index=False)
                 else:
                     df_new = pd.DataFrame(new_citations)
                 if len(df_new) > 0:

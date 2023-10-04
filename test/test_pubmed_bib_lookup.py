@@ -3,7 +3,6 @@
 
 import bib_lookup
 
-
 pubmed_examples = {
     "PMID: 35344711": "@article{Li_2022,\n      title = {Broad neutralization of {SARS}-{CoV}-2 variants by an inhalable bispecific single-domain antibody},\n     author = {Cheng Li and Wuqiang Zhan and Zhenlin Yang and Chao Tu and Gaowei Hu and Xiang Zhang and Wenping Song and Shujuan Du and Yuanfei Zhu and Keke Huang and Yu Kong and Meng Zhang and Qiyu Mao and Xiaodan Gu and Yi Zhang and Youhua Xie and Qiang Deng and Yuanlin Song and Zhenguo Chen and Lu Lu and Shibo Jiang and Yanling Wu and Lei Sun and Tianlei Ying},\n    journal = {Cell},\n        doi = {10.1016/j.cell.2022.03.009},\n       year = {2022},\n      month = {4},\n  publisher = {Elsevier {BV}},\n     volume = {185},\n     number = {8},\n      pages = {1389--1401.e18}\n}",
     "20339075": "@article{Wang_2010,\n      title = {The Wnt/$\\upbeta$-Catenin Pathway Is Required for the Development of Leukemia Stem Cells in {AML}},\n     author = {Yingzi Wang and Andrei V. Krivtsov and Amit U. Sinha and Trista E. North and Wolfram Goessling and Zhaohui Feng and Leonard I. Zon and Scott A. Armstrong},\n    journal = {Science},\n        doi = {10.1126/science.1186624},\n       year = {2010},\n      month = {3},\n  publisher = {American Association for the Advancement of Science ({AAAS})},\n     volume = {327},\n     number = {5973},\n      pages = {1650--1653}\n}",
