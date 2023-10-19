@@ -9,7 +9,7 @@
 
 A useful tool for looking up Bib entries using DOI, or pubmed ID (or URL), or arXiv ID (or URL).
 
-:bomb: **NEW** :bomb: **Streamlit** support! See [here](https://bib-lookup.streamlit.app/) for an app deployed on [Streamlit Community Cloud](https://share.streamlit.io/).
+:rocket: **NEW** :rocket: **Streamlit** support! See [here](https://bib-lookup.streamlit.app/) for an app deployed on [Streamlit Community Cloud](https://share.streamlit.io/).
 
 It is an updated version of
 <https://github.com/wenh06/utils/blob/master/utils_universal/utils_bib.py>

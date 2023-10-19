@@ -69,12 +69,12 @@ if button:
         except Exception as e:
             st.error(f"Error: {e}")
         else:
+            st.code(bib, language="latex", line_numbers=False)
             # write the output to a text area
-            # output_container.write(bib)
-            st.text_area(
-                label="Bib",
-                value=bib,
-                height=27 * len(bib.split("\n")),
-                max_chars=100000,
-                key="output",
-            )
+            # st.text_area(
+            #     label="Bib",
+            #     value=bib,
+            #     height=27 * len(bib.split("\n")),
+            #     max_chars=100000,
+            #     key="output",
+            # )
