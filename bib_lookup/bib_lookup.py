@@ -142,7 +142,7 @@ class BibLookup(ReprMixin):
     1. ~~add CLI support;~~
     2. use eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi for PubMed, as in [3]_;
     3. try using google scholar api described in [4]_ (unfortunately [4]_ is charged);
-    4. use `Flask` to write a simple browser-based UI;
+    4. ~~use `Flask` to write a simple browser-based UI;~~ (done with `streamlit`)
     5. make `__call__` method asynchronised using `asyncio` and `aiohttp` or `httpx`;
 
     WARNING
