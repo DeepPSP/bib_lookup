@@ -21,7 +21,10 @@ extras["test"] = [
     "IPython",
     "pre-commit",
 ]
-extras["dev"] = extras["test"]
+extras["app"] = [
+    "streamlit",
+]
+extras["dev"] = extras["test"] + extras["app"]
 
 
 setuptools.setup(
