@@ -22,6 +22,7 @@ from string import punctuation
 from typing import Dict, List, Optional, Sequence, Tuple, Union
 
 import feedparser
+import numpy as np
 import requests
 
 from ._bib import BIB_FIELDS, DF_BIB_ENTRY_TYPES, BibItem
@@ -81,29 +82,32 @@ class BibLookup(ReprMixin):
     kwargs : dict, optional
         Additional key word arguments, including
 
-            - "verbose": int,
-              default 0, verbose level for printing.
-            - "ordering": sequence of str,
-              default ["author", "title", "journal", "booktitle"],
-              ordering of the fields in the final output,
-              case insensitive.
-            - "arxiv2doi": bool,
-              default True,
-              whether to convert arXiv ID to DOI to look up.
-            - "format": str,
-              default "bibtex", case insensitive,
-              format of the final output,
-              only "bibtex" format lookup results will be saved in internal cache.
-            - "style": str,
-              default "apa", case insensitive,
-              style of the final output,
-              valid only when "format" is "text".
-            - "timeout": float,
-              default 6.0,
-              timeout for requests.
-            - "ignore_errors": bool,
-              default False,
-              whether to ignore errors.
+        - "verbose": int,
+          default 0, verbose level for printing.
+        - "ordering": sequence of str,
+          default ["author", "title", "journal", "booktitle"],
+          ordering of the fields in the final output,
+          case insensitive.
+        - "arxiv2doi": bool,
+          default True,
+          whether to convert arXiv ID to DOI to look up.
+        - "format": str,
+          default "bibtex", case insensitive,
+          format of the final output,
+          only "bibtex" format lookup results will be saved in internal cache.
+        - "style": str,
+          default "apa", case insensitive,
+          style of the final output,
+          valid only when "format" is "text".
+        - "timeout": float,
+          default 6.0,
+          timeout for requests.
+        - "ignore_errors": bool,
+          default False,
+          whether to ignore errors.
+        - "cache_limit": int or np.inf or None,
+          default 1e6,
+          maximum number of items in the internal cache.
 
     Example
     -------
@@ -252,6 +256,15 @@ class BibLookup(ReprMixin):
         self._ordering = bl_config["ordering"]
         self._ordering = [k.lower() for k in self._ordering]
         self._comment_pattern = re.compile(r"^%")
+        if isinstance(bl_config["cache_limit"], (int, float, np.generic)):
+            self.__cache_limit = bl_config["cache_limit"] if bl_config["cache_limit"] >= 0 else np.inf
+        elif bl_config["cache_limit"] is None or bl_config["cache_limit"] in ["None", "none", "inf", "Inf", "INF"]:
+            self.__cache_limit = np.inf
+        else:
+            raise ValueError(
+                "`cache_limit` must be a non-negative number or infinity or `None` or `inf`, "
+                f"but got `{bl_config['cache_limit']}`"
+            )
 
         self.__info_color = "blue"
         self.__err_color = "red"
@@ -447,6 +460,8 @@ class BibLookup(ReprMixin):
             try:
                 res = self._to_bib_item(res, idtf, align, ignore_fields, label)
                 self.__cached_lookup_results[identifier] = res
+                if len(self.__cached_lookup_results) > self.__cache_limit:
+                    self.__cached_lookup_results.popitem(last=False)
             except Exception:
                 res = self.default_err
 
@@ -859,6 +874,10 @@ class BibLookup(ReprMixin):
     @property
     def style(self) -> str:
         return self._style
+
+    @property
+    def cache_limit(self) -> Union[int, float]:
+        return self.__cache_limit
 
     def debug(self) -> None:
         self.verbose = 2

@@ -21,4 +21,5 @@ DEFAULT_CONFIG = dict(
     verbose=0,
     print_result=False,
     ordering=["title", "author", "journal", "booktitle"],
+    cache_limit=1e6,
 )

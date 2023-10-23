@@ -11,7 +11,7 @@ pubmed_examples = {
 }
 
 
-bl = bib_lookup.BibLookup()
+bl = bib_lookup.BibLookup(cache_limit=None)
 
 
 def test_pubmed_bib_lookup():

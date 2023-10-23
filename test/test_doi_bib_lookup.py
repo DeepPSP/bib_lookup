@@ -3,6 +3,8 @@
 
 from collections import OrderedDict
 
+import pytest
+
 import bib_lookup
 
 doi_examples = {
@@ -35,3 +37,6 @@ def test_doi_bib_lookup():
 
     assert isinstance(bl.get_cache(), OrderedDict)
     assert isinstance(bl.get_cache(string_format=True), str)
+
+    with pytest.raises(ValueError):
+        bib_lookup.BibLookup(cache_limit="xxx")
