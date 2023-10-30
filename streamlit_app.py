@@ -51,6 +51,20 @@ def do_lookup():
         current_arxiv2doi = st.session_state.arxiv2doi if "arxiv2doi" in st.session_state else True
         current_align = st.session_state.align if "align" in st.session_state else "middle"
         current_fmt = st.session_state.fmt if "fmt" in st.session_state else "bibtex"
+        if "history" in st.session_state:
+            if (
+                st.session_state["history"]["doi"] == input_doi
+                and st.session_state["history"]["arxiv2doi"] == current_arxiv2doi
+            ):
+                if st.session_state["history"]["fmt"] == current_fmt == "bibtex":
+                    bib = str(bl._to_bib_item(st.session_state["history"]["bib"], align=current_align))
+                    output_container.code(bib, language="latex", line_numbers=False)
+                    return
+                elif st.session_state["history"]["fmt"] == current_fmt:
+                    # other formats
+                    bib = st.session_state["history"]["bib"]
+                    output_container.code(bib, language="latex", line_numbers=False)
+                    return
         try:
             bib = bl(
                 input_doi,
@@ -58,6 +72,14 @@ def do_lookup():
                 format=current_fmt,
                 align=current_align,
             )
+            # cache into session_state["history"]
+            if "history" not in st.session_state:
+                st.session_state["history"] = {}
+            if input_doi not in st.session_state["history"]:
+                st.session_state["history"]["doi"] = input_doi
+                st.session_state["history"]["fmt"] = current_fmt
+                st.session_state["history"]["arxiv2doi"] = current_arxiv2doi
+                st.session_state["history"]["bib"] = bib
         except Exception as e:
             output_container.error(f"Error: {e}")
             # st.error(f"Error: {e}")
