@@ -1,3 +1,5 @@
+import warnings
+
 import streamlit as st
 
 from bib_lookup.bib_lookup import BibLookup
@@ -8,6 +10,10 @@ st.set_page_config(
     page_icon=":books:",
     layout="centered",
 )
+
+
+# ignore warnings
+warnings.filterwarnings("ignore")
 
 
 @st.cache_resource
@@ -45,13 +51,12 @@ output_container = st.container()
 
 def do_lookup():
     if input_doi == "":
-        # output_container.error("DOI cannot be empty")
         pass  # do nothing
     else:
         current_arxiv2doi = st.session_state.arxiv2doi if "arxiv2doi" in st.session_state else True
         current_align = st.session_state.align if "align" in st.session_state else "middle"
         current_fmt = st.session_state.fmt if "fmt" in st.session_state else "bibtex"
-        if "history" in st.session_state:
+        if "history" in st.session_state and st.session_state["history"] != {}:
             if (
                 st.session_state["history"]["doi"] == input_doi
                 and st.session_state["history"]["arxiv2doi"] == current_arxiv2doi
@@ -75,17 +80,15 @@ def do_lookup():
             # cache into session_state["history"]
             if "history" not in st.session_state:
                 st.session_state["history"] = {}
-            if input_doi not in st.session_state["history"]:
+            if input_doi not in st.session_state["history"] and bib not in bl.lookup_errors:
                 st.session_state["history"]["doi"] = input_doi
                 st.session_state["history"]["fmt"] = current_fmt
                 st.session_state["history"]["arxiv2doi"] = current_arxiv2doi
                 st.session_state["history"]["bib"] = bib
         except Exception as e:
             output_container.error(f"Error: {e}")
-            # st.error(f"Error: {e}")
         else:
             output_container.code(bib, language="latex", line_numbers=False)
-            # st.code(bib, language="latex", line_numbers=False)
 
 
 # show the version number on the sidebar
@@ -119,18 +122,9 @@ fmt = st.sidebar.selectbox(
     on_change=do_lookup,
 )
 
+
 if button:
     if input_doi == "":
         output_container.error("DOI cannot be empty")
     else:
         do_lookup()
-    # if input_doi == "":
-    #     st.error("DOI cannot be empty")
-    # else:
-    #     # output_container = st.empty()
-    #     try:
-    #         bib = bl(input_doi, arxiv2doi=arxiv2doi, format=fmt, align=align)
-    #     except Exception as e:
-    #         st.error(f"Error: {e}")
-    #     else:
-    #         st.code(bib, language="latex", line_numbers=False)
