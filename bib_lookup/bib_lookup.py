@@ -803,7 +803,7 @@ class BibLookup(ReprMixin):
 
         # all field names to lower case,
         # and ignore the fields in the list `_ignore_fields`
-        field_dict = {k.lower(): v for k, v in field_dict.items() if k.lower() not in _ignore_fields}
+        field_dict = {k.lower(): v.strip('{}" ') for k, v in field_dict.items() if k.lower() not in _ignore_fields}
 
         # re-order the fields according to the list `self.ordering`
         _ordering = self.ordering + [k for k in field_dict if k not in self.ordering]
