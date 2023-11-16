@@ -56,7 +56,7 @@ doi,citation
    publisher = {IEEE},
   collection = {CIC-00}
 }"
-10.1109/ACCESS.2020.3029211,@article{Kalyakulina_2020,
+10.1109/ACCESS.2020.3029211,"@article{Kalyakulina_2020,
       title = {LUDB: A New Open-Access Validation Tool for Electrocardiogram Delineation Algorithms},
      author = {Kalyakulina, Alena I. and Yusipov, Igor I. and Moskalenko, Viktor A. and Nikolskiy, Alexander V. and Kosonogov, Konstantin A. and Osipov, Grigory V. and Zolotykh, Nikolai Yu. and Ivanchenko, Mikhail V.},
     journal = {IEEE Access},
