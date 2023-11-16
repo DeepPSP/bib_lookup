@@ -175,7 +175,7 @@ class BibItem(object):
             if idx < len(self.fields) - 1:
                 field_dict[k] += ","
         # align the fields
-        max_key_len = max([len(k) for k in field_dict.keys()])
+        max_key_len = max([len(k) for k in field_dict.keys()]) if len(field_dict) > 0 else 0
         if self.align == "middle":
             lines = [header] + [f"{' '*(2+max_key_len-len(k))}{k} = {v}" for k, v in field_dict.items()] + ["}"]
         elif self.align == "left":
@@ -474,7 +474,7 @@ BIB_FIELDS = {
     "author": "author(s) of title, authortype specifies kind",
     "bookauthor": "author(s) of booktitle",
     "editor": "editor(s), editortype specifies role",
-    "editora/b/c": "secondary editor(s), editora/b/ctype for roles",
+    # "editora/b/c": "secondary editor(s), editora/b/ctype for roles",
     "editora": "secondary editor(s), editora/b/ctype for roles",
     "editorb": "secondary editor(s), editora/b/ctype for roles",
     "editorc": "secondary editor(s), editora/b/ctype for roles",
@@ -484,7 +484,7 @@ BIB_FIELDS = {
     "forward": "author(s) of forward",
     "introduction": "author(s) of introduction",
     "translator": "translator(s) of (book)title",
-    "holder": "of patent",
+    "holder": "holder of patent",
     # organizations
     "institution": "university or similar",
     "organization": "manual/website publisher or event sponsor",
@@ -516,6 +516,7 @@ BIB_FIELDS = {
     "pages": "page list or range",
     "pagetotal": "total number of pages",
     "(book)pagination": "pagination format of (book)title",
+    "pagination": "pagination format of (book)title",
     # dates
     "date": "publication date as 〈yyyy-mm-dd〉",
     "eventdate": "conference or event date as 〈yyyy-mm-dd〉",
@@ -584,6 +585,9 @@ BIB_FIELDS = {
     "arxivid": "arXiv identifier",
     "archiveprefix": "arXiv Prefix",
     "primaryclass": "primary class, e.g. cs.CV",
+    "collection": "similar to series",
+    "key": "used for alphabetizing, crossreferencing, and creating a label when the “author” and “editor” fields are missing",
+    "annote": "an annotation for annotated bibliography styles (not typical)",
 }
 
 DF_BIB_FIELDS = pd.DataFrame([(k, v) for k, v in BIB_FIELDS.items()], columns=["field", "description"])
