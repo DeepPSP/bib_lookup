@@ -266,6 +266,8 @@ class BibLookup(ReprMixin):
                 f"but got `{bl_config['cache_limit']}`"
             )
 
+        self.__field_pattern = f""",\\s*({"|".join(list(BIB_FIELDS))})\\s*=\\s*"""
+
         self.__info_color = "blue"
         self.__err_color = "red"
         self.__err_fontsize = "large"
@@ -761,6 +763,17 @@ class BibLookup(ReprMixin):
                 for line in res.split("\n")
                 if len(line.strip()) > 0 and not re.match(self._comment_pattern, line.strip())
             ]
+            if len(lines) <= 1:
+                # raw text is not split by "\n" but by ", " now
+                lines = []
+                split_indices = [m.start() for m in re.finditer(self.__field_pattern, res.lower())]
+                split_indices.insert(0, 0)
+                for idx in range(len(split_indices) - 1):
+                    lines.append(res[split_indices[idx] : split_indices[idx + 1]])
+                lines.append(res[split_indices[-1] :])
+                if re.findall(self.__field_pattern, lines[-1].lower()):
+                    lines.append("}")
+                lines = [re.sub("\\}\\s*\\}", "}", line.strip(", ")) for line in lines if len(line.strip(", ")) > 0]
             header_dict = list(re.finditer(self.bib_header_pattern, lines[0]))[0].groupdict()
             field_dict = OrderedDict()
             for line in lines[1:-1]:
