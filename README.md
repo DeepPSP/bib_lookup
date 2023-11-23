@@ -7,7 +7,7 @@
 [![downloads](https://img.shields.io/pypi/dm/bib-lookup?style=flat-square)](https://pypistats.org/packages/bib-lookup)
 [![license](https://img.shields.io/github/license/DeepPSP/bib_lookup?style=flat-square)](LICENSE)
 
-A useful tool for looking up Bib entries using DOI, or pubmed ID (or URL), or arXiv ID (or URL).
+A useful tool for looking up Bib entries using DOI, PubMed ID (URL), or arXiv ID (URL).
 
 :rocket: **NEW** :rocket: **Streamlit** support! See [here](https://bib-lookup.streamlit.app/) for an app deployed on [Streamlit Community Cloud](https://share.streamlit.io/).
 
