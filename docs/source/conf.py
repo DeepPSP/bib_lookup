@@ -56,6 +56,7 @@ extensions = [
     "sphinx_multiversion",
     # "sphinx_toolbox.collapse",  # replaced by dropdown of sphinx_design
     # "numpydoc",
+    "sphinx_emoji_favicon",
     "sphinxcontrib.tikz",
     "sphinxcontrib.pseudocode",
     "sphinxcontrib.bibtex",
@@ -162,6 +163,8 @@ html_static_path = ["_static"]
 master_doc = "index"
 
 numfig = False
+
+emoji_favicon = ":livres:"
 
 
 linkcheck_ignore = [
