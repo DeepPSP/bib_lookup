@@ -6,6 +6,8 @@
 [![DOI](https://zenodo.org/badge/476130336.svg)](https://zenodo.org/badge/latestdoi/476130336)
 [![downloads](https://img.shields.io/pypi/dm/bib-lookup?style=flat-square)](https://pypistats.org/packages/bib-lookup)
 [![license](https://img.shields.io/github/license/DeepPSP/bib_lookup?style=flat-square)](LICENSE)
+![GitHub Release Date - Published_At](https://img.shields.io/github/release-date/DeepPSP/bib_lookup)
+![GitHub commits since latest release (by SemVer including pre-releases)](https://img.shields.io/github/commits-since/DeepPSP/bib_lookup/latest)
 
 A useful tool for looking up Bib entries using DOI, PubMed ID (URL), or arXiv ID (URL).
 
