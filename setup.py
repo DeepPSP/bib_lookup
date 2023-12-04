@@ -13,13 +13,11 @@ long_description = (cwd / "README.md").read_text(encoding="utf-8")
 
 extras = {}
 extras["test"] = [
-    "black==22.8.0",
-    "flake8",
+    "pre-commit",
     "pytest",
     "pytest-xdist",
     "pytest-cov",
     "IPython",
-    "pre-commit",
 ]
 extras["app"] = [
     "streamlit",

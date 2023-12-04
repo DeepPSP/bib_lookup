@@ -38,5 +38,6 @@ jobs:
       run: |
         pytest --cov=bib_lookup -v test
     - name: Upload coverage to Codecov
-      if: matrix.python-version == '3.10'
+      # Only upload coverage for Python 3.10 and the event is not scheduled
+      if: matrix.python-version == '3.10' && !contains(fromJson('["schedule"]'), github.event_name)
       uses: codecov/codecov-action@v3
