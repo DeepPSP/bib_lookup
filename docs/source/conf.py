@@ -58,7 +58,6 @@ extensions = [
     # "numpydoc",
     "sphinx_emoji_favicon",
     "sphinxcontrib.tikz",
-    "sphinxcontrib.pseudocode",
     "sphinxcontrib.bibtex",
     "sphinxcontrib.proof",
 ]
