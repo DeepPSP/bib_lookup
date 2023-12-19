@@ -162,11 +162,13 @@ def test_errors():
         number=11,
         pages=115006,
     )
-    default_bl._to_bib_item(
+    bib_item = default_bl._to_bib_item(
         res=feed_dict,
         identifier="10.1088/1361-6579/ac9451",
         label="xxx",
     )
+    # assert idempotency of `_to_bib_item`
+    assert default_bl._to_bib_item(str(bib_item)) == bib_item
     with pytest.raises(
         AssertionError,
         match="`label` must be a string",
