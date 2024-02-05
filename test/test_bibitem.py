@@ -10,7 +10,6 @@ from bib_lookup._bib import BIB_ENTRY_TYPES, BIB_FIELDS, BibItem
 
 
 class TestBibItem:
-
     identifier = "10.1088/1361-6579/ac9451"
     entry_type = "article"
     fields = OrderedDict(
