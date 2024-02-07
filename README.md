@@ -8,6 +8,7 @@
 [![license](https://img.shields.io/github/license/DeepPSP/bib_lookup?style=flat-square)](LICENSE)
 ![GitHub Release Date - Published_At](https://img.shields.io/github/release-date/DeepPSP/bib_lookup)
 ![GitHub commits since latest release (by SemVer including pre-releases)](https://img.shields.io/github/commits-since/DeepPSP/bib_lookup/latest)
+[![Streamlit App](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://bib-lookup.streamlit.app/)
 
 A useful tool for looking up Bib entries using DOI, PubMed ID (URL), or arXiv ID (URL).
 
