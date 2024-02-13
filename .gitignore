@@ -175,4 +175,4 @@ log
 # notebooks are ignored by default
 # notebooks that are not ignored should be specified
 *.ipynb
-!demo.ipynb
+# !demo.ipynb
