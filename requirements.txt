@@ -3,3 +3,4 @@ feedparser
 numpy
 pandas
 PyYAML
+packaging
