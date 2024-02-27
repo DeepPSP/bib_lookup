@@ -1017,7 +1017,7 @@ class BibLookup(ReprMixin):
                     if not re.search("bstctl", lines[0].lower()):
                         # ignore_fields should be set empty
                         # to keep it unchanged
-                        bib_item = self._to_bib_item("\n".join(lines), ignore_fields=[])
+                        bib_item = self._to_bib_item(",\n".join(lines), ignore_fields=[])
                         bib_items.append(bib_item)
                         if cache:
                             self.__cached_lookup_results[bib_item.identifier] = bib_item
