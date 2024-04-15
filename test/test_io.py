@@ -27,6 +27,8 @@ _SOURCE_FILE_LIST.extend(
 _SOURCE_FILE_LIST.append(_CWD.parent / "sample-files" / "sample-source-subdir")
 _SIMPLIFIED_OUTPUT_FILE = _CWD.parent / "tmp" / "test_io_simplified_output.bib"
 
+_COMPLICATED_BIB_FILE = _CWD.parent / "sample-files" / "complicated_items.bib"
+
 
 def test_io_from_file():
     if _OUTPUT_FILE_1.exists():
@@ -113,3 +115,14 @@ def test_simplify_bib_file():
             output_file=_SIMPLIFIED_OUTPUT_FILE,
         )
     _SIMPLIFIED_OUTPUT_FILE.unlink()
+
+
+def test_complicated_items():
+    bl = BibLookup()
+    complicated_items = bl.read_bib_file(_COMPLICATED_BIB_FILE)
+    complicated_file_content = [line for line in _COMPLICATED_BIB_FILE.read_text().splitlines() if len(line.strip()) > 0]
+    split_indices = [i for i, line in enumerate(complicated_file_content) if line.startswith("@")] + [
+        len(complicated_file_content)
+    ]
+    for i, (start, end) in enumerate(zip(split_indices[:-1], split_indices[1:])):
+        assert str(complicated_items[i]) == "\n".join(complicated_file_content[start:end])

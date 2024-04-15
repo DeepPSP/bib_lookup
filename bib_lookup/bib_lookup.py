@@ -74,6 +74,7 @@ class BibLookup(ReprMixin):
     ignore_fields : str or Sequence[str], optional
         Fields to be ignored in the final output,
         case insensitive, by default ["url", "abstract"].
+        If is "none", no field will be ignored.
     output_file : str or pathlib.Path, optional,
         The file to save the lookup results.
         Append mode is used if the file exists.
@@ -209,7 +210,10 @@ class BibLookup(ReprMixin):
         if ignore_fields is None:
             ignore_fields = bl_config["ignore_fields"]
         if isinstance(ignore_fields, str):
-            self._ignore_fields = [ignore_fields.lower()]
+            if ignore_fields.lower() == "none":
+                self._ignore_fields = []
+            else:
+                self._ignore_fields = [ignore_fields.lower()]
         else:
             self._ignore_fields = [k.lower() for k in ignore_fields]
         colon = "[\\s]*:[\\s]*"
@@ -322,9 +326,9 @@ class BibLookup(ReprMixin):
             Alignment of the final output, case insensitive.
             If specified, `self.align` is ignored.
         ignore_fields : str or Sequence[str], optional
-            Fields to be ignored in the final output,
-            case insensitive.
+            Fields to be ignored in the final output, case insensitive.
             If specified, `self._ignore_fields` is ignored.
+            If is "none", no field will be ignored.
         label : str or Sequence[str], optional
             Label(s) of the publication(s).
             If specified, the label(s) provided by the source is/are ignored.
@@ -734,9 +738,9 @@ class BibLookup(ReprMixin):
             Alignment of the final output, case insensitive.
             If specified, `self.align` is ignored.
         ignore_fields : str or Sequence[str], optional
-            Fields to be ignored in the final output,
-            case insensitive.
+            Fields to be ignored in the final output, case insensitive.
             If specified, `self._ignore_fields` is ignored.
+            If is "none", no field will be ignored.
         label : str, optional
             Label of the publication.
 
@@ -749,7 +753,10 @@ class BibLookup(ReprMixin):
         if ignore_fields is None:
             _ignore_fields = self.ignore_fields
         elif isinstance(ignore_fields, str):
-            _ignore_fields = [ignore_fields.lower()]
+            if ignore_fields.lower() == "none":
+                _ignore_fields = []
+            else:
+                _ignore_fields = [ignore_fields.lower()]
         else:
             _ignore_fields = [k.lower() for k in ignore_fields]
         _align = (align or self.align).lower()
@@ -771,7 +778,7 @@ class BibLookup(ReprMixin):
             lines.append(res[split_indices[-1] :])
             if re.findall(self.__field_pattern, lines[-1].lower()):
                 lines.append("}")
-            lines = [re.sub("\\}\\s*\\}", "}", line.strip(", ")) for line in lines if len(line.strip(", ")) > 0]
+            lines = [re.sub("\\}[^\\w]+\\}", "}", line.strip(", ")) for line in lines if len(line.strip(", ")) > 0]
             header_dict = list(re.finditer(self.bib_header_pattern, lines[0]))[0].groupdict()
             field_dict = OrderedDict()
             for line in lines[1:-1]:
@@ -801,7 +808,19 @@ class BibLookup(ReprMixin):
 
         # all field names to lower case,
         # and ignore the fields in the list `_ignore_fields`
-        field_dict = {k.lower(): v.strip('{}", ') for k, v in field_dict.items() if k.lower() not in _ignore_fields}
+        # field_dict = {k.lower(): v.strip('{}", ') for k, v in field_dict.items() if k.lower() not in _ignore_fields}
+        # the above treatment might result in errors when the leading or trailing words are enclosed by braces
+        # e.g. "{{IDH1} and {IDH2} mutations in postoperative diffuse glioma-associated {epilepsy}}"
+        field_dict = {k.lower(): v.strip(", ") for k, v in field_dict.items() if k.lower() not in _ignore_fields}
+        # take off at most one pair of double quotes or single quotes or braces at the beginning and the end of the value
+        for k, v in field_dict.items():
+            tmp_v = re.sub("\\{[^\\{\\}]*\\}", "", v).strip()
+            if v.startswith('"') and v.endswith('"'):
+                field_dict[k] = v[1:-1]
+            elif v.startswith("'") and v.endswith("'"):
+                field_dict[k] = v[1:-1]
+            elif (tmp_v.startswith("{") and tmp_v.endswith("}")) or len(tmp_v) == 0:
+                field_dict[k] = v[1:-1]
 
         # re-order the fields according to the list `self.ordering`
         _ordering = self.ordering + [k for k in field_dict if k not in self.ordering]
