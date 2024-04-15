@@ -110,6 +110,16 @@ def main():
         dest="format",
     )
     parser.add_argument(
+        "-s" "--simplify-bib",
+        type=str,
+        help=(
+            "The .tex file to simplify corresponding bib file by removing unused entries "
+            "and writing to a new file with `_simplified` appended to the original file name."
+            "Requires the `input` argument to be the bib file."
+        ),
+        dest="simplify_bib",
+    )
+    parser.add_argument(
         "--style",
         type=str,
         help="Style of the output, valid only when 'format' is 'text', optional.",
@@ -150,7 +160,7 @@ def main():
 
     args = vars(parser.parse_args())
 
-    if "config" in args and args["config"] is not None:
+    if args.get("config", None) is not None:
         if args["config"] == "show":
             if not _CONFIG_FILE.is_file():
                 print("User-defined configuration file does not exist.")
@@ -208,7 +218,7 @@ def main():
             _CONFIG_FILE.write_text(json.dumps(config, indent=4))
             return
 
-    if "gather" in args and args["gather"] is not None:
+    if args.get("gather", None) is not None:
         from bib_lookup.utils import gather_tex_source_files_in_one
 
         entry_file = Path(args["gather"]).resolve()
@@ -227,6 +237,19 @@ def main():
             gather_tex_source_files_in_one(args["gather"], write_file=True)
         except FileExistsError:
             print(f"Output file for {args['gather']} already exists. " "Please remove it first and try again.")
+        return
+
+    if args.get("simplify_bib", None) is not None:
+        if args.get("input_file", None) is None:
+            print("Please provide the input bib file to simplify.")
+            return
+        input_file = Path(args["input_file"]).resolve()
+        if not input_file.is_file() or input_file.suffix != ".bib":
+            print(f"Input bib file {args['input_file']} is not a valid .bib file. Please check and try again.")
+            return
+
+        simplified_bib_file = BibLookup.simplify_bib_file(tex_sources=args["simplify_bib"], bib_file=input_file)
+        # print(f"Simplified bib file written to {simplified_bib_file}")
         return
 
     check_file = args["check_file"]
