@@ -134,10 +134,13 @@ class BibItem(object):
             # remove redundant curly braces and commas
             v = str(v).strip(" ,")  # DO NOT strip "{}"
             self.__double_braces_flags[k] = False
-            braces_count = 0
+            braces_count = 1
             # exclude the case where the leading and trailing words are enclosed by braces
             # e.g. "{IDH1} and {IDH2} mutations in postoperative diffuse glioma-associated {epilepsy}"
             tmp_v = re.sub("\\{[^\\{\\}]*\\}", "", v).strip()
+            if not re.findall("\\w+", tmp_v):
+                # exclude the case {{...}}
+                tmp_v = v
             while (
                 all([tmp_v.startswith("{"), tmp_v.endswith("}")])
                 or all([v.startswith('"'), v.endswith('"')])
@@ -146,6 +149,9 @@ class BibItem(object):
                 v = v[1:-1]
                 braces_count += 1
                 tmp_v = re.sub("\\{[^\\{\\}]*\\}", "", v).strip()
+                if not re.findall("\\w+", tmp_v):
+                    # exclude the case {{...}}
+                    tmp_v = v
             if braces_count >= 2:
                 self.__double_braces_flags[k] = True
             # convert month to number if applicable

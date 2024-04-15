@@ -817,6 +817,10 @@ class BibLookup(ReprMixin):
         field_dict = {k.lower(): v.strip(", ") for k, v in field_dict.items() if k.lower() not in _ignore_fields}
         # take off at most one pair of double quotes or single quotes or braces at the beginning and the end of the value
         for k, v in field_dict.items():
+            # if the field ends with a } but without a leading {, remove the trailing }
+            # this resolves the issue with fetched content that ends with, for example, "month=jun }"
+            if field_dict[k].endswith("}") and not field_dict[k].startswith("{"):
+                field_dict[k] = field_dict[k][:-1].strip()
             tmp_v = re.sub("\\{[^\\{\\}]*\\}", "", v).strip()
             if v.startswith('"') and v.endswith('"'):
                 field_dict[k] = v[1:-1]
