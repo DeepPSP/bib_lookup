@@ -173,3 +173,11 @@ def test_cli():
     exitcode, output_msg = execute_cmd(cmd)  # prints the config
     assert _CONFIG_FILE.exists()
     new_config_file.unlink()
+
+    # simplify bib file
+    tex_entry_file = SAMPLE_DATA_DIR / "sample-source.tex"
+    cmd = f"bib-lookup --simplify-bib {str(tex_entry_file)} -i {str(LARGE_DATABASE)}"
+    exitcode, output_msg = execute_cmd(cmd)
+    result_file = LARGE_DATABASE.parent / (LARGE_DATABASE.stem + "_simplified.bib")
+    assert result_file.exists()
+    result_file.unlink()

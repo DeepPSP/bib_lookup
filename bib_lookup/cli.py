@@ -110,7 +110,8 @@ def main():
         dest="format",
     )
     parser.add_argument(
-        "-s" "--simplify-bib",
+        "-s",
+        "--simplify-bib",
         type=str,
         help=(
             "The .tex file to simplify corresponding bib file by removing unused entries "
