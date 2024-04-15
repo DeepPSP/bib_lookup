@@ -2,5 +2,6 @@ requests
 feedparser
 numpy
 pandas
+beautifulsoup4
 PyYAML
 packaging

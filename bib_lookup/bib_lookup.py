@@ -24,6 +24,7 @@ from typing import Dict, List, Optional, Sequence, Tuple, Union
 import feedparser
 import numpy as np
 import requests
+from bs4 import BeautifulSoup, MarkupResemblesLocatorWarning
 
 from ._bib import BIB_FIELDS, DF_BIB_ENTRY_TYPES, BibItem
 from ._const import CONFIG_FILE as _CONFIG_FILE
@@ -55,6 +56,8 @@ else:
     process_text = color_text
     newline = "\n"
     whitespace = " "
+
+warnings.simplefilter("ignore", MarkupResemblesLocatorWarning)
 
 
 class BibLookup(ReprMixin):
@@ -821,6 +824,9 @@ class BibLookup(ReprMixin):
                 field_dict[k] = v[1:-1]
             elif (tmp_v.startswith("{") and tmp_v.endswith("}")) or len(tmp_v) == 0:
                 field_dict[k] = v[1:-1]
+            field_dict[k] = BeautifulSoup(field_dict[k], "html.parser").get_text()
+            # replace the "&" in field content with "\&"
+            field_dict[k] = field_dict[k].replace("&", r"\&").replace(r"\\&", r"\&")
 
         # re-order the fields according to the list `self.ordering`
         _ordering = self.ordering + [k for k in field_dict if k not in self.ordering]
