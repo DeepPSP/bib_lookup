@@ -694,7 +694,7 @@ class BibLookup(ReprMixin):
         res["journal"] = f"arXiv preprint arXiv:{arxiv_id}"
         res["label"] = f"{parsed['authors'][0]['name'].split(' ')[-1].lower()}{year}_{arxiv_id}"
         res["entry_type"] = "article"
-        res["doi"] = f"10.48550/arXiv.{arxiv_id}"
+        res["doi"] = re.sub("[vV]\\d+$", "", f"10.48550/arXiv.{arxiv_id}")
         return res
 
     def _handle_network_error(self, res: str) -> str:
