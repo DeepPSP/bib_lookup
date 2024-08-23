@@ -239,7 +239,7 @@ class BibLookup(ReprMixin):
         # arXiv examples:
         # "arXiv:1501.00001v1", "arXiv:cs/0012022"
         self.__arxiv_pattern_prefix = f"((?:(?:(?:https?:\\/\\/)?arxiv.org\\/)?abs\\/)|(arxiv{colon}))"
-        self.__arxiv_pattern = f"^(?:{self.__arxiv_pattern_prefix})?" "(?:([\\w\\-]+\\/\\d+)|(\\d+\\.\\d+(v(\\d+))?))$"
+        self.__arxiv_pattern = f"^(?:{self.__arxiv_pattern_prefix})?(?:([\\w\\-]+\\/\\d+)|(\\d+\\.\\d+(v(\\d+))?))$"
         # self.__arxiv_pattern_old = f"^(?:{self.__arxiv_pattern_prefix})?[\\w\\-]+\\/\\d+$"
         self.__default_err = "Not Found"
         self.__network_err = "Network Error"
@@ -253,7 +253,7 @@ class BibLookup(ReprMixin):
         self._format = bl_config["format"].lower()
         if self._format != "bibtex" and not self._arxiv2doi:
             warnings.warn(
-                f"format `{self._format}` is supported only when `arxiv2doi` is True. " "`arxiv2doi` is set to True.",
+                f"format `{self._format}` is supported only when `arxiv2doi` is True. `arxiv2doi` is set to True.",
                 RuntimeWarning,
             )
             self._arxiv2doi = True

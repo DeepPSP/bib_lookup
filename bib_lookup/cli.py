@@ -158,6 +158,11 @@ def main():
             "configuration file if it exists."
         ),
     )
+    parser.add_argument(
+        "--overwrite",
+        action="store_true",
+        help="Overwrite the generated file if it already exists.",
+    )
 
     args = vars(parser.parse_args())
 
@@ -191,7 +196,7 @@ def main():
                 config = dict([kv.strip().split("=") for kv in args["config"].split(";")])
             else:
                 assert Path(args["config"]).is_file(), (
-                    f"Configuration file ``{args['config']}`` does not exist. " "Please check and try again."
+                    f"Configuration file ``{args['config']}`` does not exist. Please check and try again."
                 )
                 if Path(args["config"]).suffix == ".json":
                     config = json.loads(Path(args["config"]).read_text())
@@ -235,9 +240,9 @@ def main():
             )
 
         try:
-            gather_tex_source_files_in_one(args["gather"], write_file=True)
+            gather_tex_source_files_in_one(args["gather"], write_file=True, overwrite=args["overwrite"])
         except FileExistsError:
-            print(f"Output file for {args['gather']} already exists. " "Please remove it first and try again.")
+            print(f"Output file for {args['gather']} already exists. Please remove it first and try again.")
         return
 
     if args.get("simplify_bib", None) is not None:

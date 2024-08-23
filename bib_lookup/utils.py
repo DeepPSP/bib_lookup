@@ -301,6 +301,7 @@ def gather_tex_source_files_in_one(
     entry_file: Union[str, Path],
     write_file: bool = False,
     output_file: Optional[Union[str, Path]] = None,
+    overwrite: bool = False,
 ) -> str:
     """Gathers all the tex source files in one file.
 
@@ -319,6 +320,8 @@ def gather_tex_source_files_in_one(
         The output file to write the tex source into.
         If is None and `write_file` is True,
         the output file will be the ``{entry_file.stem}_{in_one}.tex``.
+    overwrite : bool, default False
+        Whether to overwrite the output file if it exists.
 
     Returns
     -------
@@ -349,9 +352,11 @@ def gather_tex_source_files_in_one(
     if output_file is None:
         output_file = root / f"{Path(entry_file).stem}_in_one.tex"
     if Path(entry_file).resolve() == Path(output_file).resolve():
-        raise ValueError("The entry file and the output file are the same, " "which is not allowed for security reasons.")
+        raise ValueError("The entry file and the output file are the same, which is not allowed for security reasons.")
     if Path(output_file).exists():
-        raise FileExistsError("The output file exists. " "If you want to overwrite it, you should delete it manually first.")
+        if not overwrite:
+            raise FileExistsError("The output file exists. If you want to overwrite it, you should delete it manually first."
+                                  " Or set `overwrite=True`.")
     Path(output_file).write_text(content, encoding="utf-8")
     return str(output_file)
 
