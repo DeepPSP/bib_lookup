@@ -355,8 +355,10 @@ def gather_tex_source_files_in_one(
         raise ValueError("The entry file and the output file are the same, which is not allowed for security reasons.")
     if Path(output_file).exists():
         if not overwrite:
-            raise FileExistsError("The output file exists. If you want to overwrite it, you should delete it manually first."
-                                  " Or set `overwrite=True`.")
+            raise FileExistsError(
+                "The output file exists. If you want to overwrite it, you should delete it manually first."
+                " Or set `overwrite=True`."
+            )
     Path(output_file).write_text(content, encoding="utf-8")
     return str(output_file)
 

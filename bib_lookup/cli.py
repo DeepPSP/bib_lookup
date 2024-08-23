@@ -195,9 +195,9 @@ def main():
             if "=" in args["config"]:
                 config = dict([kv.strip().split("=") for kv in args["config"].split(";")])
             else:
-                assert Path(args["config"]).is_file(), (
-                    f"Configuration file ``{args['config']}`` does not exist. Please check and try again."
-                )
+                assert Path(
+                    args["config"]
+                ).is_file(), f"Configuration file ``{args['config']}`` does not exist. Please check and try again."
                 if Path(args["config"]).suffix == ".json":
                     config = json.loads(Path(args["config"]).read_text())
                 elif Path(args["config"]).suffix in [".yaml", ".yml"]:

@@ -116,8 +116,10 @@ def test_gather_tex_source_files_in_one():
 
     with pytest.raises(
         FileExistsError,
-        match=("The output file exists. If you want to overwrite it, "
-        "you should delete it manually first. Or set `overwrite=True`."),
+        match=(
+            "The output file exists. If you want to overwrite it, "
+            "you should delete it manually first. Or set `overwrite=True`."
+        ),
     ):
         gather_tex_source_files_in_one(entry_file, write_file=True, output_file=output_file)
 
