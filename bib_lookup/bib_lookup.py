@@ -465,14 +465,17 @@ class BibLookup(ReprMixin):
 
         res = self._handle_network_error(res)
 
-        if res not in self.lookup_errors and format in ["bibtex", "bibentry"]:
-            try:
-                res = self._to_bib_item(res, idtf, align, ignore_fields, label)
-                self.__cached_lookup_results[identifier] = res
-                if len(self.__cached_lookup_results) > self.__cache_limit:
-                    self.__cached_lookup_results.popitem(last=False)
-            except Exception:
-                res = self.default_err
+        if res not in self.lookup_errors:
+            if format in ["bibtex", "bibentry"]:
+                try:
+                    res = self._to_bib_item(res, idtf, align, ignore_fields, label)
+                    self.__cached_lookup_results[identifier] = res
+                    if len(self.__cached_lookup_results) > self.__cache_limit:
+                        self.__cached_lookup_results.popitem(last=False)
+                except Exception:
+                    res = self.default_err
+            elif format == "text":
+                res = BeautifulSoup(res, "html.parser").get_text()
 
         if self.verbose >= 1:
             if res in self.lookup_errors:
