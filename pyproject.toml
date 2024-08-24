@@ -7,7 +7,7 @@ name = "bib-lookup"
 dynamic = ["version"]
 description = "A useful tool for looking up Bib entries using DOI, or pubmed ID (or URL), or arXiv ID (or URL)."
 readme = "README.md"
-license = "MIT"
+license = { file = "LICENSE" }
 requires-python = ">=3.6"
 authors = [
     { name = "DeepPSP", email = "wenh06@gmail.com" },
