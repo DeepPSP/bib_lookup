@@ -57,7 +57,7 @@ setuptools.setup(
         "Operating System :: OS Independent",
     ],
     python_requires=">=3.6",
-    install_requires=open("requirements.txt").readlines(),
+    install_requires=(cwd / "requirements.txt").read_text().splitlines(),
     extras_require=extras,
     entry_points={
         "console_scripts": ["bib-lookup=bib_lookup.cli:main"],
