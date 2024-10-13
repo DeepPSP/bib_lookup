@@ -17,7 +17,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ["3.7", "3.8", "3.9", "3.10", "3.11"]
+        python-version: ["3.8", "3.9", "3.10", "3.11", "3.12"]
 
     steps:
     - uses: actions/checkout@v4
@@ -34,6 +34,7 @@ jobs:
         python setup.py install_egg_info # Workaround https://github.com/pypa/pip/issues/4537
         python -m pip install -e .[dev]
         python -m pip freeze
+        pip list
     - name: Run test with pytest and collect coverage
       run: |
         pytest --cov=bib_lookup -vv -s test
