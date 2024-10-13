@@ -191,14 +191,14 @@ class BibItem(object):
         # align the fields
         max_key_len = max([len(k) for k in field_dict.keys()]) if len(field_dict) > 0 else 0
         if self.align == "middle":
-            lines = [header] + [f"{' '*(2+max_key_len-len(k))}{k} = {v}" for k, v in field_dict.items()] + ["}"]
+            lines = [header] + [f"{' ' * (2 + max_key_len - len(k))}{k} = {v}" for k, v in field_dict.items()] + ["}"]
         elif self.align == "left":
-            lines = [header] + [f"{' '*2}{k} = {v}" for k, v in field_dict.items()] + ["}"]
+            lines = [header] + [f"{' ' * 2}{k} = {v}" for k, v in field_dict.items()] + ["}"]
         elif self.align in [
             "left-middle",
             "left_middle",
         ]:
-            lines = [header] + [f"{' '*2}{k}{' '*(1+max_key_len-len(k))}= {v}" for k, v in field_dict.items()] + ["}"]
+            lines = [header] + [f"{' ' * 2}{k}{' ' * (1 + max_key_len - len(k))}= {v}" for k, v in field_dict.items()] + ["}"]
         return "\n".join(lines)
 
     __repr__ = __str__
