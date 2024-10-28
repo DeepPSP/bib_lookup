@@ -46,7 +46,8 @@ def test_citation_mixin():
 
     obj = SomeClass()
     obj.update_cache()
-    assert pd.read_csv(bib_lookup.CitationMixin.citation_cache).equals(df_cache_after_update)
+    match = pd.read_csv(bib_lookup.CitationMixin.citation_cache).equals(df_cache_after_update)
+    assert match, pd.read_csv(bib_lookup.CitationMixin.citation_cache).compare(df_cache_after_update)
 
     if df_system_cache is not None:
         df_system_cache.to_csv(bib_lookup.CitationMixin.citation_cache, index=False)
