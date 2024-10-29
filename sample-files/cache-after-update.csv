@@ -54,6 +54,7 @@ doi,citation
       series = {CIC-00},
          doi = {10.1109/cic.2000.898505},
    publisher = {IEEE},
+       pages = {255–258},
   collection = {CIC-00}
 }"
 10.1109/ACCESS.2020.3029211,"@article{Kalyakulina_2020,
