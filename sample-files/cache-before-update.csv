@@ -36,9 +36,10 @@ doi,citation
      author = {Matthew A Reyna and Nadi Sadr and Erick A Perez Alday and Annie Gu and Amit J Shah and Chad Robichaux and Ali Bahrami Rad and Andoni Elola and Salman Seyedi and Sardar Ansari and Hamid Ghanbari and Qiao Li and Ashish Sharma and Gari D Clifford},
   booktitle = {2021 Computing in Cardiology ({CinC})},
         doi = {10.23919/cinc53138.2021.9662687},
+  publisher = {{IEEE}},
        year = {2021},
       month = {9},
-  publisher = {{IEEE}}
+      pages = {1–4}
 }"
 10.1109/cic.2000.898505,"@inproceedings{Penzel,
       title = {The apnea-{ECG} database},
@@ -167,6 +168,7 @@ doi,citation
      author = {P. Laguna and R.G. Mark and A. Goldberg and G.B. Moody},
   booktitle = {Computers in Cardiology 1997},
         doi = {10.1109/cic.1997.648140},
+      pages = {673–676},
   publisher = {{IEEE}}
 }"
 10.1101/2021.05.17.444563,"@article{Kazemnejad_2021,

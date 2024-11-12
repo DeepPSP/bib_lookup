@@ -45,7 +45,8 @@ doi,citation
         doi = {10.23919/cinc53138.2021.9662687},
   publisher = {IEEE},
        year = {2021},
-      month = {9}
+      month = {9},
+      pages = {1–4}
 }"
 10.1109/cic.2000.898505,"@inproceedings{Penzel,
        title = {The apnea-ECG database},
@@ -200,6 +201,7 @@ doi,citation
       series = {CIC-97},
          doi = {10.1109/cic.1997.648140},
    publisher = {IEEE},
+       pages = {673–676},
   collection = {CIC-97}
 }"
 10.1101/2021.05.17.444563,"@article{Kazemnejad_2021,

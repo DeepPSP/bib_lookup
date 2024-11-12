@@ -100,7 +100,6 @@ python -m pip install .
   author    = {Hao Wen and Jingsu Kang},
   title     = {Hybrid Arrhythmia Detection on Varying-Dimensional Electrocardiography: Combining Deep Neural Networks and Clinical Rules},
   booktitle = {2021 Computing in Cardiology ({CinC})},
-  volume    = {48},
   doi       = {10.23919/cinc53138.2021.9662801},
   publisher = {{IEEE}},
   year      = {2021},

@@ -50,7 +50,7 @@ def test_citation_mixin():
     match = df_citation_cache.equals(df_cache_after_update)
     if not match:
         mismatch_list = df_citation_cache.compare(df_cache_after_update).values.tolist()
-        mismatch_list = ("+" * 80 + "\n").join(["\n".join(row) for row in mismatch_list])
+        mismatch_list = ("\n" + "+" * 80 + "\n").join(["\n".join(row) for row in mismatch_list])
     else:
         mismatch_list = None
     assert match, f"mismatch list = {mismatch_list}"
