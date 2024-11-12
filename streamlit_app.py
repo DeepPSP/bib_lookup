@@ -154,3 +154,5 @@ if button:
         output_container.error("DOI cannot be empty")
     else:
         do_lookup()
+elif input_doi != "":  # this makes hitting "Enter" key to trigger the lookup
+    do_lookup()
