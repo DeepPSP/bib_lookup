@@ -582,6 +582,8 @@ class BibLookup(ReprMixin):
                 }
             )
             category = "arxiv"
+            # version should be removed from `idtf`
+            idtf = re.sub("v\\d+", "", idtf)
             if _arxiv2doi:
                 idtf = f"10.48550/arXiv.{idtf}"
                 return self._obtain_feed_content(idtf)
