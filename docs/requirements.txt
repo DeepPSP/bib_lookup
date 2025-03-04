@@ -1,4 +1,4 @@
-sphinx<7.0
+sphinx
 nbsphinx
 sphinx-theme
 pydata-sphinx-theme
@@ -8,7 +8,6 @@ sphinx-autobuild
 sphinx-markdown-tables
 sphinx-copybutton
 sphinx-multiversion
-# sphinx-toolbox  # replaced by dropdown of sphinx_design
 sphinx-design
 sphinx-emoji-favicon
 sphinxcontrib-napoleon

@@ -22,34 +22,6 @@ def get_bib_lookuper():
     return BibLookup(verbose=0)
 
 
-bl = get_bib_lookuper()
-
-
-st.title("Bib Lookup")
-
-
-# input on the main page
-
-input_doi = st.text_input(
-    label="**DOI / PubMed ID / arXiv ID**",
-    value="",
-    max_chars=100,
-    key="input_doi",
-)
-
-
-# a "Search" button to trigger the lookup on the right side of the input box
-button = st.button(
-    label="Search",
-    key="button",
-    # on_click=do_lookup,
-)
-
-# a container for writting output
-
-output_container = st.container()
-
-
 def do_lookup():
     if input_doi == "":
         pass  # do nothing
@@ -91,6 +63,33 @@ def do_lookup():
         else:
             output_container.code(bib, language="latex", line_numbers=False)
 
+
+bl = get_bib_lookuper()
+
+
+st.title("Bib Lookup")
+
+
+# input on the main page
+
+input_doi = st.text_input(
+    label="**DOI / PubMed ID / arXiv ID**",
+    value="",
+    max_chars=100,
+    key="input_doi",
+    help="Enter a DOI, PubMed ID or arXiv ID",
+)
+
+# a "Search" button to trigger the lookup on the right side of the input box
+button = st.button(
+    label="Search",
+    key="button",
+    on_click=do_lookup,
+)
+
+# a container for writting output
+
+output_container = st.container()
 
 # show the version number on the sidebar
 
@@ -149,8 +148,10 @@ else:
     )
 
 
-if button:
-    if input_doi == "":
-        output_container.error("DOI cannot be empty")
-    else:
-        do_lookup()
+# if button:
+#     if input_doi == "":
+#         output_container.error("DOI cannot be empty")
+#     else:
+#         do_lookup()
+# elif input_doi != "":  # this makes hitting "Enter" key to trigger the lookup
+#     do_lookup()

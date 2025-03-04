@@ -83,7 +83,7 @@ python -m pip install .
     title = {Counting Multiplicities in a Hypersurface over a Number Field},
   journal = {arXiv preprint arXiv:1707.07183v2},
      year = {2017},
-    month = {7},
+    month = {7}
 }
 >>> print(bl("10.1109/CVPR.2016.90"))
 @inproceedings{He_2016,
@@ -93,7 +93,7 @@ python -m pip install .
         doi = {10.1109/cvpr.2016.90},
        year = {2016},
       month = {6},
-  publisher = {{IEEE}},
+  publisher = {{IEEE}}
 }
 >>> print(bl("10.23919/cinc53138.2021.9662801", align="left-middle"))
 @inproceedings{Wen_2021,
@@ -101,9 +101,10 @@ python -m pip install .
   title     = {Hybrid Arrhythmia Detection on Varying-Dimensional Electrocardiography: Combining Deep Neural Networks and Clinical Rules},
   booktitle = {2021 Computing in Cardiology ({CinC})},
   doi       = {10.23919/cinc53138.2021.9662801},
+  publisher = {{IEEE}},
   year      = {2021},
   month     = {9},
-  publisher = {{IEEE}},
+  pages     = {1–4}
 }
 ```
 

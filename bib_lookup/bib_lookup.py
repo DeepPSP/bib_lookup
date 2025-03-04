@@ -1175,7 +1175,7 @@ class BibLookup(ReprMixin):
                     f"\042{process_text(bi.entry_type, self.__err_color, font_size=self.__err_fontsize)}\042 "
                     f"should have the following fields:{newline}{whitespace * 4}"
                     + process_text(
-                        f"{DF_BIB_ENTRY_TYPES[DF_BIB_ENTRY_TYPES.entry_type==bi.entry_type].iloc[0].required_fields}",
+                        f"{DF_BIB_ENTRY_TYPES[DF_BIB_ENTRY_TYPES.entry_type == bi.entry_type].iloc[0].required_fields}",
                         self.__info_color,
                     )
                     + newline
