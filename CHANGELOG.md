@@ -17,4 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Fix bugs in the function `utils.gather_tex_source_files_in_one` when
+  `\input{\some_filepath}` and commented `% \input{\some_filepath}` coexist.
+
 ### Security

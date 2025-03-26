@@ -330,35 +330,36 @@ def gather_tex_source_files_in_one(
         or the path to the output file if `write_file` is True.
 
     """
-    input_pattern = "[\\w|\\/\\_\\-]+(?:\\.tex)?"
-    input_pattern = f"""\\\\input{{(?P<filepath>{input_pattern})}}"""
     root = Path(entry_file).parent
+    if write_file:
+        if output_file is None:
+            output_file = root / f"{Path(entry_file).stem}_in_one.tex"
+        if Path(entry_file).resolve() == Path(output_file).resolve():
+            raise ValueError("The entry file and the output file are the same, which is not allowed for security reasons.")
+        if Path(output_file).exists():
+            if not overwrite:
+                raise FileExistsError(
+                    "The output file exists. If you want to overwrite it, you should delete it manually first."
+                    " Or set `overwrite=True`."
+                )
+    input_pattern = "[\\w|\\/\\_\\-]+(?:\\.tex)?"
+    input_pattern = f"^(?:(?:[^%\\\\]|\\\\.)*)(\\\\input{{(?P<filepath>{input_pattern})}})"
+    input_pattern = re.compile(input_pattern, re.MULTILINE)
     content = Path(entry_file).read_text()
     while True:
-        input_items = []
-        for item in re.findall(input_pattern, content):
-            for line in content.splitlines():
-                if line.strip().startswith("%"):
-                    continue
-                if f"{{{item}}}" in line:
-                    input_items.append(item)
-                    break
+        input_items = list(re.finditer(input_pattern, content))
         if len(input_items) == 0:
             break
+        parts = []
+        prev_end = 0
         for item in input_items:
-            content = content.replace(f"\\input{{{item}}}", (root / item).with_suffix(".tex").read_text())
+            parts.append(content[prev_end : item.start(1)])
+            parts.append((root / item.group("filepath")).with_suffix(".tex").read_text())
+            prev_end = item.end(1)
+        parts.append(content[prev_end:])
+        content = "".join(parts)
     if not write_file:
         return content
-    if output_file is None:
-        output_file = root / f"{Path(entry_file).stem}_in_one.tex"
-    if Path(entry_file).resolve() == Path(output_file).resolve():
-        raise ValueError("The entry file and the output file are the same, which is not allowed for security reasons.")
-    if Path(output_file).exists():
-        if not overwrite:
-            raise FileExistsError(
-                "The output file exists. If you want to overwrite it, you should delete it manually first."
-                " Or set `overwrite=True`."
-            )
     Path(output_file).write_text(content, encoding="utf-8")
     return str(output_file)
 
