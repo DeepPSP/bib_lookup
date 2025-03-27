@@ -177,7 +177,7 @@ class BibLookup(ReprMixin):
 
     __URL__ = dict(
         doi="https://doi.org/",
-        pm="http://www.pubmedcentral.nih.gov/utils/idconv/v1.0/?format=json&ids=",
+        pm="https://www.ncbi.nlm.nih.gov/pmc/utils/idconv/v1.0/?format=json&ids=",
         arxiv="http://export.arxiv.org/api/query?id_list=",
     )
     __name__ = "BibLookup"
