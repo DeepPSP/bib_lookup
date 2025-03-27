@@ -35,7 +35,8 @@ Fixed
 - Fix layout bugs of the streamlit app.
 - Fix bugs in the function `utils.gather_tex_source_files_in_one` when
   `\input{\some_filepath}` and commented `% \input{\some_filepath}` coexist.
-- Update the base URL for the PubMed ID lookup service.
+- Update the base URL for the PubMed ID lookup service, and change
+  post method to get method to fetch the lookup content.
 
 Security
 ~~~~~~~~

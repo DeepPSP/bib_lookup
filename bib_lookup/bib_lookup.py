@@ -639,9 +639,9 @@ class BibLookup(ReprMixin):
 
         """
         try:
-            r = self.session.post(**feed_content)
+            r = self.session.get(**feed_content)
             if self.verbose > 1:
-                print_func(r.json())
+                print_func(r.text)
             mid_res = r.json()["records"][0]
         except requests.Timeout:
             res = self.timeout_err
