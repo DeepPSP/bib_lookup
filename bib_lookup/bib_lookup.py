@@ -29,16 +29,9 @@ from bs4 import BeautifulSoup, MarkupResemblesLocatorWarning
 from ._bib import BIB_FIELDS, DF_BIB_ENTRY_TYPES, BibItem
 from ._const import CONFIG_FILE as _CONFIG_FILE
 from ._const import DEFAULT_CONFIG as _DEFAULT_CONFIG
-from .utils import (
-    NETWORK_ERROR_MESSAGES,
-    ReprMixin,
-    color_text,
-    gather_tex_source_files_in_one,
-    is_notebook,
-    md_text,
-    printmd,
-    str2bool,
-)
+from .utils import NETWORK_ERROR_MESSAGES, ReprMixin
+from .utils import capitalize_title as capitalize_title_func
+from .utils import color_text, gather_tex_source_files_in_one, is_notebook, md_text, printmd, str2bool
 
 __all__ = [
     "BibLookup",
@@ -112,6 +105,9 @@ class BibLookup(ReprMixin):
         - "cache_limit": int or np.inf or None,
           default 1e6,
           maximum number of items in the internal cache.
+        - "capitalize_title": bool,
+          default False,
+          whether to capitalize the title of the bib items or not.
 
     Example
     -------
@@ -273,6 +269,8 @@ class BibLookup(ReprMixin):
                 f"but got `{bl_config['cache_limit']}`"
             )
 
+        self.__capitalize_title = str2bool(bl_config["capitalize_title"])
+
         self.__field_pattern = f""",\\s*({"|".join(list(BIB_FIELDS))})\\s*=\\s*"""
 
         self.__info_color = "blue"
@@ -315,6 +313,7 @@ class BibLookup(ReprMixin):
         ignore_errors: Optional[bool] = None,
         format: Optional[str] = None,
         style: Optional[str] = None,
+        capitalize_title: Optional[bool] = None,
         verbose: Optional[int] = None,
     ) -> Union[str, type(None)]:
         """Look up publication(s) and return the result.
@@ -353,6 +352,11 @@ class BibLookup(ReprMixin):
         style : str, optional
             Style of the final output.
             If specified, `self._style` is ignored.
+        capitalize_title : bool, optional
+            Whether to capitalize the title of the bib items or not.
+            If specified, `self.__capitalize_title` is ignored.
+            If `True`, the title will be capitalized.
+            If `False`, the title will be in the original case.
         verbose : int, optional
             Verbosity level for printing.
             If specified, `self.verbose` is ignored.
@@ -385,6 +389,7 @@ class BibLookup(ReprMixin):
                 ignore_errors,
                 format,
                 style,
+                capitalize_title,
                 verbose,
             )
         if isinstance(identifier, str):
@@ -400,6 +405,7 @@ class BibLookup(ReprMixin):
                     ignore_errors,
                     format,
                     style,
+                    capitalize_title,
                     verbose,
                 )
         elif isinstance(identifier, Sequence):
@@ -425,6 +431,7 @@ class BibLookup(ReprMixin):
                         ignore_errors,
                         format,
                         style,
+                        capitalize_title,
                         verbose,
                     )
                 return
@@ -441,6 +448,7 @@ class BibLookup(ReprMixin):
                         ignore_errors,
                         format,
                         style,
+                        capitalize_title,
                         verbose,
                     )
                     for idx, item in enumerate(identifier)
@@ -468,7 +476,7 @@ class BibLookup(ReprMixin):
         if res not in self.lookup_errors:
             if format in ["bibtex", "bibentry"]:
                 try:
-                    res = self._to_bib_item(res, idtf, align, ignore_fields, label)
+                    res = self._to_bib_item(res, idtf, align, ignore_fields, label, capitalize_title)
                     self.__cached_lookup_results[identifier] = res
                     if len(self.__cached_lookup_results) > self.__cache_limit:
                         self.__cached_lookup_results.popitem(last=False)
@@ -729,6 +737,7 @@ class BibLookup(ReprMixin):
         align: Optional[str] = None,
         ignore_fields: Optional[Union[str, Sequence[str]]] = None,
         label: Optional[str] = None,
+        capitalize_title: Optional[bool] = None,
     ) -> BibItem:
         """Convert a query result to a :class:`BibItem` instance.
 
@@ -752,6 +761,12 @@ class BibLookup(ReprMixin):
             If is "none", no field will be ignored.
         label : str, optional
             Label of the publication.
+            If specified, the label provided by the source is ignored.
+        capitalize_title : bool, optional
+            Whether to capitalize the title of the bib items or not.
+            If specified, `self.__capitalize_title` is ignored.
+            If `True`, the title will be capitalized.
+            If `False`, the title will be in the original case.
 
         Returns
         -------
@@ -842,6 +857,9 @@ class BibLookup(ReprMixin):
         _ordering = self.ordering + [k for k in field_dict if k not in self.ordering]
         _ordering = [k for k in _ordering if k in field_dict]
         field_dict = OrderedDict((k, field_dict[k]) for k in _ordering)
+
+        if capitalize_title and field_dict.get("title", None) is not None:
+            field_dict["title"] = capitalize_title_func(field_dict["title"])
 
         # to BibItem
         bib_item = BibItem(

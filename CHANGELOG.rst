@@ -16,6 +16,8 @@ Added
 
 - Add `overwrite` optional argument to function
   `gather_tex_source_files_in_one` in `utils` module.
+- Add utility function `capitalize_title` in `utils` module,
+  and add it as an option for the streamlit app.
 
 Changed
 ~~~~~~~

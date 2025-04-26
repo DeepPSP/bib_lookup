@@ -21,6 +21,7 @@ __all__ = [
     "printmd",
     "str2bool",
     "gather_tex_source_files_in_one",
+    "capitalize_title",
     "NETWORK_ERROR_MESSAGES",
 ]
 
@@ -362,6 +363,71 @@ def gather_tex_source_files_in_one(
         return content
     Path(output_file).write_text(content, encoding="utf-8")
     return str(output_file)
+
+
+def capitalize_title(s: str, exceptions: Optional[List[str]] = None) -> str:
+    """Convert a string to title case, excluding specified
+    words (e.g., prepositions, conjunctions).
+
+    Parameters
+    ----------
+    s : str
+        Input string to be converted to custom title case.
+    exceptions : iterable of str, optional
+        Collection of words to keep in lowercase (case-insensitive comparison).
+
+    Returns
+    -------
+    str
+        Formatted string in custom title case.
+
+    """
+    words = s.split()
+    if not words:
+        return s
+
+    trigger_punctuation = {":", ".", "!", "?"}
+
+    if exceptions is None:
+        # fmt: off
+        exceptions_lower = [
+            # articles
+            "a", "an", "the",
+            # short prepositions
+            "as", "at", "by", "down", "for", "from", "if",
+            "in", "into", "like", "near", "of", "off", "on", "onto",
+            "over", "past", "than", "to", "upon", "with",
+            # short coordinating conjunctions
+            "and", "but", "or", "nor", "once", "so", "that", "when", "yet",
+        ]
+        # fmt: on
+    else:
+        exceptions_lower = {ex.lower() for ex in exceptions}
+
+    processed = list(s)
+
+    force_capitalize = False
+    prev_end = 0
+    for idx, item in enumerate(re.finditer("(\\w+)", s)):
+        start, end = item.span()
+        word = item.group(1)
+        if idx == 0:  # first word should be capitalized
+            processed[start:end] = word.capitalize()
+            prev_end = end
+            continue
+        if any(c in trigger_punctuation for c in s[prev_end:start]):
+            force_capitalize = True
+        if force_capitalize:
+            processed[start:end] = word.capitalize()
+            force_capitalize = False
+            prev_end = end
+            continue
+        if word.lower() in exceptions_lower:
+            processed[start:end] = word.lower()
+        else:
+            processed[start:end] = word.capitalize()
+        prev_end = end
+    return "".join(processed)
 
 
 NETWORK_ERROR_MESSAGES = """400 Bad Request

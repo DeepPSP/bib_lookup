@@ -29,13 +29,18 @@ def do_lookup():
         current_arxiv2doi = st.session_state.arxiv2doi if "arxiv2doi" in st.session_state else True
         current_align = st.session_state.align if "align" in st.session_state else "middle"
         current_fmt = st.session_state.fmt if "fmt" in st.session_state else "bibtex"
+        current_capitalize_title = st.session_state.capitalize_title if "capitalize_title" in st.session_state else False
         if "history" in st.session_state and st.session_state["history"] != {}:
             if (
                 st.session_state["history"]["doi"] == input_doi
                 and st.session_state["history"]["arxiv2doi"] == current_arxiv2doi
             ):
                 if st.session_state["history"]["fmt"] == current_fmt == "bibtex":
-                    bib = str(bl._to_bib_item(st.session_state["history"]["bib"], align=current_align))
+                    bib = str(
+                        bl._to_bib_item(
+                            st.session_state["history"]["bib"], align=current_align, capitalize_title=current_capitalize_title
+                        )
+                    )
                     output_container.code(bib, language="latex", line_numbers=False)
                     return
                 elif st.session_state["history"]["fmt"] == current_fmt:
@@ -49,6 +54,7 @@ def do_lookup():
                 arxiv2doi=current_arxiv2doi,
                 format=current_fmt,
                 align=current_align,
+                capitalize_title=current_capitalize_title,
             )
             # cache into session_state["history"]
             if "history" not in st.session_state:
@@ -58,6 +64,7 @@ def do_lookup():
                 st.session_state["history"]["fmt"] = current_fmt
                 st.session_state["history"]["arxiv2doi"] = current_arxiv2doi
                 st.session_state["history"]["bib"] = bib
+                st.session_state["history"]["capitalize_title"] = current_capitalize_title
         except Exception as e:
             output_container.error(f"Error: {e}")
         else:
@@ -119,6 +126,13 @@ fmt = st.sidebar.selectbox(
     options=["bibtex", "text", "rdf-xml", "turtle", "ris", "crossref-xml", "datacite-xml", "crossref-tdm", "bibentry"],
     index=0,
     key="fmt",
+    on_change=do_lookup,
+)
+# toggle capitalize_title to be on or off
+capitalize_title = st.sidebar.checkbox(
+    label="Capitalize title",
+    value=False,
+    key="capitalize_title",
     on_change=do_lookup,
 )
 # link to issue tracker on GitHub
