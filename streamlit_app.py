@@ -122,7 +122,7 @@ arxiv2doi = st.sidebar.checkbox(
 )
 # select the format of the output
 fmt = st.sidebar.selectbox(
-    label="format",
+    label="Format",
     options=["bibtex", "text", "rdf-xml", "turtle", "ris", "crossref-xml", "datacite-xml", "crossref-tdm", "bibentry"],
     index=0,
     key="fmt",

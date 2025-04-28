@@ -1,11 +1,12 @@
 """
 """
 
+import random
 from pathlib import Path
 
 import pytest
 
-from bib_lookup.utils import color_text, gather_tex_source_files_in_one, md_text, printmd, str2bool
+from bib_lookup.utils import capitalize_title, color_text, gather_tex_source_files_in_one, md_text, printmd, str2bool
 
 _SAMPLE_DIR = Path(__file__).resolve().parents[1] / "sample-files"
 
@@ -124,3 +125,21 @@ def test_gather_tex_source_files_in_one():
         gather_tex_source_files_in_one(entry_file, write_file=True, output_file=output_file)
 
     gather_tex_source_files_in_one(entry_file, write_file=True, output_file=output_file, overwrite=True)
+
+
+def test_capitalize_title():
+    test_title_1 = """"Why Should I Trust You?": Explaining the Predictions of Any Classifier"""
+    test_title_2 = """Modelling the Effect of Exercise on Insulin Pharmacokinetics in "Continuous Subcutaneous Insulin Infusion" Treated Type 1 Diabetes Patients"""
+    # it is "ProxSkip" in the original title, but we are not able to treat the acronyms
+    test_title_3 = """Proxskip: Yes! Local Gradient Steps Provably Lead to Communication Acceleration! Finally!"""
+
+    def random_case_title(title):
+        return "".join([c.upper() if random.random() > 0.5 else c.lower() for c in title])
+
+    for _ in range(100):
+        title = random_case_title(test_title_1)
+        assert capitalize_title(title) == test_title_1, f"Failed for {test_title_1}\ngot {capitalize_title(title)}"
+        title = random_case_title(test_title_2)
+        assert capitalize_title(title) == test_title_2, f"Failed for {test_title_2}\ngot {capitalize_title(title)}"
+        title = random_case_title(test_title_3)
+        assert capitalize_title(title) == test_title_3, f"Failed for {test_title_3}\ngot {capitalize_title(title)}"
