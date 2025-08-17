@@ -83,6 +83,7 @@ SAMPLE_INPUT_TXT = SAMPLE_DATA_DIR / "sample_input.txt"
 TMP_DIR = PROJECT_DIR / "tmp"
 TMP_DIR.mkdir(exist_ok=True)
 OUTPUT_FILE = TMP_DIR / "test_cli_output.bib"
+OUTPUT_FILE.unlink(missing_ok=True)
 
 
 def test_cli():
@@ -102,6 +103,7 @@ def test_cli():
         "--check-file y --timeout 10 --ignore-errors true --verbose 3"
     )
     exitcode, output_msg = execute_cmd(cmd)
+    OUTPUT_FILE.unlink(missing_ok=True)
 
     tex_entry_file = SAMPLE_DATA_DIR / "sample-source.tex"
     default_output_file = tex_entry_file.parent / f"{tex_entry_file.stem}_in_one.tex"
@@ -117,19 +119,16 @@ def test_cli():
     exitcode, output_msg = execute_cmd(cmd)
     assert exitcode == 0 and tex_output_file.exists()
     cmd = f"bib-lookup --gather {str(tex_entry_file)} {str(tex_output_file)}"
-    exitcode, output_msg = execute_cmd(cmd)
+    exitcode, output_msg = execute_cmd(cmd, raise_error=False)
+    assert exitcode == 1
+    cmd = f"bib-lookup --gather {str(tex_entry_file)} {str(tex_output_file)} 123"
+    exitcode, output_msg = execute_cmd(cmd, raise_error=False)
     assert exitcode == 1
     cmd = f"bib-lookup --gather {str(tex_entry_file)} --overwrite"
     exitcode, output_msg = execute_cmd(cmd)
     assert exitcode == 0
 
     tex_output_file.unlink(missing_ok=True)
-    cmd = f"bib-lookup --gather {str(tex_output_file)}"
-    exitcode, output_msg = execute_cmd(cmd)
-    assert exitcode == 1
-
-    # errors are printed
-    exitcode, output_msg = execute_cmd(cmd)
     default_output_file.unlink()
 
     cmd = f"bib-lookup 10.1109/CVPR.2016.90 --gather {str(tex_entry_file)}"
@@ -140,12 +139,20 @@ def test_cli():
     tex_entry_file = SAMPLE_DATA_DIR / "not-exist.tex"
     cmd = f"bib-lookup --gather {str(tex_entry_file)}"
     # errors are printed
-    exitcode, output_msg = execute_cmd(cmd)
+    exitcode, output_msg = execute_cmd(cmd, raise_error=False)
+    assert exitcode == 1
     assert not (SAMPLE_DATA_DIR / "not-exist_in_one.tex").exists()
 
     # output version info
     cmd = "bib-lookup --version"
     exitcode, output_msg = execute_cmd(cmd)
+
+    if _CONFIG_FILE.exists():
+        # copy the content
+        _CONFIG_FILE.rename(_CONFIG_FILE.with_suffix(".bak"))
+        config_backed_file = _CONFIG_FILE.with_suffix(".bak")
+    else:
+        config_backed_file = None
 
     # config file
     cmd = "bib-lookup --config show"
@@ -189,6 +196,10 @@ def test_cli():
     exitcode, output_msg = execute_cmd(cmd)  # prints the config
     assert _CONFIG_FILE.exists()
     new_config_file.unlink()
+
+    # restore the original config file
+    if config_backed_file is not None:
+        config_backed_file.rename(_CONFIG_FILE)
 
     # simplify bib file
     tex_entry_file = SAMPLE_DATA_DIR / "sample-source.tex"

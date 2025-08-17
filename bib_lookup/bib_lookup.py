@@ -50,7 +50,7 @@ else:
     newline = "\n"
     whitespace = " "
 
-warnings.simplefilter("ignore", MarkupResemblesLocatorWarning)
+warnings.filterwarnings("ignore", category=MarkupResemblesLocatorWarning)
 
 
 class BibLookup(ReprMixin):
