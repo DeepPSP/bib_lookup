@@ -20,6 +20,7 @@ __all__ = [
     "md_text",
     "printmd",
     "str2bool",
+    "check_warnings",
     "gather_tex_source_files_in_one",
     "capitalize_title",
     "NETWORK_ERROR_MESSAGES",
@@ -428,6 +429,21 @@ def capitalize_title(s: str, exceptions: Optional[List[str]] = None) -> str:
             processed[start:end] = word.capitalize()
         prev_end = end
     return "".join(processed)
+
+
+def check_warnings(s: str) -> None:
+    """Check warnings from the bibtex system.
+
+    The warnings include:
+    - `comma(s) at end of name (removing)`
+
+    Parameters
+    ----------
+    s : str
+        The string of one or multiple bib entries.
+
+    """
+    end_name_comma_pattern = re.compile(r"(?:author|editor)\s*=.*,\s*(?:and|})")
 
 
 NETWORK_ERROR_MESSAGES = """400 Bad Request
