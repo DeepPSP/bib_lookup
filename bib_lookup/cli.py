@@ -5,6 +5,7 @@ Command-line interface for the bib_lookup package.
 
 import argparse
 import json
+import sys
 import warnings
 from pathlib import Path
 
@@ -136,7 +137,9 @@ def main():
     parser.add_argument(
         "--gather",
         type=str,
-        help="The entry .tex file to call `utils.gather_tex_source_files_in_one`",
+        nargs="+",  # allow one or two arguments
+        help="The entry .tex file to call `utils.gather_tex_source_files_in_one`. "
+        "Optionally, you can specify the output file as the second argument.",
         dest="gather",
     )
     parser.add_argument(
@@ -227,22 +230,43 @@ def main():
     if args.get("gather", None) is not None:
         from bib_lookup.utils import gather_tex_source_files_in_one
 
-        entry_file = Path(args["gather"]).resolve()
-
-        if not entry_file.is_file() or entry_file.suffix != ".tex":
-            print(f"File {args['gather']} is not a valid .tex file. Please check and try again.")
-            return
-
-        if len(args["identifiers"]) > 0 or args["input_file"] is not None:
-            warnings.warn(
-                "Identifiers and input file are ignored when gathering .tex files.",
-                RuntimeWarning,
-            )
-
         try:
-            gather_tex_source_files_in_one(args["gather"], write_file=True, overwrite=args["overwrite"])
-        except FileExistsError:
-            print(f"Output file for {args['gather']} already exists. Please remove it first and try again.")
+            gather_args = args["gather"]
+            if len(gather_args) == 1:
+                entry_file = Path(gather_args[0]).resolve()
+                output_file = None  # let the function use default naming
+            elif len(gather_args) == 2:
+                entry_file = Path(gather_args[0]).resolve()
+                output_file = Path(gather_args[1]).resolve()
+            else:
+                print("Error: --gather accepts one or two arguments only.")
+                sys.exit(1)
+
+            if not entry_file.is_file() or entry_file.suffix != ".tex":
+                print(f"Error: File {entry_file} is not a valid .tex file.")
+                sys.exit(1)
+
+            if len(args["identifiers"]) > 0 or args["input_file"] is not None:
+                warnings.warn(
+                    "Identifiers and input file are ignored when gathering .tex files.",
+                    RuntimeWarning,
+                )
+
+            gather_tex_source_files_in_one(
+                entry_file,
+                write_file=True,
+                output_file=output_file,
+                overwrite=args["overwrite"],
+            )
+        except FileExistsError as e:
+            print(f"Error: {e}".replace("overwrite=True", "--overwrite"))
+            sys.exit(1)
+        except FileNotFoundError as e:
+            print(f"Error: {e}")
+            sys.exit(1)
+        except Exception as e:
+            print(f"Unexpected error: {e}")
+            sys.exit(1)
         return
 
     if args.get("simplify_bib", None) is not None:

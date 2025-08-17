@@ -331,38 +331,77 @@ def gather_tex_source_files_in_one(
         or the path to the output file if `write_file` is True.
 
     """
-    root = Path(entry_file).parent
+    ntry_file = Path(entry_file).resolve()
+    base_dir = entry_file.parent  # for paths without \currfiledir prefix
+
     if write_file:
         if output_file is None:
-            output_file = root / f"{Path(entry_file).stem}_in_one.tex"
-        if Path(entry_file).resolve() == Path(output_file).resolve():
-            raise ValueError("The entry file and the output file are the same, which is not allowed for security reasons.")
-        if Path(output_file).exists():
-            if not overwrite:
-                raise FileExistsError(
-                    "The output file exists. If you want to overwrite it, you should delete it manually first."
-                    " Or set `overwrite=True`."
-                )
-    input_pattern = "[\\w|\\/\\_\\-]+(?:\\.tex)?"
-    input_pattern = f"^(?:(?:[^%\\\\]|\\\\.)*)(\\\\input{{(?P<filepath>{input_pattern})}})"
-    input_pattern = re.compile(input_pattern, re.MULTILINE)
-    content = Path(entry_file).read_text()
-    while True:
-        input_items = list(re.finditer(input_pattern, content))
-        if len(input_items) == 0:
-            break
-        parts = []
-        prev_end = 0
-        for item in input_items:
-            parts.append(content[prev_end : item.start(1)])
-            parts.append((root / item.group("filepath")).with_suffix(".tex").read_text())
-            prev_end = item.end(1)
-        parts.append(content[prev_end:])
-        content = "".join(parts)
-    if not write_file:
+            output_file = base_dir / f"{entry_file.stem}_in_one.tex"
+        output_file = Path(output_file).resolve()
+        if entry_file == output_file:
+            raise ValueError("The entry file and the output file are the same.")
+        if output_file.exists() and not overwrite:
+            raise FileExistsError(f"The output file {output_file} already exists. Use `overwrite=True` to overwrite it.")
+
+    # POSIX file path regex, supports multi-level directories, Unicode, skip '|' for external commands
+    posix_path_regex = r"[^\s{}|]+(?:/[^\s{}|]+)*"
+
+    # Regex to match \input{filepath}, optional \currfiledir or \currfileabsdir, skip commented lines
+    input_pattern = (
+        "^(?:(?:[^%\\\\]|\\\\.)*?)"  # Exclude commented lines
+        "\\\\input\\s*{\\s*"  # Match \input{ with optional spaces
+        f"(?P<filepath>{posix_path_regex}|\\\\currfile(?:abs)?dir[^\n}}]*)"  # Match filepath or currfiledir/absdir
+        "\\s*}"  # Optional spaces before closing }
+    )
+    pattern = re.compile(input_pattern, re.MULTILINE | re.DOTALL)
+
+    def _read_tex(file_path: Path, entry_base_dir: Path) -> str:
+        """Read a tex file and recursively inline its \\input{} content."""
+        file_path = file_path.resolve()
+        content = file_path.read_text(encoding="utf-8")
+        root = file_path.parent  # current file's directory
+
+        while True:
+            matches = list(pattern.finditer(content))
+            if not matches:
+                break
+            parts = []
+            prev_end = 0
+            for m in matches:
+                # replace entire \input{...} span
+                parts.append(content[prev_end : m.start()])
+                filepath_raw = m.group("filepath").strip()
+
+                # skip external commands starting with '|'
+                if filepath_raw.startswith("|"):
+                    parts.append(content[m.start() : m.end()])  # keep whole \input{...}
+                else:
+                    # handle \currfiledir or \currfileabsdir
+                    currdir_match = re.match(r"^\\currfile(?:abs)?dir\s+(.*)$", filepath_raw)
+                    if currdir_match:
+                        rel_path = currdir_match.group(1)
+                        included_file = root / rel_path  # relative to current file
+                    else:
+                        included_file = entry_base_dir / filepath_raw  # relative to entry file
+
+                    included_file = included_file.with_suffix(".tex").resolve()
+                    if not included_file.exists():
+                        raise FileNotFoundError(f"Included file not found: {included_file}")
+
+                    # recursively inline the content
+                    parts.append(_read_tex(included_file, entry_base_dir))
+
+                prev_end = m.end()  # move past the whole \input{...}
+            parts.append(content[prev_end:])
+            content = "".join(parts)
         return content
-    Path(output_file).write_text(content, encoding="utf-8")
-    return str(output_file)
+
+    final_content = _read_tex(entry_file, base_dir)
+
+    if write_file:
+        Path(output_file).write_text(final_content, encoding="utf-8")
+        return str(output_file)
+    return final_content
 
 
 def capitalize_title(s: str, exceptions: Optional[List[str]] = None) -> str:

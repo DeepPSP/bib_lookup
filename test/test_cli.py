@@ -110,6 +110,23 @@ def test_cli():
     cmd = f"bib-lookup --gather {str(tex_entry_file)}"
     exitcode, output_msg = execute_cmd(cmd)
     assert default_output_file.exists()
+    tex_output_file = TMP_DIR / "xxx.tex"
+    # remove tex_output_file if exists
+    tex_output_file.unlink(missing_ok=True)
+    cmd = f"bib-lookup --gather {str(tex_entry_file)} {str(tex_output_file)}"
+    exitcode, output_msg = execute_cmd(cmd)
+    assert exitcode == 0 and tex_output_file.exists()
+    cmd = f"bib-lookup --gather {str(tex_entry_file)} {str(tex_output_file)}"
+    exitcode, output_msg = execute_cmd(cmd)
+    assert exitcode == 1
+    cmd = f"bib-lookup --gather {str(tex_entry_file)} --overwrite"
+    exitcode, output_msg = execute_cmd(cmd)
+    assert exitcode == 0
+
+    tex_output_file.unlink(missing_ok=True)
+    cmd = f"bib-lookup --gather {str(tex_output_file)}"
+    exitcode, output_msg = execute_cmd(cmd)
+    assert exitcode == 1
 
     # errors are printed
     exitcode, output_msg = execute_cmd(cmd)

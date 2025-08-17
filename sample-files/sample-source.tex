@@ -11,7 +11,7 @@
     filecolor=magenta,
     urlcolor=cyan,
 }
-
+\usepackage{currfile}
 \usepackage{amsmath,amsfonts,amssymb,mathrsfs}
 \usepackage[backend=biber,style=gb7714-2015]{biblatex}
 \addbibresource[location=local]{large_database.bib}
@@ -41,7 +41,13 @@ $$\operatorname{prox}_{\rho f}(v) = \argmin_x \{f(x) + \dfrac{\rho}{2} \lVert x-
 
 \input{sample-source-sub1}
 
-\input{sample-source-sub2}
+\input{
+sample-source-sub2.tex
+}
+
+\input{\currfiledir sample-source-subdir/some-table}
+
+\input{\currfileabsdir sample-source-subdir/some-tikz.tex}
 
 
 \printbibliography[heading=bibliography]
