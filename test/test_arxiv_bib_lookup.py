@@ -1,5 +1,4 @@
-"""
-"""
+""" """
 
 import bib_lookup
 
