@@ -70,6 +70,8 @@ def do_lookup():
         else:
             output_container.code(bib, language="latex", line_numbers=False)
 
+    st.session_state["do_lookup"] = False
+
 
 bl = get_bib_lookuper()
 
@@ -85,13 +87,15 @@ input_doi = st.text_input(
     max_chars=100,
     key="input_doi",
     help="Enter a DOI, PubMed ID or arXiv ID",
+    on_change=lambda: st.session_state.update({"do_lookup": True}),
 )
 
 # a "Search" button to trigger the lookup on the right side of the input box
 button = st.button(
     label="Search",
     key="button",
-    on_click=do_lookup,
+    # on_click=do_lookup,
+    on_click=lambda: st.session_state.update({"do_lookup": True}),
 )
 
 # a container for writting output
@@ -111,14 +115,16 @@ align = st.sidebar.selectbox(
     options=["middle", "left", "left-middle"],
     index=0,
     key="align",
-    on_change=do_lookup,
+    # on_change=do_lookup,
+    on_change=lambda: st.session_state.update({"do_lookup": True}),
 )
 # toggle arxiv2doi to be on or off
 arxiv2doi = st.sidebar.checkbox(
     label="arXiv ID to DOI",
     value=True,
     key="arxiv2doi",
-    on_change=do_lookup,
+    # on_change=do_lookup,
+    on_change=lambda: st.session_state.update({"do_lookup": True}),
 )
 # select the format of the output
 fmt = st.sidebar.selectbox(
@@ -126,14 +132,16 @@ fmt = st.sidebar.selectbox(
     options=["bibtex", "text", "rdf-xml", "turtle", "ris", "crossref-xml", "datacite-xml", "crossref-tdm", "bibentry"],
     index=0,
     key="fmt",
-    on_change=do_lookup,
+    # on_change=do_lookup,
+    on_change=lambda: st.session_state.update({"do_lookup": True}),
 )
 # toggle capitalize_title to be on or off
 capitalize_title = st.sidebar.checkbox(
     label="Capitalize title",
     value=False,
     key="capitalize_title",
-    on_change=do_lookup,
+    # on_change=do_lookup,
+    on_change=lambda: st.session_state.update({"do_lookup": True}),
 )
 # link to issue tracker on GitHub
 for _ in range(7):
@@ -169,3 +177,6 @@ else:
 #         do_lookup()
 # elif input_doi != "":  # this makes hitting "Enter" key to trigger the lookup
 #     do_lookup()
+
+if st.session_state.get("do_lookup", False):
+    do_lookup()
