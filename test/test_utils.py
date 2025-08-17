@@ -110,16 +110,13 @@ def test_gather_tex_source_files_in_one():
 
     with pytest.raises(
         ValueError,
-        match=("The entry file and the output file are the same, which is not allowed for security reasons."),
+        match="The entry file and the output file are the same",
     ):
         gather_tex_source_files_in_one(entry_file, write_file=True, output_file=entry_file)
 
     with pytest.raises(
         FileExistsError,
-        match=(
-            "The output file exists. If you want to overwrite it, "
-            "you should delete it manually first. Or set `overwrite=True`."
-        ),
+        match="The output file .+ already exists",
     ):
         gather_tex_source_files_in_one(entry_file, write_file=True, output_file=output_file)
 
