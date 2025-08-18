@@ -8,7 +8,28 @@ Changelog <https://keepachangelog.com/en/1.1.0/>`__, and this project
 adheres to `Semantic
 Versioning <https://semver.org/spec/v2.0.0.html>`__.
 
-`Unreleased <https://github.com/DeepPSP/bib_lookup/compare/v0.0.29...HEAD>`__
+`Unreleased <https://github.com/DeepPSP/bib_lookup/compare/v0.1.0...HEAD>`__
+------------------------------------------------------------------------------------------------
+
+Added
+~~~~~
+
+Changed
+~~~~~~~
+
+Deprecated
+~~~~~~~~~~
+
+Removed
+~~~~~~~
+
+Fixed
+~~~~~
+
+Security
+~~~~~~~~
+
+`0.1.0 <https://github.com/DeepPSP/bib_lookup/compare/v0.0.29...v0.1.0>`__ - 2025-08-18
 ------------------------------------------------------------------------------------------------
 
 Added
@@ -25,12 +46,6 @@ Changed
 - Add `doi` field to `arXiv` lookup results.
 - Enhance the text format lookup results.
 
-Deprecated
-~~~~~~~~~~
-
-Removed
-~~~~~~~
-
 Fixed
 ~~~~~
 
@@ -39,9 +54,10 @@ Fixed
   `\input{\some_filepath}` and commented `% \input{\some_filepath}` coexist.
 - Update the base URL for the PubMed ID lookup service, and change
   post method to get method to fetch the lookup content.
-
-Security
-~~~~~~~~
+- Fix bugs in the function `utils.gather_tex_source_files_in_one` when
+  the `filepath` in `\input{filepath}` contains commands like
+  `\currfiledir` or `\currfileabsdir`, or contains characters other than
+  alphanumeric characters and `/` (e.g. Chinese characters).
 
 `0.0.29 <https://github.com/DeepPSP/bib_lookup/compare/v0.0.28...v0.0.29>`__ - 2024-08-15
 ------------------------------------------------------------------------------------------------
