@@ -8,7 +8,7 @@ Changelog <https://keepachangelog.com/en/1.1.0/>`__, and this project
 adheres to `Semantic
 Versioning <https://semver.org/spec/v2.0.0.html>`__.
 
-`Unreleased <https://github.com/DeepPSP/bib_lookup/compare/v0.1.0...HEAD>`__
+`Unreleased <https://github.com/DeepPSP/bib_lookup/compare/v0.1.1...HEAD>`__
 ------------------------------------------------------------------------------------------------
 
 Added
@@ -28,6 +28,19 @@ Fixed
 
 Security
 ~~~~~~~~
+
+`0.1.1 <https://github.com/DeepPSP/bib_lookup/compare/v0.1.0...v0.1.1>`__ - 2025-08-28
+------------------------------------------------------------------------------------------------
+
+Fixed
+~~~~~
+
+- Fix bugs in the utility function `utils.gather_tex_source_files_in_one`: Removed
+  problematic regex pattern that caused over-matching of content preceding `\input{}`
+  commands. Implemented robust comment exclusion using interval intersection detection
+  to prevent processing of commented `\input{}` commands. Added utility functions
+  `overlaps()` and `is_intersect()` to accurately determine if matched commands fal
+  within comment boundaries.
 
 `0.1.0 <https://github.com/DeepPSP/bib_lookup/compare/v0.0.29...v0.1.0>`__ - 2025-08-18
 ------------------------------------------------------------------------------------------------
