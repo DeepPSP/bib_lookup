@@ -3,7 +3,7 @@
 import re
 from enum import Enum
 from pathlib import Path
-from typing import Any, List, Optional, Union
+from typing import Any, List, Optional, Sequence, Union
 
 try:
     from IPython import get_ipython
@@ -298,6 +298,95 @@ def str2bool(v: Union[str, bool, int, float]) -> bool:
     return b
 
 
+EMPTY_SET = []
+Interval = Union[Sequence[int], type(EMPTY_SET)]
+GeneralizedInterval = Union[Sequence[Interval], type(EMPTY_SET)]
+
+
+def overlaps(interval: Interval, another: Interval) -> int:
+    """Find the overlap between two intervals.
+
+    The amount of overlap, in bp between interval and anohter, is returned.
+
+        - If > 0, the number of bp of overlap
+        - If 0,  they are book-ended
+        - If < 0, the distance in bp between them
+
+    Parameters
+    ----------
+    interval, another : Interval
+        The two intervals to compute their overlap.
+
+    Returns
+    -------
+    int
+        Overlap length of two intervals;
+        if < 0, the distance of two intervals.
+
+    Examples
+    --------
+    >>> overlaps([1,2], [2,3])
+    0
+    >>> overlaps([1,2], [3,4])
+    -1
+    >>> overlaps([1,2], [0,3])
+    1
+
+    """
+    # in case a or b is not in ascending order
+    interval = list(interval)
+    another = list(another)
+    interval.sort()
+    another.sort()
+    return min(interval[-1], another[-1]) - max(interval[0], another[0])
+
+
+def is_intersect(
+    interval: Union[GeneralizedInterval, Interval],
+    another_interval: Union[GeneralizedInterval, Interval],
+) -> bool:
+    """Determines if two (generalized) intervals intersect or not.
+
+    Parameters
+    ----------
+    interval, another_interval : GeneralizedInterval or Interval
+        The two intervals to check if they intersect.
+
+    Returns
+    -------
+    bool
+        True if `interval` intersects with another_interval, False otherwise.
+
+    Examples
+    --------
+    >>> is_intersect([0, 10], [5, 15])
+    True
+    >>> is_intersect([0, 10], [10, 15])
+    False
+    >>> is_intersect([0, 10], [])
+    False
+    >>> is_intersect([0, 10], [[5, 20], [25, 30]])
+    True
+
+    """
+    if interval is None or another_interval is None or len(interval) * len(another_interval) == 0:
+        # the case of empty set
+        return False
+
+    # check if is GeneralizedInterval
+    is_generalized = isinstance(interval[0], (list, tuple))
+    is_another_generalized = isinstance(another_interval[0], (list, tuple))
+
+    if is_generalized and is_another_generalized:
+        return any([is_intersect(interval, itv) for itv in another_interval])
+    elif not is_generalized and is_another_generalized:
+        return is_intersect(another_interval, interval)
+    elif is_generalized:  # and not is_another_generalized
+        return any([is_intersect(itv, another_interval) for itv in interval])
+    else:  # not is_generalized and not is_another_generalized
+        return any([overlaps(interval, another_interval) > 0])
+
+
 def gather_tex_source_files_in_one(
     entry_file: Union[str, Path],
     write_file: bool = False,
@@ -331,7 +420,7 @@ def gather_tex_source_files_in_one(
         or the path to the output file if `write_file` is True.
 
     """
-    ntry_file = Path(entry_file).resolve()
+    entry_file = Path(entry_file).resolve()
     base_dir = entry_file.parent  # for paths without \currfiledir prefix
 
     if write_file:
@@ -348,12 +437,14 @@ def gather_tex_source_files_in_one(
 
     # Regex to match \input{filepath}, optional \currfiledir or \currfileabsdir, skip commented lines
     input_pattern = (
-        "^(?:(?:[^%\\\\]|\\\\.)*?)"  # Exclude commented lines
+        # "^(?:(?:[^%\\\\]|\\\\.)*?)"  # Exclude commented lines
         "\\\\input\\s*{\\s*"  # Match \input{ with optional spaces
         f"(?P<filepath>{posix_path_regex}|\\\\currfile(?:abs)?dir[^\n}}]*)"  # Match filepath or currfiledir/absdir
         "\\s*}"  # Optional spaces before closing }
     )
     pattern = re.compile(input_pattern, re.MULTILINE | re.DOTALL)
+    # Regex to match LaTeX comments
+    comment_pattern = re.compile(r"%.*?$", re.MULTILINE)
 
     def _read_tex(file_path: Path, entry_base_dir: Path) -> str:
         """Read a tex file and recursively inline its \\input{} content."""
@@ -365,9 +456,15 @@ def gather_tex_source_files_in_one(
             matches = list(pattern.finditer(content))
             if not matches:
                 break
+
+            # Find all comment ranges
+            comment_ranges = [m.span() for m in comment_pattern.finditer(content)]
             parts = []
             prev_end = 0
+            matched_found = False
             for m in matches:
+                if is_intersect(m.span(), comment_ranges):
+                    continue
                 # replace entire \input{...} span
                 parts.append(content[prev_end : m.start()])
                 filepath_raw = m.group("filepath").strip()
@@ -390,10 +487,13 @@ def gather_tex_source_files_in_one(
 
                     # recursively inline the content
                     parts.append(_read_tex(included_file, entry_base_dir))
+                    matched_found = True
 
                 prev_end = m.end()  # move past the whole \input{...}
             parts.append(content[prev_end:])
             content = "".join(parts)
+            if not matched_found:
+                break
         return content
 
     final_content = _read_tex(entry_file, base_dir)
