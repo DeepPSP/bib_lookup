@@ -17,6 +17,9 @@ Added
 Changed
 ~~~~~~~
 
+- Add argument `keep_comments` to function `gather_tex_source_files_in_one`
+  in `utils` module to control whether to keep comments in the output.
+
 Deprecated
 ~~~~~~~~~~
 

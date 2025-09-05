@@ -91,6 +91,9 @@ def test_gather_tex_source_files_in_one():
     ret = gather_tex_source_files_in_one(entry_file)
     assert ret.splitlines()[0] == entry_file.read_text().splitlines()[0]
 
+    ret = gather_tex_source_files_in_one(entry_file, keep_comments=False)
+    assert r"% comment line" not in ret
+
     output_file = _TMP_DIR / "sample-source-in-one.tex"
     if output_file.exists():
         output_file.unlink()

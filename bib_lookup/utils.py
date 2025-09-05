@@ -387,17 +387,36 @@ def is_intersect(
         return any([overlaps(interval, another_interval) > 0])
 
 
+def _remove_comments(content: str) -> str:
+    """Remove LaTeX comments from content.
+
+    Parameters
+    ----------
+    content : str
+        The LaTeX content with comments.
+
+    Returns
+    -------
+    str
+        The LaTeX content without comments.
+
+    """
+    comment_pattern = re.compile(r"%.*?$", re.MULTILINE)
+    return comment_pattern.sub("", content)
+
+
 def gather_tex_source_files_in_one(
     entry_file: Union[str, Path],
     write_file: bool = False,
     output_file: Optional[Union[str, Path]] = None,
     overwrite: bool = False,
+    keep_comments: bool = True,
 ) -> str:
     """Gathers all the tex source files in one file.
 
     This function is useful when the entry file contains ``input`` commands
-    to include other tex files,
-    and when the journal submission system does not support subdirectories.
+    to include other tex files, and when the journal submission system
+    does not support subdirectories.
 
     Parameters
     ----------
@@ -412,12 +431,29 @@ def gather_tex_source_files_in_one(
         the output file will be the ``{entry_file.stem}_{in_one}.tex``.
     overwrite : bool, default False
         Whether to overwrite the output file if it exists.
+    keep_comments : bool, default True
+        Whether to keep comments in the output.
+
+        .. versionadded:: 0.1.2
 
     Returns
     -------
     str
         The tex source if `write_file` is False,
         or the path to the output file if `write_file` is True.
+
+    Raises
+    ------
+    ValueError
+        If the entry file and the output file are the same.
+    FileExistsError
+        If the output file exists and `overwrite` is False.
+    FileNotFoundError
+        If any of the included files are not found.
+
+    .. note::
+       The reason for not using `latexpand` or similar tools is that
+       they do not support `\\currfiledir` or `\\currfileabsdir`.
 
     """
     entry_file = Path(entry_file).resolve()
@@ -497,6 +533,8 @@ def gather_tex_source_files_in_one(
         return content
 
     final_content = _read_tex(entry_file, base_dir)
+    if not keep_comments:
+        final_content = _remove_comments(final_content)
 
     if write_file:
         Path(output_file).write_text(final_content, encoding="utf-8")

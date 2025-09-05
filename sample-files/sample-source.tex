@@ -16,6 +16,11 @@
 \usepackage[backend=biber,style=gb7714-2015]{biblatex}
 \addbibresource[location=local]{large_database.bib}
 
+
+\newif\ifIncludeSub
+\IncludeSubtrue
+
+
 \title{bib\_lookup}
 \author{WEN Hao}
 \date{}
@@ -48,6 +53,13 @@ sample-source-sub2.tex
 \input{\currfiledir sample-source-subdir/some-table}
 
 \input{\currfileabsdir sample-source-subdir/some-tikz.tex}
+
+
+\IncludeSubfalse
+
+\ifIncludeSub
+\input{sample-source-sub3.tex}
+\fi
 
 
 \printbibliography[heading=bibliography]
