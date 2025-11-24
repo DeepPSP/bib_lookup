@@ -19,7 +19,7 @@ from collections import OrderedDict
 from copy import deepcopy
 from pathlib import Path
 from string import punctuation
-from typing import Dict, List, Optional, Sequence, Tuple, Union
+from typing import Dict, List, Literal, Optional, Sequence, Tuple, Union
 
 import feedparser
 import numpy as np
@@ -193,7 +193,7 @@ class BibLookup(ReprMixin):
         # update current config with user-defined config
         bl_config.update(kwargs)
 
-        self.align = (align or bl_config["align"]).lower()
+        self.align = (align or bl_config["align"]).lower()  # type: ignore
         assert self.align in [
             "middle",
             "left",
@@ -207,14 +207,14 @@ class BibLookup(ReprMixin):
         self.__cached_lookup_results = OrderedDict()
         self.email = email or bl_config["email"]
         if ignore_fields is None:
-            ignore_fields = bl_config["ignore_fields"]
+            ignore_fields = bl_config["ignore_fields"]  # type: ignore
         if isinstance(ignore_fields, str):
             if ignore_fields.lower() == "none":
                 self._ignore_fields = []
             else:
                 self._ignore_fields = [ignore_fields.lower()]
         else:
-            self._ignore_fields = [k.lower() for k in ignore_fields]
+            self._ignore_fields = [k.lower() for k in ignore_fields]  # type: ignore
         colon = "[\\s]*:[\\s]*"
         # NOTE when applying `re.search`, all strings are converted to lower cases
         # DOI examples:
@@ -243,21 +243,21 @@ class BibLookup(ReprMixin):
 
         self.__header_pattern = "^@(?P<entry_type>\\w+)\\{(?P<label>[^,]+)"
 
-        self.ignore_errors = str2bool(bl_config["ignore_errors"])
-        self.timeout = float(bl_config["timeout"])
-        self._arxiv2doi = str2bool(bl_config["arxiv2doi"])
-        self._format = bl_config["format"].lower()
+        self.ignore_errors = str2bool(bl_config["ignore_errors"])  # type: ignore
+        self.timeout = float(bl_config["timeout"])  # type: ignore
+        self._arxiv2doi = str2bool(bl_config["arxiv2doi"])  # type: ignore
+        self._format = bl_config["format"].lower()  # type: ignore
         if self._format != "bibtex" and not self._arxiv2doi:
             warnings.warn(
                 f"format `{self._format}` is supported only when `arxiv2doi` is True. `arxiv2doi` is set to True.",
                 RuntimeWarning,
             )
             self._arxiv2doi = True
-        self._style = bl_config["style"].lower()
-        self.verbose = int(bl_config["verbose"])
-        self.print_result = str2bool(bl_config["print_result"])
+        self._style = bl_config["style"].lower()  # type: ignore
+        self.verbose = int(bl_config["verbose"])  # type: ignore
+        self.print_result = str2bool(bl_config["print_result"])  # type: ignore
         self._ordering = bl_config["ordering"]
-        self._ordering = [k.lower() for k in self._ordering]
+        self._ordering = [k.lower() for k in self._ordering]  # type: ignore
         self._comment_pattern = re.compile(r"^%")
         if isinstance(bl_config["cache_limit"], (int, float, np.generic)):
             self.__cache_limit = bl_config["cache_limit"] if bl_config["cache_limit"] >= 0 else np.inf
@@ -269,7 +269,7 @@ class BibLookup(ReprMixin):
                 f"but got `{bl_config['cache_limit']}`"
             )
 
-        self.__capitalize_title = str2bool(bl_config["capitalize_title"])
+        self.__capitalize_title = str2bool(bl_config["capitalize_title"])  # type: ignore
 
         self.__field_pattern = f""",\\s*({"|".join(list(BIB_FIELDS))})\\s*=\\s*"""
 
@@ -315,7 +315,7 @@ class BibLookup(ReprMixin):
         style: Optional[str] = None,
         capitalize_title: Optional[bool] = None,
         verbose: Optional[int] = None,
-    ) -> Union[str, type(None)]:
+    ) -> Union[str, None]:
         """Look up publication(s) and return the result.
 
         Parameters
@@ -417,14 +417,14 @@ class BibLookup(ReprMixin):
                     not isinstance(label, str) and len(label) == len(identifier) and all([isinstance(i, str) for i in label])
                 ), "`label` must be a sequence of strings of the same length as `identifier`"
             else:
-                label = [None] * len(identifier)
+                label = [None] * len(identifier)  # type: ignore
             if print_result:
                 for idx, item in enumerate(identifier):
                     self(
                         item,
                         align,
                         ignore_fields,
-                        label[idx],
+                        label[idx],  # type: ignore
                         arxiv2doi,
                         print_result,
                         timeout,
@@ -441,7 +441,7 @@ class BibLookup(ReprMixin):
                         item,
                         align,
                         ignore_fields,
-                        label[idx],
+                        label[idx],  # type: ignore
                         arxiv2doi,
                         print_result,
                         timeout,
@@ -451,7 +451,7 @@ class BibLookup(ReprMixin):
                         capitalize_title,
                         verbose,
                     )
-                    for idx, item in enumerate(identifier)
+                    for idx, item in enumerate(identifier)  # type: ignore
                 ).strip("\n")
         else:
             raise TypeError(f"`identifier` must be a string or a sequence of strings, but got `{identifier}`.")
@@ -471,12 +471,12 @@ class BibLookup(ReprMixin):
         elif category == "error" or re.findall("|".join(self.__exceptional_doi_domains), idtf):
             res = self.default_err
 
-        res = self._handle_network_error(res)
+        res = self._handle_network_error(res)  # type: ignore
 
         if res not in self.lookup_errors:
             if format in ["bibtex", "bibentry"]:
                 try:
-                    res = self._to_bib_item(res, idtf, align, ignore_fields, label, capitalize_title)
+                    res = self._to_bib_item(res, idtf, align, ignore_fields, label, capitalize_title)  # type: ignore
                     self.__cached_lookup_results[identifier] = res
                     if len(self.__cached_lookup_results) > self.__cache_limit:
                         self.__cached_lookup_results.popitem(last=False)
@@ -487,7 +487,7 @@ class BibLookup(ReprMixin):
 
         if self.verbose >= 1:
             if res in self.lookup_errors:
-                print_func(process_text(res, self.__err_color, font_size=self.__err_fontsize))
+                print_func(process_text(res, self.__err_color, font_size=self.__err_fontsize))  # type: ignore
             else:
                 print(res)
         self.verbose = original_verbose
@@ -948,9 +948,10 @@ class BibLookup(ReprMixin):
 
     def save(
         self,
-        identifiers: Union[int, str, Sequence[str], Sequence[int]] = None,
+        identifiers: Optional[Union[int, str, Sequence[str], Sequence[int]]] = None,
         output_file: Optional[Union[str, Path]] = None,
         skip_existing: Union[bool, str] = True,
+        output_mode: Literal["w", "a"] = "a",
     ) -> None:
         """Save bib items corresponding to the identifiers
         to the output file.
@@ -969,6 +970,11 @@ class BibLookup(ReprMixin):
             If True or "strict", skip existing bib items in the output file.
             For "strict" comparison of instances of :class:`BibItem`,
             ref. the :meth:`BibItem.__eq__` method.
+        output_mode : {"w", "a"}, default "a"
+            The file writing mode, by default "a".
+            "w" for overwrite, "a" for append.
+
+            .. versionadded:: 0.1.2
 
         WARNING
         -------
@@ -992,14 +998,14 @@ class BibLookup(ReprMixin):
         assert isinstance(identifiers, Sequence) and all(
             [isinstance(i, str) for i in identifiers]
         ), "`identifiers` must be a string (or an integer) or a sequence of strings (or integers)"
-        identifiers = [i for i in identifiers if i in self.__cached_lookup_results]
+        identifiers = [i for i in identifiers if i in self.__cached_lookup_results]  # type: ignore
 
         # check if the bib item is already existed in the output file
         if skip_existing:
             existing_bib_items = self.read_bib_file(_output_file)
             identifiers = [
                 i
-                for i in identifiers
+                for i in identifiers  # type: ignore
                 if not any(
                     [
                         self[i].__eq__(
@@ -1011,7 +1017,7 @@ class BibLookup(ReprMixin):
                 )
             ]
 
-        if len(identifiers) == 0:
+        if len(identifiers) == 0:  # type: ignore
             print_func(
                 f"no bib item is saved to `{process_text(str(_output_file), self.__info_color)}` "
                 "because all bib items are already existed in the output file, "
@@ -1019,13 +1025,13 @@ class BibLookup(ReprMixin):
             )
             return
 
-        with open(_output_file, "a") as f:
+        with open(_output_file, output_mode) as f:
             f.writelines("\n".join([str(self.__cached_lookup_results[i]) for i in identifiers]) + "\n")
 
         print_func(f"Bib items written to `{process_text(str(_output_file), self.__info_color)}`")
 
         # remove saved bib items from the cache
-        for i in identifiers:
+        for i in identifiers:  # type: ignore
             self.__cached_lookup_results.pop(i)
 
     def read_bib_file(
@@ -1221,6 +1227,7 @@ class BibLookup(ReprMixin):
         tex_sources: Union[Path, str, List[Union[Path, str]]],
         bib_file: Union[Path, str],
         output_file: Optional[Union[Path, str]] = None,
+        output_mode: Literal["w", "a"] = "a",
     ) -> str:
         """Simplify a bib file by removing all the bib items
         that are not used in the tex sources.
@@ -1238,6 +1245,12 @@ class BibLookup(ReprMixin):
         output_file : str or pathlib.Path, optional
             The output file to save the simplified bib file,
             defaults to ``Path(bib_file).stem + "_simplified.bib"``.
+        output_mode : {"w", "a"}, default "a"
+            The file writing mode,
+            by default "a" (append mode).
+            If "w", the output file will be overwritten if it already exists.
+
+            .. versionadded:: 0.1.2
 
         Returns
         -------
@@ -1284,7 +1297,7 @@ class BibLookup(ReprMixin):
         cited_identifiers = [idtf for idtf in ref_bl if ref_bl[idtf].label in cited_labels]
 
         # write to output file
-        ref_bl.save(cited_identifiers, output_file)
+        ref_bl.save(cited_identifiers, output_file=output_file, output_mode=output_mode)
         return str(output_file)
 
 
