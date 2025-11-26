@@ -14,13 +14,16 @@ on:
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
+env:
+  MAIN_PYTHON_VERSION: '3.12'
+
 jobs:
   build:
 
     runs-on: ubuntu-22.04
     strategy:
       matrix:
-        python-version: ["3.8", "3.9", "3.10", "3.11", "3.12"]
+        python-version: ["3.9", "3.10", "3.11", "3.12", "3.13", "3.14"]
 
     steps:
     - uses: actions/checkout@v4
@@ -34,7 +37,6 @@ jobs:
         python -m pip install -r requirements.txt
         python -m pip install pytest pytest-xdist pytest-cov # Testing packages
         python -m pip uninstall bib_lookup --yes # Remove if already installed
-        python setup.py install_egg_info # Workaround https://github.com/pypa/pip/issues/4537
         python -m pip install -e .[dev]
         python -m pip freeze
         pip list
@@ -42,8 +44,8 @@ jobs:
       run: |
         pytest --cov=bib_lookup -vv -s test
     - name: Upload coverage to Codecov
-      # Only upload coverage for Python 3.10 and the event is not scheduled
-      if: matrix.python-version == '3.10' && !contains(fromJson('["schedule"]'), github.event_name)
+      # Only upload coverage for Python ${MAIN_PYTHON_VERSION} and the event is not scheduled
+      if: matrix.python-version == env.MAIN_PYTHON_VERSION && !contains(fromJson('["schedule"]'), github.event_name)
       uses: codecov/codecov-action@v4
       with:
         fail_ci_if_error: true # optional (default = false)

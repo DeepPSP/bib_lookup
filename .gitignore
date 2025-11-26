@@ -176,3 +176,5 @@ log
 # notebooks that are not ignored should be specified
 *.ipynb
 # !demo.ipynb
+
+sample-files/**/*_in_one.tex

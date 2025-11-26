@@ -17,6 +17,9 @@ Added
 Changed
 ~~~~~~~
 
+- Add argument `keep_comments` to function `gather_tex_source_files_in_one`
+  in `utils` module to control whether to keep comments in the output.
+
 Deprecated
 ~~~~~~~~~~
 
@@ -39,7 +42,7 @@ Fixed
   problematic regex pattern that caused over-matching of content preceding `\input{}`
   commands. Implemented robust comment exclusion using interval intersection detection
   to prevent processing of commented `\input{}` commands. Added utility functions
-  `overlaps()` and `is_intersect()` to accurately determine if matched commands fal
+  `overlaps()` and `is_intersect()` to accurately determine if matched commands fall
   within comment boundaries.
 
 `0.1.0 <https://github.com/DeepPSP/bib_lookup/compare/v0.0.29...v0.1.0>`__ - 2025-08-18

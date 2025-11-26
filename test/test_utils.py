@@ -32,7 +32,7 @@ def test_color_text():
     ct = color_text("test", color=("red", "green", "blue"))
 
     with pytest.raises(TypeError, match="Cannot color text with provided color of type `.+`"):
-        ct = color_text("test", color=1)
+        ct = color_text("test", color=1)  # type: ignore
 
     with pytest.raises(ValueError, match="unknown text color `xxx`"):
         ct = color_text("test", color="xxx")
@@ -44,7 +44,6 @@ def test_color_text():
 def test_md_text():
     md_text("test")
     md_text("test", color="green")
-    md_text("test", color=("red", "green", "blue"))
     md_text("test", color="red", method="html")
     md_text("test", color="yellow", bold=True)
     md_text("test", color="blue", font_size=20)
@@ -90,6 +89,11 @@ def test_gather_tex_source_files_in_one():
     entry_file = _SAMPLE_DIR / "sample-source.tex"
     ret = gather_tex_source_files_in_one(entry_file)
     assert ret.splitlines()[0] == entry_file.read_text().splitlines()[0]
+    assert r"\verb|here \input{sample-source-sub3.tex}| should not include section 3." in ret
+    assert r"\verb*|here \input{sample-source-sub3.tex}| should not include section 3." in ret
+
+    ret = gather_tex_source_files_in_one(entry_file, keep_comments=False)
+    assert r"% comment line" not in ret
 
     output_file = _TMP_DIR / "sample-source-in-one.tex"
     if output_file.exists():

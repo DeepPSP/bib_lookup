@@ -81,7 +81,7 @@ class BibItem(object):
 
     @property
     def label(self) -> str:
-        return self.__label
+        return self.__label or self.identifier
 
     @property
     def align(self) -> str:
@@ -199,7 +199,7 @@ class BibItem(object):
             "left_middle",
         ]:
             lines = [header] + [f"{' ' * 2}{k}{' ' * (1 + max_key_len - len(k))}= {v}" for k, v in field_dict.items()] + ["}"]
-        return "\n".join(lines)
+        return "\n".join(lines)  # type: ignore
 
     __repr__ = __str__
 
@@ -227,7 +227,7 @@ class BibItem(object):
             assert e in BIB_ENTRY_TYPES or e in BIB_FIELDS, f"`{e}` is not a valid entry type or field name"
             print(f"{e}:{newline}    {BIB_ENTRY_TYPES[e] if e in BIB_ENTRY_TYPES else BIB_FIELDS[e]}{newline}")
 
-    def __eq__(self, other: "BibItem", strict: bool = False) -> bool:
+    def __eq__(self, other: object, strict: bool = False) -> bool:
         """Comparison method for `BibItem`.
 
         Parameters
