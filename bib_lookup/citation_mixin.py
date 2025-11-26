@@ -29,7 +29,7 @@ class CitationMixin(object):
         style: Optional[str] = None,
         timeout: Optional[float] = None,
         print_result: bool = False,
-    ) -> Union[str, type(None)]:
+    ) -> Union[str, None]:
         """Get the bib citation(s) from the DOI(s).
 
         Parameters
@@ -120,6 +120,7 @@ class CitationMixin(object):
                     citation += "\n" + "\n".join(df_new["citation"].tolist())
         else:
             citation = ""
+            doi = []
 
         citation = citation.strip("\n ")
         if citation == "" and self.doi is not None:

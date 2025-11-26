@@ -102,7 +102,7 @@ def test_simplify_bib_file():
     if _SIMPLIFIED_OUTPUT_FILE.exists():
         _SIMPLIFIED_OUTPUT_FILE.unlink()
     BibLookup.simplify_bib_file(
-        tex_sources=_SOURCE_FILE_LIST,
+        tex_sources=_SOURCE_FILE_LIST,  # type: ignore
         bib_file=_LARGE_DATABASE_FILE,
         output_file=_SIMPLIFIED_OUTPUT_FILE,
     )

@@ -315,7 +315,7 @@ def main():
     if args["output_file"] is not None:
         bl.save(skip_existing=not args["allow_duplicates"])
         if check_file:
-            bl.check_bib_file(bl.output_file)
+            bl.check_bib_file(bl.output_file)  # type: ignore
     else:
         if len(bl) == 0:
             print("No entries found.")

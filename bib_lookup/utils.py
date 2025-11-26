@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Any, List, Optional, Sequence, Union
 
 try:
-    from IPython import get_ipython
+    from IPython import get_ipython  # type: ignore
 except ModuleNotFoundError:
     get_ipython = None
 
@@ -45,6 +45,8 @@ def is_notebook() -> bool:
     .. [#sa] https://stackoverflow.com/questions/15411967/how-can-i-check-if-code-is-executed-in-the-ipython-notebook
 
     """
+    if get_ipython is None:
+        return False
     try:
         shell = get_ipython().__class__
         if shell.__name__ == "ZMQInteractiveShell":
@@ -135,14 +137,14 @@ class _ANSI_ESCAPE_CODES(Enum):
     STOP = "\033[0m"
 
 
-def color_text(text: str, color: Optional[str] = None, method: str = "ansi", **kwargs: Any) -> str:
+def color_text(text: str, color: Optional[Union[str, tuple]] = None, method: str = "ansi", **kwargs: Any) -> str:
     """Color the text.
 
     Parameters
     ----------
     text : str
         The text to be colored.
-    color : str, optional
+    color : str or tuple of str, optional
         The color of the text.
         If is None, the text will be printed in the default color.
     method : {"ansi", "html", "file"}, optional
@@ -162,6 +164,7 @@ def color_text(text: str, color: Optional[str] = None, method: str = "ansi", **k
     if not isinstance(color, (str, tuple)):
         raise TypeError(f"Cannot color text with provided color of type `{type(color)}`")
     if isinstance(color, tuple):
+        assert len(color) >= 1
         if len(color) > 1:
             text = color_text(text, color[1:], method)
         color = color[0]
@@ -169,7 +172,7 @@ def color_text(text: str, color: Optional[str] = None, method: str = "ansi", **k
     if method == "html":
         return f"<font color = {color}>{text}</font>"
     elif method == "ansi":
-        color = color.lower()
+        color = color.lower()  # type: ignore
         if color == "green":
             color = _ANSI_ESCAPE_CODES.OKGREEN.value
         elif color == "red":
@@ -234,7 +237,8 @@ def md_text(
     color_style = f"color: {color}" if color is not None else ""
     font_family_style = f"font-family: '{font_family}'" if font_family is not None else ""
     font_size_style = f"font-size: {str(font_size)}" if font_size is not None else ""
-    span_style = "; ".join([color_style, font_size_style, font_family_style])
+    all_styles = [color_style, font_size_style, font_family_style]
+    span_style = "; ".join([s for s in all_styles if s])
     md_str = f"""<span style="{span_style}">{text}</span>"""
     if bold:
         md_str = f"""<strong>{md_str}</strong>"""
@@ -378,13 +382,13 @@ def is_intersect(
     is_another_generalized = isinstance(another_interval[0], (list, tuple))
 
     if is_generalized and is_another_generalized:
-        return any([is_intersect(interval, itv) for itv in another_interval])
+        return any([is_intersect(interval, itv) for itv in another_interval])  # type: ignore
     elif not is_generalized and is_another_generalized:
         return is_intersect(another_interval, interval)
     elif is_generalized:  # and not is_another_generalized
-        return any([is_intersect(itv, another_interval) for itv in interval])
+        return any([is_intersect(itv, another_interval) for itv in interval])  # type: ignore
     else:  # not is_generalized and not is_another_generalized
-        return any([overlaps(interval, another_interval) > 0])
+        return any([overlaps(interval, another_interval) > 0])  # type: ignore
 
 
 def _remove_comments(content: str) -> str:
@@ -493,6 +497,8 @@ def gather_tex_source_files_in_one(
             if not matches:
                 break
 
+            verbatim_intervals = find_verbatim_blocks(content)
+
             # Find all comment ranges
             comment_ranges = [m.span() for m in comment_pattern.finditer(content)]
             parts = []
@@ -507,6 +513,9 @@ def gather_tex_source_files_in_one(
 
                 # skip external commands starting with '|'
                 if filepath_raw.startswith("|"):
+                    parts.append(content[m.start() : m.end()])  # keep whole \input{...}
+                # skip verbatim environments
+                elif any(m.start() >= vspan[0] and m.end() <= vspan[1] for vspan in verbatim_intervals):
                     parts.append(content[m.start() : m.end()])  # keep whole \input{...}
                 else:
                     # handle \currfiledir or \currfileabsdir
@@ -537,9 +546,57 @@ def gather_tex_source_files_in_one(
         final_content = _remove_comments(final_content)
 
     if write_file:
-        Path(output_file).write_text(final_content, encoding="utf-8")
+        Path(output_file).write_text(final_content, encoding="utf-8")  # type: ignore
         return str(output_file)
     return final_content
+
+
+def find_verbatim_blocks(text: str) -> List[List[int]]:
+    """Find all LaTeX verbatim blocks and return their start and end positions.
+
+    This function identifies both inline \\verb commands and verbatim environments
+    in LaTeX source code, returning the character positions of each block.
+
+    Parameters
+    ----------
+    text : str
+        Input LaTeX source code to search for verbatim blocks.
+
+    Returns
+    -------
+    List[List[int]]
+        List of [start, end] position pairs for each verbatim block found.
+        Positions are character indices in the input text.
+
+    Notes
+    -----
+    The function detects:
+    - \\verb and \\verb* commands with any delimiter character
+    - \\begin{verbatim}...\\end{verbatim} environments
+
+    Examples
+    --------
+    >>> text = r'Text \\verb|code| more text'
+    >>> find_verbatim_blocks(text)
+    [[10, 20]]
+    """
+    positions = []
+
+    # Match \verb and \verb* commands with any delimiter
+    verb_pattern = re.compile(r"\\verb\*?(.)(.*?)\1", re.DOTALL)
+    for match in verb_pattern.finditer(text):
+        start, end = match.span()
+        positions.append([start, end])
+
+    # Match verbatim environments
+    verbatim_pattern = re.compile(r"\\begin\{verbatim\}(.*?)\\end\{verbatim\}", re.DOTALL)
+    for match in verbatim_pattern.finditer(text):
+        start, end = match.span()
+        positions.append([start, end])
+
+    # Sort by starting position
+    positions.sort(key=lambda x: x[0])
+    return positions
 
 
 def capitalize_title(s: str, exceptions: Optional[List[str]] = None) -> str:

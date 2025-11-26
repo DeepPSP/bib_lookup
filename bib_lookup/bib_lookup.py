@@ -556,12 +556,13 @@ class BibLookup(ReprMixin):
                 _type = f"{_type}; style = {style}"
             headers = {"Accept": _type}
             url = self.__URL__["doi"] + idtf
-            fc.update(
-                {
+            fc = dict(
+                **fc,
+                **{
                     "url": url,
                     "headers": headers,
                     "allow_redirects": True,
-                }
+                },
             )
             category = "doi"
         elif re.search(self.pm_pattern, idtf):
@@ -571,10 +572,11 @@ class BibLookup(ReprMixin):
                 idtf,
             ).strip("/")
             url = self.__URL__["pm"] + idtf
-            fc.update(
-                {
+            fc = dict(
+                **fc,
+                **{
                     "url": url,
-                }
+                },
             )
             category = "pm"
         elif re.search(self.arxiv_pattern, idtf):
@@ -584,10 +586,11 @@ class BibLookup(ReprMixin):
                 idtf,
             ).strip("/")
             url = self.__URL__["arxiv"] + idtf
-            fc.update(
-                {
+            fc = dict(
+                **fc,
+                **{
                     "url": url,
-                }
+                },
             )
             category = "arxiv"
             # version should be removed from `idtf`
@@ -691,8 +694,9 @@ class BibLookup(ReprMixin):
             return res
         parsed = feedparser.parse(r.content.decode("utf-8")).entries[0]
         if self.verbose > 3:
-            print_func(parsed)
-        title = re.sub("[\\s]+", " ", parsed["title"])  # sometimes this field has "\n"
+            print_func(str(parsed))
+        # sometimes this field has "\n"
+        title = re.sub("[\\s]+", " ", parsed["title"])  # type: ignore
         if title == "Error":
             res = self.default_err
             return res
@@ -701,7 +705,7 @@ class BibLookup(ReprMixin):
         res = {"title": title}
         # it seems that surnames are put in the last position of full names by arXiv
         authors = [item["name"] for item in parsed["authors"]]
-        res["author"] = " and ".join(authors)
+        res["author"] = " and ".join(authors)  # type: ignore
         res["year"] = year
         res["month"] = parsed["published_parsed"].tm_mon
         res["journal"] = f"arXiv preprint arXiv:{arxiv_id}"
@@ -929,7 +933,7 @@ class BibLookup(ReprMixin):
 
     @property
     def ordering(self) -> List[str]:
-        return self._ordering
+        return self._ordering  # type: ignore
 
     @property
     def format(self) -> str:
@@ -1010,7 +1014,7 @@ class BibLookup(ReprMixin):
                     [
                         self[i].__eq__(
                             bib_item,
-                            strict=(isinstance(skip_existing, str) and skip_existing.lower() == "strict"),
+                            strict=(isinstance(skip_existing, str) and skip_existing.lower() == "strict"),  # type: ignore
                         )
                         for bib_item in existing_bib_items
                     ]
@@ -1026,7 +1030,7 @@ class BibLookup(ReprMixin):
             return
 
         with open(_output_file, output_mode) as f:
-            f.writelines("\n".join([str(self.__cached_lookup_results[i]) for i in identifiers]) + "\n")
+            f.writelines("\n".join([str(self.__cached_lookup_results[i]) for i in identifiers]) + "\n")  # type: ignore
 
         print_func(f"Bib items written to `{process_text(str(_output_file), self.__info_color)}`")
 
@@ -1119,7 +1123,7 @@ class BibLookup(ReprMixin):
 
     def clear_cache(self) -> None:
         """Helper function to clear the cached bib items."""
-        for item in list(self):
+        for item in list(self):  # type: ignore
             self.pop(item)
 
     def print(self) -> None:
@@ -1146,7 +1150,7 @@ class BibLookup(ReprMixin):
             return "\n".join(
                 [
                     f"% index: {idx}\n" + f"% identifier: {self[item].identifier}\n" + str(self[item])
-                    for idx, item in enumerate(self)
+                    for idx, item in enumerate(self)  # type: ignore
                 ]
             )
         else:
@@ -1188,7 +1192,7 @@ class BibLookup(ReprMixin):
         assert _bib_file.exists() and _bib_file.suffix == ".bib", "Not a valid Bib file"
         bib_items, line_numbers = self.read_bib_file(bib_file=bib_file, cache=False, return_line_numbers=True)
         err_lines = set()
-        for ln, bi in zip(line_numbers, bib_items):
+        for ln, bi in zip(line_numbers, bib_items):  # type: ignore
             try:
                 bi.check_required_fields()
             except AssertionError:
@@ -1206,12 +1210,12 @@ class BibLookup(ReprMixin):
                 )
                 err_lines.add(ln)
         # check for bib items with duplicate labels
-        for i, bi in enumerate(bib_items[:-1]):
-            for j, bj in enumerate(bib_items[i + 1 :]):
+        for i, bi in enumerate(bib_items[:-1]):  # type: ignore
+            for j, bj in enumerate(bib_items[i + 1 :]):  # type: ignore
                 j += i + 1
                 if bi.label == bj.label:
-                    ln_i = line_numbers[i]
-                    ln_j = line_numbers[j]
+                    ln_i = line_numbers[i]  # type: ignore
+                    ln_j = line_numbers[j]  # type: ignore
                     err_lines.update({ln_i, ln_j})
                     print_func(
                         f"Bib items \042{process_text(bi.label, self.__err_color, font_size=self.__err_fontsize)}\042 "

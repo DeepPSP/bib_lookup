@@ -74,10 +74,10 @@ def test_errors():
         TypeError,
         match="`identifier` must be a string or a sequence of strings, but got `.+`",
     ):
-        default_bl(1)
+        default_bl(1)  # type: ignore
 
     with pytest.raises(TypeError, match="`index` should be an integer or a string, not `.+`"):
-        default_bl[1.0]
+        default_bl[1.0]  # type: ignore
     with pytest.raises(AssertionError, match="`.+` not found"):
         default_bl["not-exist"]
 
@@ -103,7 +103,7 @@ def test_errors():
         AssertionError,
         match="`identifier` must be a string or a sequence of strings, but got `.+`",
     ):
-        default_bl([1])
+        default_bl([1])  # type: ignore
 
     with pytest.raises(
         AssertionError,
@@ -114,7 +114,7 @@ def test_errors():
         AssertionError,
         match="`label` must be a sequence of strings of the same length as `identifier`",
     ):
-        default_bl(["10.1088/1361-6579/ac9451"], label=[1])
+        default_bl(["10.1088/1361-6579/ac9451"], label=[1])  # type: ignore
     with pytest.raises(
         AssertionError,
         match="`label` must be a sequence of strings of the same length as `identifier`",
@@ -133,13 +133,13 @@ def test_errors():
         AssertionError,
         match="`identifiers` must be a string \\(or an integer\\) or a sequence of strings \\(or integers\\)",
     ):
-        default_bl.save(identifiers=1.2)
+        default_bl.save(identifiers=1.2)  # type: ignore
 
     with pytest.raises(
         AssertionError,
         match="`identifiers` must be a string \\(or an integer\\) or a sequence of strings \\(or integers\\)",
     ):
-        default_bl.pop(1.2)
+        default_bl.pop(1.2)  # type: ignore
 
     with pytest.raises(AssertionError, match="`bib_file` is not specified"):
         bl = BibLookup()
@@ -162,7 +162,7 @@ def test_errors():
         pages=115006,
     )
     bib_item = default_bl._to_bib_item(
-        res=feed_dict,
+        res=feed_dict,  # type: ignore
         identifier="10.1088/1361-6579/ac9451",
         label="xxx",
     )
@@ -173,9 +173,9 @@ def test_errors():
         match="`label` must be a string",
     ):
         default_bl._to_bib_item(
-            res=feed_dict,
+            res=feed_dict,  # type: ignore
             identifier="10.1088/1361-6579/ac9451",
-            label=1,
+            label=1,  # type: ignore
         )
 
     assert default_bl("none: xxxxx", ignore_errors=True, verbose=5) == ""

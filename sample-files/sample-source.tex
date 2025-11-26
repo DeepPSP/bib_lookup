@@ -55,11 +55,26 @@ sample-source-sub2.tex
 \input{\currfileabsdir sample-source-subdir/some-tikz.tex}
 
 
-\IncludeSubfalse
+% \IncludeSubfalse
 
-\ifIncludeSub
+
+% % should not include section 3
+% \ifIncludeSub
+% \input{sample-source-sub3.tex}
+% \fi
+
+
+% should not include section 3
+
+\verb|here \input{sample-source-sub3.tex}| should not include section 3.
+
+\verb*|here \input{sample-source-sub3.tex}| should not include section 3.
+
+\begin{verbatim}
+here
 \input{sample-source-sub3.tex}
-\fi
+\end{verbatim}
+should not include section 3.
 
 
 \printbibliography[heading=bibliography]

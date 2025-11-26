@@ -17,5 +17,5 @@ def test_pubmed_bib_lookup():
     for pmid, lookup_result in pubmed_examples.items():
         bib_string = bl(pmid, timeout=1000)
         assert bib_string == lookup_result, f"{pmid} mismatch"
-    bib_string = bl(pmid, timeout=1000, verbose=10)
-    assert bib_string == lookup_result, f"{pmid} mismatch"
+    bib_string = bl(pmid, timeout=1000, verbose=10)  # type: ignore
+    assert bib_string == lookup_result, f"{pmid} mismatch"  # type: ignore

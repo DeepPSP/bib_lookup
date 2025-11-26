@@ -191,7 +191,7 @@ class TestBibItem:
             BibItem(
                 identifier=self.identifier,
                 entry_type=self.entry_type,
-                fields=dict(self.fields),
+                fields=dict(self.fields),  # type: ignore
             )
 
         with pytest.raises(
@@ -234,7 +234,7 @@ class TestBibItem:
             AssertionError,
             match="`entries_or_fields` must be of type `str` or a sequence, but got `.+`",
         ):
-            BibItem.help(1)
+            BibItem.help(1)  # type: ignore
 
         with pytest.raises(AssertionError, match="`xxx` is not a valid entry type or field name"):
             BibItem.help("xxx")
