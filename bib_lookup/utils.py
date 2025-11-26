@@ -583,7 +583,7 @@ def find_verbatim_blocks(text: str) -> List[List[int]]:
     positions = []
 
     # Match \verb and \verb* commands with any delimiter
-    verb_pattern = re.compile(r"\\verb\*?(.)(.*?)\1", re.DOTALL)
+    verb_pattern = re.compile(r"\\verb\*?(.)([^\n]*?)\1")
     for match in verb_pattern.finditer(text):
         start, end = match.span()
         positions.append([start, end])
