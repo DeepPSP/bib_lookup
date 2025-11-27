@@ -95,15 +95,24 @@ def test_simplify_bib_file():
         _SIMPLIFIED_OUTPUT_FILE.unlink()
     BibLookup.simplify_bib_file(
         tex_sources=_SOURCE_FILE,
-        bib_file=_LARGE_DATABASE_FILE,
+        # bib_file=_LARGE_DATABASE_FILE,
         output_file=_SIMPLIFIED_OUTPUT_FILE,
+    )
+    simplified_bib_file_content = _SIMPLIFIED_OUTPUT_FILE.read_text()
+    assert all(
+        [
+            "mcmahan2017fed_avg" not in simplified_bib_file_content,
+            "reddi2020fed_opt" not in simplified_bib_file_content,
+            "karimireddy2020scaffold" not in simplified_bib_file_content,
+            "wang2019dgl" not in simplified_bib_file_content,
+        ]
     )
 
     if _SIMPLIFIED_OUTPUT_FILE.exists():
         _SIMPLIFIED_OUTPUT_FILE.unlink()
     BibLookup.simplify_bib_file(
         tex_sources=_SOURCE_FILE_LIST,  # type: ignore
-        bib_file=_LARGE_DATABASE_FILE,
+        # bib_file=_LARGE_DATABASE_FILE,
         output_file=_SIMPLIFIED_OUTPUT_FILE,
     )
 
@@ -112,6 +121,7 @@ def test_simplify_bib_file():
             tex_sources=_SOURCE_FILE,
             bib_file=_LARGE_DATABASE_FILE,
             output_file=_SIMPLIFIED_OUTPUT_FILE,
+            output_mode="w",
         )
     _SIMPLIFIED_OUTPUT_FILE.unlink()
 

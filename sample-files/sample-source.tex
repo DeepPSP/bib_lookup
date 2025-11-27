@@ -77,6 +77,20 @@ here
 should not include section 3.
 
 
+% citations that should not be included in simplified bib
+% typically these are in comments or verbatim environments
+% this item \cite{mcmahan2017fed_avg} should not be included in simplified bib file
+
+\verb|here \cite{reddi2020fed_opt}| should not be included in simplified bib file.
+\verb*|here \cite{karimireddy2020scaffold}| should not be included in simplified bib file.
+\begin{verbatim}
+here
+\cite{wang2019dgl}
+\end{verbatim}
+should not be included in simplified bib file.
+
+
+
 \printbibliography[heading=bibliography]
 
 

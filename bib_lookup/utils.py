@@ -391,6 +391,58 @@ def is_intersect(
         return any([overlaps(interval, another_interval) > 0])  # type: ignore
 
 
+def is_sub_interval(
+    interval: Union[GeneralizedInterval, Interval],
+    another_interval: Union[GeneralizedInterval, Interval],
+) -> bool:
+    """Determines if `interval` is a sub-interval of `another_interval`.
+
+    NOTE: each of the two intervals should be non-overlapping itself.
+
+    Parameters
+    ----------
+    interval, another_interval : GeneralizedInterval or Interval
+        The two intervals to check if `interval` is a sub-interval of `another_interval`.
+
+    Returns
+    -------
+    bool
+        True if `interval` is a sub-interval of `another_interval`, False otherwise.
+
+    Examples
+    --------
+    >>> is_sub_interval([5, 10], [0, 15])
+    True
+    >>> is_sub_interval([0, 10], [5, 15])
+    False
+    >>> is_sub_interval([5, 10], [[0, 7], [8, 15]])
+    False
+    >>> is_sub_interval([[2,4],[6,8]], [[0,5],[6,10]])
+    True
+    >>> is_sub_interval([[2,3],[5,9]], [[0,5],[6,10]])
+    False
+
+    """
+    if len(interval) == 0:
+        # the case of empty set
+        return True
+    elif len(another_interval) == 0:
+        return False
+
+    # check if is GeneralizedInterval
+    is_generalized = isinstance(interval[0], (list, tuple))
+    is_another_generalized = isinstance(another_interval[0], (list, tuple))
+
+    if is_generalized and is_another_generalized:
+        return all([is_sub_interval(itv, another_interval) for itv in interval])  # type: ignore
+    elif not is_generalized and is_another_generalized:
+        return any([is_sub_interval(interval, itv) for itv in another_interval])  # type: ignore
+    elif is_generalized:  # and not is_another_generalized
+        return all([is_sub_interval(itv, another_interval) for itv in interval])  # type: ignore
+    else:  # not is_generalized and not is_another_generalized
+        return overlaps(interval, another_interval) == (interval[1] - interval[0])  # type: ignore
+
+
 def _remove_comments(content: str) -> str:
     """Remove LaTeX comments from content.
 

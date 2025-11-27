@@ -270,13 +270,16 @@ def main():
         return
 
     if args.get("simplify_bib", None) is not None:
-        if args.get("input_file", None) is None:
-            print("Please provide the input bib file to simplify.")
-            return
-        input_file = Path(args["input_file"]).resolve()
-        if not input_file.is_file() or input_file.suffix != ".bib":
-            print(f"Input bib file {args['input_file']} is not a valid .bib file. Please check and try again.")
-            return
+        # if args.get("input_file", None) is None:
+        #     print("Please provide the input bib file to simplify.")
+        #     return
+        if args.get("input_file", None) is not None:
+            input_file = Path(args["input_file"]).resolve()
+            if not input_file.is_file() or input_file.suffix != ".bib":
+                print(f"Input bib file {args['input_file']} is not a valid .bib file. Please check and try again.")
+                return
+        else:
+            input_file = None
 
         simplified_bib_file = BibLookup.simplify_bib_file(tex_sources=args["simplify_bib"], bib_file=input_file)
         # print(f"Simplified bib file written to {simplified_bib_file}")

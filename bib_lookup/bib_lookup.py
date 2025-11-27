@@ -29,9 +29,22 @@ from bs4 import BeautifulSoup, MarkupResemblesLocatorWarning
 from ._bib import BIB_FIELDS, DF_BIB_ENTRY_TYPES, BibItem
 from ._const import CONFIG_FILE as _CONFIG_FILE
 from ._const import DEFAULT_CONFIG as _DEFAULT_CONFIG
-from .utils import NETWORK_ERROR_MESSAGES, ReprMixin
+from .utils import (
+    NETWORK_ERROR_MESSAGES,
+    ReprMixin,
+    _remove_comments,
+)
 from .utils import capitalize_title as capitalize_title_func
-from .utils import color_text, gather_tex_source_files_in_one, is_notebook, md_text, printmd, str2bool
+from .utils import (
+    color_text,
+    find_verbatim_blocks,
+    gather_tex_source_files_in_one,
+    is_notebook,
+    is_sub_interval,
+    md_text,
+    printmd,
+    str2bool,
+)
 
 __all__ = [
     "BibLookup",
@@ -985,6 +998,7 @@ class BibLookup(ReprMixin):
         Saved bib items will be removed from the cache.
 
         """
+        assert output_mode in ["w", "a"], f"`output_mode` must be one of ['w', 'a'], but got `{output_mode}`"
         _output_file = output_file or self.output_file
         assert _output_file is not None, "`output_file` is not specified"
         _output_file = Path(_output_file).resolve()
@@ -1005,7 +1019,7 @@ class BibLookup(ReprMixin):
         identifiers = [i for i in identifiers if i in self.__cached_lookup_results]  # type: ignore
 
         # check if the bib item is already existed in the output file
-        if skip_existing:
+        if skip_existing or (output_mode == "a" and _output_file.exists()):
             existing_bib_items = self.read_bib_file(_output_file)
             identifiers = [
                 i
@@ -1023,7 +1037,7 @@ class BibLookup(ReprMixin):
 
         if len(identifiers) == 0:  # type: ignore
             print_func(
-                f"no bib item is saved to `{process_text(str(_output_file), self.__info_color)}` "
+                f"no bib item is saved to {process_text(str(_output_file), self.__info_color)} "
                 "because all bib items are already existed in the output file, "
                 "or the given identifiers are not found in the cache"
             )
@@ -1032,7 +1046,7 @@ class BibLookup(ReprMixin):
         with open(_output_file, output_mode) as f:
             f.writelines("\n".join([str(self.__cached_lookup_results[i]) for i in identifiers]) + "\n")  # type: ignore
 
-        print_func(f"Bib items written to `{process_text(str(_output_file), self.__info_color)}`")
+        print_func(f"Bib items written to {process_text(str(_output_file), self.__info_color)}")
 
         # remove saved bib items from the cache
         for i in identifiers:  # type: ignore
@@ -1229,7 +1243,7 @@ class BibLookup(ReprMixin):
     @staticmethod
     def simplify_bib_file(
         tex_sources: Union[Path, str, List[Union[Path, str]]],
-        bib_file: Union[Path, str],
+        bib_file: Optional[Union[Path, str, List[Union[Path, str]]]] = None,
         output_file: Optional[Union[Path, str]] = None,
         output_mode: Literal["w", "a"] = "a",
     ) -> str:
@@ -1244,8 +1258,11 @@ class BibLookup(ReprMixin):
             it is considered as the entry file of the tex project,
             and `gather_tex_source_files_in_one` will be called
             to gather all the tex source files for simplification.
-        bib_file : str or pathlib.Path
-            The bib file to simplify.
+        bib_file : str or pathlib.Path or List[str] or List[pathlib.Path], optional
+            The bib file(s) to simplify.
+            If not provided, this function will look for
+            the ``\\bibliography{}`` or ``\\addbibresource{}`` commands
+            in the tex source files to get the bib file paths.
         output_file : str or pathlib.Path, optional
             The output file to save the simplified bib file,
             defaults to ``Path(bib_file).stem + "_simplified.bib"``.
@@ -1264,43 +1281,99 @@ class BibLookup(ReprMixin):
         """
         if isinstance(tex_sources, (str, Path)):
             tex_sources = [tex_sources]
-        tex_sources = [Path(tex_source) for tex_source in tex_sources]
-        bib_file = Path(bib_file)
+        tex_sources = [Path(ts) for ts in tex_sources]
+
+        # get content of tex sources and remove comments
+        full_tex_content = ""
+        if len(tex_sources) == 1 and tex_sources[0].is_file():
+            full_tex_content = gather_tex_source_files_in_one(tex_sources[0], write_file=False, keep_comments=False)
+            base_dir = tex_sources[0].parent
+        else:
+            _contents = []
+            base_dir = tex_sources[0].parent if tex_sources[0].is_file() else tex_sources[0]
+
+            for source in tex_sources:
+                if source.is_file():
+                    files = [source]
+                else:
+                    files = list(source.rglob("*.tex"))
+
+                for f in files:
+                    text = f.read_text(encoding="utf-8", errors="ignore")
+                    _contents.append(_remove_comments(text))
+
+            full_tex_content = "\n".join(_contents)
+
+        verbatim_intervals = find_verbatim_blocks(full_tex_content)
+
+        # find bib file(s)
+        if bib_file is None:
+            # if bib_file not provided, try to find from tex sources
+            found_bib_files = []
+            bib_cmd_pattern = re.compile(r"\\(?:bibliography|addbibresource)(?:\[.*?\])?\s*\{(?P<files>.*?)\}", re.DOTALL)
+
+            for match in bib_cmd_pattern.finditer(full_tex_content):
+                if is_sub_interval(match.span(), verbatim_intervals):
+                    continue
+
+                file_strs = [s.strip() for s in match.group("files").split(",")]
+                for f_str in file_strs:
+                    if not f_str:
+                        continue
+                    if not f_str.lower().endswith(".bib"):
+                        f_str += ".bib"
+
+                    candidate = (base_dir / f_str).resolve()  # type: ignore
+                    if candidate.exists():
+                        found_bib_files.append(candidate)
+            # remove duplicates
+            found_bib_files = list(dict.fromkeys(found_bib_files))
+
+            if found_bib_files:
+                bib_file = found_bib_files
+            else:
+                # if not found and not provided, raise an exception
+                raise ValueError("No bib file provided and no bibliography commands found in the tex sources.")
+
+        if not isinstance(bib_file, list):
+            bib_files = [Path(bib_file)] if bib_file else []
+        else:
+            bib_files = [Path(f) for f in bib_file]
+
+        if not bib_files:
+            raise ValueError("Bib file list is empty.")
+
+        target_bib = bib_files[0]
         if output_file is None:
-            output_file = bib_file.parent / (bib_file.stem + "_simplified.bib")
+            output_file = target_bib.parent / (target_bib.stem + "_simplified.bib")
         else:
             output_file = Path(output_file)
-        if output_file.exists():
-            raise FileExistsError(f"Output file \042{output_file}\042 already exists")
 
+        if output_file.exists() and output_mode != "a":
+            raise FileExistsError(f'Output file "{output_file}" already exists')
+
+        # read bib files
         ref_bl = BibLookup()
-        # bib_items = ref_bl.read_bib_file(bib_file, cache=True)
-        ref_bl.read_bib_file(bib_file, cache=True)
+        for bf in bib_files:
+            if bf.exists():
+                ref_bl.read_bib_file(bf, cache=True)
+            else:
+                print(f"Warning: Bib file not found: {bf}")
 
-        # get the labels of bib items that are cited
         cited_labels = set()
         _punctuation = "".join([s for s in punctuation if s not in "{}"])
-        # citation pattern: https://fr.overleaf.com/learn/latex/Natbib_citation_styles
         citation_pattern = (
-            "\\\\(?:paren)?cite(?:t|p|t\\*|p\\*|author|year)?(?:(?:\\[.+\\])?)?" f"\\{{(?P<label>[\\w\\s{_punctuation}]+)\\}}"
+            "\\\\(?:paren)?cite(?:t|p|t\\*|p\\*|author|year|url)?(?:(?:\\[.+\\])?)?"
+            f"\\{{(?P<label>[\\w\\s{_punctuation}]+)\\}}"
         )
-        for tex_source in tex_sources:
-            if tex_source.is_file() and len(tex_sources) == 1:
-                for items in re.findall(
-                    citation_pattern,
-                    gather_tex_source_files_in_one(tex_source, write_file=False),
-                ):
-                    cited_labels.update([item.strip() for item in items.split(",")])
-            elif tex_source.is_file():
-                for items in re.findall(citation_pattern, tex_source.read_text()):
-                    cited_labels.update([item.strip() for item in items.split(",")])
-            else:  # is a directory
-                for tex_file in tex_source.rglob("*.tex"):
-                    for items in re.findall(citation_pattern, tex_file.read_text()):
-                        cited_labels.update([item.strip() for item in items.split(",")])
+        for items in re.finditer(citation_pattern, full_tex_content):
+            if is_sub_interval(items.span(), verbatim_intervals):
+                continue
+            cited_labels.update([item.strip() for item in items.group("label").split(",")])
+
+        # filter and save
         cited_identifiers = [idtf for idtf in ref_bl if ref_bl[idtf].label in cited_labels]
 
-        # write to output file
         ref_bl.save(cited_identifiers, output_file=output_file, output_mode=output_mode)
         return str(output_file)
 
