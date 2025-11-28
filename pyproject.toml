@@ -67,3 +67,7 @@ path = "bib_lookup/version.py"
 include = [
     "/bib_lookup",
 ]
+
+[tool.coverage.run]
+source = ["bib_lookup"]
+patch = ["subprocess"]
