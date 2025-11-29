@@ -71,3 +71,18 @@ include = [
 [tool.coverage.run]
 source = ["bib_lookup"]
 patch = ["subprocess"]
+
+[tool.coverage.report]
+omit = [
+    # omit all test files
+    "tests/*",
+]
+# show_missing = true
+# skip_covered = true
+exclude_also =[
+    "raise NotImplementedError",
+    # Don't complain if non-runnable code isn't run:
+    "if __name__ == .__main__.:",
+    # Don't complain about abstract methods, they aren't run:
+    "@(abc\\.)?abstractmethod",
+]

@@ -8,7 +8,7 @@ from typing import Any, List, Optional, Sequence, Union
 try:
     from IPython import get_ipython  # type: ignore
 except ModuleNotFoundError:
-    get_ipython = None
+    get_ipython = None  # type: ignore
 
 
 __all__ = [
@@ -26,7 +26,7 @@ __all__ = [
 ]
 
 
-def is_notebook() -> bool:
+def is_notebook() -> bool:  # pragma: no cover
     """Check if the current environment is a notebook (Jupyter or Colab).
 
     Implementation adapted from [#sa]_.
@@ -265,8 +265,8 @@ def printmd(md_str: str) -> None:
         from IPython.display import Markdown, display
 
         display(Markdown(md_str))
-    except ModuleNotFoundError:
-        print(md_str)
+    except ModuleNotFoundError:  # pragma: no cover
+        print(md_str)  # pragma: no cover
 
 
 def str2bool(v: Union[str, bool, int, float]) -> bool:
@@ -716,7 +716,7 @@ def capitalize_title(s: str, exceptions: Optional[List[str]] = None) -> str:
     return "".join(processed)
 
 
-def check_warnings(s: str) -> None:
+def check_warnings(s: str) -> None:  # pragma: no cover
     """Check warnings from the bibtex system.
 
     The warnings include:

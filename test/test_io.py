@@ -28,6 +28,8 @@ _SIMPLIFIED_OUTPUT_FILE = _CWD.parent / "tmp" / "test_io_simplified_output.bib"
 
 _COMPLICATED_BIB_FILE = _CWD.parent / "sample-files" / "complicated_items.bib"
 
+_EXCEPTION_SOURCE_FILE = _CWD.parent / "sample-files" / "sample-source-exception.tex"
+
 
 def test_io_from_file():
     if _OUTPUT_FILE_1.exists():
@@ -124,6 +126,19 @@ def test_simplify_bib_file():
             output_mode="w",
         )
     _SIMPLIFIED_OUTPUT_FILE.unlink()
+
+    with pytest.raises(FileNotFoundError, match="No bib file provided and no bibliography commands found in the tex sources"):
+        BibLookup.simplify_bib_file(
+            tex_sources=_EXCEPTION_SOURCE_FILE,
+            output_file=None,
+        )
+
+    with pytest.raises(FileNotFoundError, match="Bib file list is empty"):
+        BibLookup.simplify_bib_file(
+            tex_sources=_EXCEPTION_SOURCE_FILE,
+            bib_file=[],
+            output_file=None,
+        )
 
 
 def test_complicated_items():

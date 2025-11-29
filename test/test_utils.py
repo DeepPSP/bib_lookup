@@ -153,6 +153,10 @@ def test_capitalize_title():
         title = random_case_title(test_title_3)
         assert capitalize_title(title) == test_title_3, f"Failed for {test_title_3}\ngot {capitalize_title(title)}"
 
+    # edge cases
+    assert capitalize_title("") == ""
+    assert capitalize_title(test_title_1, exceptions=[]) == test_title_1.title()
+
 
 def test_is_intersect():
     assert is_intersect([0, 10], [5, 15]) is True

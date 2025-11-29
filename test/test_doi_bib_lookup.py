@@ -15,7 +15,7 @@ doi_examples = {
 }
 
 
-bl = bib_lookup.BibLookup()
+bl = bib_lookup.BibLookup(ignore_fields="none")
 bl.debug()
 
 
@@ -31,6 +31,8 @@ def test_doi_bib_lookup():
     assert bl(list(doi_examples), timeout=1000, print_result=True, verbose=10) is None
 
     assert bl("doi: xxx/xxx") == bl.default_err
+
+    assert bl.cache_limit is not None
 
     bl.print()
 

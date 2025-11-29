@@ -53,10 +53,10 @@ __all__ = [
 
 
 if is_notebook():
-    print_func = printmd
-    process_text = md_text
-    newline = "<br/>"
-    whitespace = "&nbsp;"
+    print_func = printmd  # pragma: no cover
+    process_text = md_text  # pragma: no cover
+    newline = "<br/>"  # pragma: no cover
+    whitespace = "&nbsp;"  # pragma: no cover
 else:
     print_func = print
     process_text = color_text
@@ -1318,8 +1318,8 @@ class BibLookup(ReprMixin):
 
                 file_strs = [s.strip() for s in match.group("files").split(",")]
                 for f_str in file_strs:
-                    if not f_str:
-                        continue
+                    # if not f_str:
+                    #     continue
                     if not f_str.lower().endswith(".bib"):
                         f_str += ".bib"
 
