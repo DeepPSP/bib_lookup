@@ -15,8 +15,10 @@ doi_examples = {
 }
 
 
-bl = bib_lookup.BibLookup(ignore_fields="none")
+# bl = bib_lookup.BibLookup(ignore_fields="none")
+bl = bib_lookup.BibLookup()
 bl.debug()
+bl_no_ignore = bib_lookup.BibLookup(ignore_fields="none")
 
 
 def test_doi_bib_lookup():
@@ -41,3 +43,6 @@ def test_doi_bib_lookup():
 
     with pytest.raises(ValueError):
         bib_lookup.BibLookup(cache_limit="xxx")
+
+    # test no ignore fields
+    bl_no_ignore("DOI: 10.1142/S1005386718000305", timeout=1000)

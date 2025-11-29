@@ -127,13 +127,13 @@ def test_simplify_bib_file():
         )
     _SIMPLIFIED_OUTPUT_FILE.unlink()
 
-    with pytest.raises(FileNotFoundError, match="No bib file provided and no bibliography commands found in the tex sources"):
+    with pytest.raises(ValueError, match="No bib file provided and no bibliography commands found in the tex sources"):
         BibLookup.simplify_bib_file(
             tex_sources=_EXCEPTION_SOURCE_FILE,
             output_file=None,
         )
 
-    with pytest.raises(FileNotFoundError, match="Bib file list is empty"):
+    with pytest.raises(ValueError, match="Bib file list is empty"):
         BibLookup.simplify_bib_file(
             tex_sources=_EXCEPTION_SOURCE_FILE,
             bib_file=[],
