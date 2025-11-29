@@ -28,6 +28,8 @@ _SIMPLIFIED_OUTPUT_FILE = _CWD.parent / "tmp" / "test_io_simplified_output.bib"
 
 _COMPLICATED_BIB_FILE = _CWD.parent / "sample-files" / "complicated_items.bib"
 
+_EXCEPTION_SOURCE_FILE = _CWD.parent / "sample-files" / "sample-source-exception.tex"
+
 
 def test_io_from_file():
     if _OUTPUT_FILE_1.exists():
@@ -95,15 +97,24 @@ def test_simplify_bib_file():
         _SIMPLIFIED_OUTPUT_FILE.unlink()
     BibLookup.simplify_bib_file(
         tex_sources=_SOURCE_FILE,
-        bib_file=_LARGE_DATABASE_FILE,
+        # bib_file=_LARGE_DATABASE_FILE,
         output_file=_SIMPLIFIED_OUTPUT_FILE,
+    )
+    simplified_bib_file_content = _SIMPLIFIED_OUTPUT_FILE.read_text()
+    assert all(
+        [
+            "mcmahan2017fed_avg" not in simplified_bib_file_content,
+            "reddi2020fed_opt" not in simplified_bib_file_content,
+            "karimireddy2020scaffold" not in simplified_bib_file_content,
+            "wang2019dgl" not in simplified_bib_file_content,
+        ]
     )
 
     if _SIMPLIFIED_OUTPUT_FILE.exists():
         _SIMPLIFIED_OUTPUT_FILE.unlink()
     BibLookup.simplify_bib_file(
         tex_sources=_SOURCE_FILE_LIST,  # type: ignore
-        bib_file=_LARGE_DATABASE_FILE,
+        # bib_file=_LARGE_DATABASE_FILE,
         output_file=_SIMPLIFIED_OUTPUT_FILE,
     )
 
@@ -112,8 +123,22 @@ def test_simplify_bib_file():
             tex_sources=_SOURCE_FILE,
             bib_file=_LARGE_DATABASE_FILE,
             output_file=_SIMPLIFIED_OUTPUT_FILE,
+            output_mode="w",
         )
     _SIMPLIFIED_OUTPUT_FILE.unlink()
+
+    with pytest.raises(ValueError, match="No bib file provided and no bibliography commands found in the tex sources"):
+        BibLookup.simplify_bib_file(
+            tex_sources=_EXCEPTION_SOURCE_FILE,
+            output_file=None,
+        )
+
+    with pytest.raises(ValueError, match="Bib file list is empty"):
+        BibLookup.simplify_bib_file(
+            tex_sources=_EXCEPTION_SOURCE_FILE,
+            bib_file=[],
+            output_file=None,
+        )
 
 
 def test_complicated_items():

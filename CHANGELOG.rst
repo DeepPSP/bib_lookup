@@ -19,6 +19,12 @@ Changed
 
 - Add argument `keep_comments` to function `gather_tex_source_files_in_one`
   in `utils` module to control whether to keep comments in the output.
+- Enhance the `gather_tex_source_files_in_one` function: it now ignores
+  `\input{}` commands that are inside verbatim-like environments such as
+  `\verb`, `\verb*`, `\begin{verbatim}`, etc.
+- Enhance the static method `simplify_bib_file` of `BibLookup` class:
+  it now automatically detects the bib files used in a LaTeX source file,
+  and now supports multiple bib files used in one LaTeX source file.
 
 Deprecated
 ~~~~~~~~~~

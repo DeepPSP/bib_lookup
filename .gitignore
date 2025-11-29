@@ -178,3 +178,4 @@ log
 # !demo.ipynb
 
 sample-files/**/*_in_one.tex
+sample-files/**/*_simplified.bib
