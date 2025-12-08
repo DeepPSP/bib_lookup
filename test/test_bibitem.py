@@ -172,6 +172,14 @@ class TestBibItem:
             bibitem_1.__eq__(self.bibitem, strict=True)
             self.bibitem.__eq__(bibitem_1, strict=True)
 
+        bibitem_1 = BibItem(
+            identifier=self.identifier,
+            entry_type=self.entry_type,
+            fields=self.fields,
+            label=None,
+            strict_eq_fields=["title", "author", "journal"],
+        )
+
     def test_help(self):
         for item in itertools.chain(BIB_ENTRY_TYPES, BIB_FIELDS):
             BibItem.help(item)

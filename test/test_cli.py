@@ -208,3 +208,15 @@ def test_cli():
     result_file = LARGE_DATABASE.parent / (LARGE_DATABASE.stem + "_simplified.bib")
     assert result_file.exists()
     result_file.unlink()
+
+    # invalid bib file
+    cmd = f"bib-lookup --simplify-bib {str(tex_entry_file)} -i {str(SAMPLE_DATA_DIR / 'invalid.bib')}"
+    exitcode, output_msg = execute_cmd(cmd, raise_error=False)
+    assert exitcode == 1
+
+    # no input bib file
+    cmd = f"bib-lookup --simplify-bib {str(tex_entry_file)}"
+    exitcode, output_msg = execute_cmd(cmd)
+    result_file = LARGE_DATABASE.parent / (LARGE_DATABASE.stem + "_simplified.bib")
+    assert result_file.exists()
+    result_file.unlink()
