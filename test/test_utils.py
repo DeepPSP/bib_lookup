@@ -5,7 +5,16 @@ from pathlib import Path
 
 import pytest
 
-from bib_lookup.utils import capitalize_title, color_text, gather_tex_source_files_in_one, md_text, printmd, str2bool
+from bib_lookup.utils import (
+    capitalize_title,
+    color_text,
+    gather_tex_source_files_in_one,
+    is_intersect,
+    is_sub_interval,
+    md_text,
+    printmd,
+    str2bool,
+)
 
 _SAMPLE_DIR = Path(__file__).resolve().parents[1] / "sample-files"
 
@@ -143,3 +152,29 @@ def test_capitalize_title():
         assert capitalize_title(title) == test_title_2, f"Failed for {test_title_2}\ngot {capitalize_title(title)}"
         title = random_case_title(test_title_3)
         assert capitalize_title(title) == test_title_3, f"Failed for {test_title_3}\ngot {capitalize_title(title)}"
+
+    # edge cases
+    assert capitalize_title("") == ""
+    assert capitalize_title(test_title_1, exceptions=[]) == test_title_1.title()
+
+
+def test_is_intersect():
+    assert is_intersect([0, 10], [5, 15]) is True
+    assert is_intersect([0, 10], [10, 15]) is False
+    assert is_intersect([0, 10], []) is False
+    assert is_intersect([0, 10], [[5, 20], [25, 30]]) is True
+    assert is_intersect([[0, 5], [10, 15]], [[5, 10], [15, 20]]) is False
+    assert is_intersect([[0, 5], [10, 15]], [4, 12]) is True
+
+
+def test_is_sub_interval():
+    assert is_sub_interval([5, 10], [0, 15]) is True
+    assert is_sub_interval([0, 10], [5, 15]) is False
+    assert is_sub_interval([], [0, 10]) is True
+    assert is_sub_interval([], []) is True
+    assert is_sub_interval([0, 10], []) is False
+    assert is_sub_interval([5, 10], [[0, 4], [6, 15]]) is False
+    assert is_sub_interval([5, 10], [[0, 4], [5, 15]]) is True
+    assert is_sub_interval([[2, 4], [6, 8]], [[0, 5], [6, 10]]) is True
+    assert is_sub_interval([[2, 3], [5, 9]], [[0, 5], [6, 10]]) is False
+    assert is_sub_interval([[2, 4], [5, 9]], [3, 10]) is False

@@ -242,7 +242,7 @@ def main():
                 print("Error: --gather accepts one or two arguments only.")
                 sys.exit(1)
 
-            if not entry_file.is_file() or entry_file.suffix != ".tex":
+            if entry_file.exists() and (not entry_file.is_file() or entry_file.suffix != ".tex"):
                 print(f"Error: File {entry_file} is not a valid .tex file.")
                 sys.exit(1)
 
@@ -260,23 +260,28 @@ def main():
             )
         except FileExistsError as e:
             print(f"Error: {e}".replace("overwrite=True", "--overwrite"))
+            print("Use the --overwrite flag to overwrite the existing file.")
             sys.exit(1)
         except FileNotFoundError as e:
             print(f"Error: {e}")
+            print("Please check the file path and try again.")
             sys.exit(1)
         except Exception as e:
-            print(f"Unexpected error: {e}")
-            sys.exit(1)
+            print(f"Unexpected error: {e}")  # pragma: no cover
+            sys.exit(1)  # pragma: no cover
         return
 
     if args.get("simplify_bib", None) is not None:
-        if args.get("input_file", None) is None:
-            print("Please provide the input bib file to simplify.")
-            return
-        input_file = Path(args["input_file"]).resolve()
-        if not input_file.is_file() or input_file.suffix != ".bib":
-            print(f"Input bib file {args['input_file']} is not a valid .bib file. Please check and try again.")
-            return
+        # if args.get("input_file", None) is None:
+        #     print("Please provide the input bib file to simplify.")
+        #     return
+        if args.get("input_file", None) is not None:
+            input_file = Path(args["input_file"]).resolve()
+            if not input_file.is_file() or input_file.suffix != ".bib":
+                print(f"Input bib file {args['input_file']} is not a valid .bib file. Please check and try again.")
+                sys.exit(1)
+        else:
+            input_file = None
 
         simplified_bib_file = BibLookup.simplify_bib_file(tex_sources=args["simplify_bib"], bib_file=input_file)
         # print(f"Simplified bib file written to {simplified_bib_file}")
@@ -324,4 +329,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    main()  # pragma: no cover

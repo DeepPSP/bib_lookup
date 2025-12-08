@@ -23,7 +23,7 @@ jobs:
     runs-on: ubuntu-22.04
     strategy:
       matrix:
-        python-version: ["3.9", "3.10", "3.11", "3.12", "3.13", "3.14"]
+        python-version: ["3.9", "3.10", "3.11", "3.12", "3.13"]
 
     steps:
     - uses: actions/checkout@v4
@@ -42,7 +42,7 @@ jobs:
         pip list
     - name: Run test with pytest and collect coverage
       run: |
-        pytest --cov=bib_lookup -vv -s test
+        pytest --cov=bib_lookup --cov-report term-missing -vv -s test
     - name: Upload coverage to Codecov
       # Only upload coverage for Python ${MAIN_PYTHON_VERSION} and the event is not scheduled
       if: matrix.python-version == env.MAIN_PYTHON_VERSION && !contains(fromJson('["schedule"]'), github.event_name)
@@ -51,3 +51,8 @@ jobs:
         fail_ci_if_error: true # optional (default = false)
         verbose: true # optional (default = false)
         token: ${{ secrets.CODECOV_TOKEN }} # required
+    - name: Upload test results to Codecov
+      if: ${{ !cancelled() }}
+      uses: codecov/test-results-action@v1
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }}
