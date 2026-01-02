@@ -1,7 +1,6 @@
 import warnings
 
 import streamlit as st
-from packaging import version
 
 from bib_lookup.bib_lookup import BibLookup
 from bib_lookup.version import __version__
@@ -70,37 +69,13 @@ def do_lookup():
         else:
             output_container.code(bib, language="latex", line_numbers=False)
 
-    st.session_state["do_lookup"] = False
+    st.session_state["confirmed_doi"] = False
 
 
 bl = get_bib_lookuper()
 
 
-st.title("Bib Lookup")
-
-
-# input on the main page
-
-input_doi = st.text_input(
-    label="**DOI / PubMed ID / arXiv ID**",
-    value="",
-    max_chars=100,
-    key="input_doi",
-    help="Enter a DOI, PubMed ID or arXiv ID",
-    on_change=lambda: st.session_state.update({"do_lookup": True}),
-)
-
-# a "Search" button to trigger the lookup on the right side of the input box
-button = st.button(
-    label="Search",
-    key="button",
-    # on_click=do_lookup,
-    on_click=lambda: st.session_state.update({"do_lookup": True}),
-)
-
-# a container for writting output
-
-output_container = st.container()
+st.title("Bib Lookup 🔍")
 
 # show the version number on the sidebar
 
@@ -116,15 +91,7 @@ align = st.sidebar.selectbox(
     index=0,
     key="align",
     # on_change=do_lookup,
-    on_change=lambda: st.session_state.update({"do_lookup": True}),
-)
-# toggle arxiv2doi to be on or off
-arxiv2doi = st.sidebar.checkbox(
-    label="arXiv ID to DOI",
-    value=True,
-    key="arxiv2doi",
-    # on_change=do_lookup,
-    on_change=lambda: st.session_state.update({"do_lookup": True}),
+    on_change=lambda: st.session_state.update({"confirmed_doi": True}),
 )
 # select the format of the output
 fmt = st.sidebar.selectbox(
@@ -133,7 +100,15 @@ fmt = st.sidebar.selectbox(
     index=0,
     key="fmt",
     # on_change=do_lookup,
-    on_change=lambda: st.session_state.update({"do_lookup": True}),
+    on_change=lambda: st.session_state.update({"confirmed_doi": True}),
+)
+# toggle arxiv2doi to be on or off
+arxiv2doi = st.sidebar.checkbox(
+    label="arXiv ID to DOI",
+    value=True,
+    key="arxiv2doi",
+    # on_change=do_lookup,
+    on_change=lambda: st.session_state.update({"confirmed_doi": True}),
 )
 # toggle capitalize_title to be on or off
 capitalize_title = st.sidebar.checkbox(
@@ -141,42 +116,45 @@ capitalize_title = st.sidebar.checkbox(
     value=False,
     key="capitalize_title",
     # on_change=do_lookup,
-    on_change=lambda: st.session_state.update({"do_lookup": True}),
+    on_change=lambda: st.session_state.update({"confirmed_doi": True}),
 )
 # link to issue tracker on GitHub
-for _ in range(7):
-    # add some space
-    st.sidebar.write("\n")
-st.sidebar.markdown("**:red[Report an issue]**")
-if version.parse(st.__version__) < version.parse("1.31.0"):
-    st.sidebar.markdown(
-        '<p style="text-align:center;color:red;"><a href="https://github.com/DeepPSP/bib_lookup/issues" target="_blank">GitHub Issue Tracker</a></p>',
-        unsafe_allow_html=True,
-    )
-    st.sidebar.markdown(
-        '<p style="text-align:center;color:red;"><a href="https://gitee.com/deep-psp/bib_lookup/issues" target="_blank">Gitee Issue Tracker</a></p>',
-        unsafe_allow_html=True,
-    )
-else:
-    st.sidebar.page_link(
-        page="https://github.com/DeepPSP/bib_lookup/issues",
-        label=":red[GitHub Issue Tracker]",
-        icon="🛠️",
-    )
-    st.sidebar.page_link(
-        page="https://gitee.com/deep-psp/bib_lookup/issues",
-        label=":red[Gitee Issue Tracker]",
-        icon="🛠️",
-    )
+st.sidebar.divider()
+st.sidebar.markdown("**:red[🛠️ Report an issue]**")
+c1, c2 = st.sidebar.columns(2)
+c1.link_button("GitHub", "https://github.com/DeepPSP/bib_lookup/issues", use_container_width=True)
+c2.link_button("Gitee", "https://gitee.com/deep-psp/bib_lookup/issues", use_container_width=True)
 
 
-# if button:
-#     if input_doi == "":
-#         output_container.error("DOI cannot be empty")
-#     else:
-#         do_lookup()
-# elif input_doi != "":  # this makes hitting "Enter" key to trigger the lookup
-#     do_lookup()
+col_input, col_btn = st.columns([4, 1], gap="small")
 
-if st.session_state.get("do_lookup", False):
+# input on the main page
+with col_input:
+    input_doi = st.text_input(
+        label="**DOI / PubMed ID / arXiv ID**",
+        label_visibility="collapsed",
+        value="",
+        max_chars=100,
+        key="input_doi",
+        # help="Enter a DOI, PubMed ID or arXiv ID",
+        placeholder="Paste DOI, arXiv ID, or PubMed ID here...",
+        on_change=lambda: st.session_state.update({"confirmed_doi": True}),
+    )
+# a "Search" button to trigger the lookup on the right side of the input box
+with col_btn:
+    button = st.button(
+        label="Search",
+        key="button",
+        type="primary",
+        use_container_width=True,
+        # on_click=do_lookup,
+        on_click=lambda: st.session_state.update({"confirmed_doi": True}),
+    )
+
+# a container for writting output
+if st.session_state.get("confirmed_doi", False):
+    st.divider()
+output_container = st.container()
+
+if st.session_state.get("confirmed_doi", False):
     do_lookup()
