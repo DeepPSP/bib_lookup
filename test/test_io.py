@@ -17,6 +17,7 @@ _OUTPUT_FILE_1.parent.mkdir(exist_ok=True)
 _OUTPUT_FILE_2 = _CWD.parent / "tmp" / "test_io_output_2.bib"
 
 _LARGE_DATABASE_FILE = _CWD.parent / "sample-files" / "large_database.bib"
+_CLEAN_DATABASE_FILE = _CWD.parent / "sample-files" / "clean_database.bib"
 
 _SOURCE_FILE = _CWD.parent / "sample-files" / "sample-source.tex"
 _SOURCE_FILE_LIST = [_SOURCE_FILE]
@@ -139,6 +140,26 @@ def test_simplify_bib_file():
             bib_file=[],
             output_file=None,
         )
+
+    # Test with clean database file (no macros)
+    BibLookup.simplify_bib_file(
+        tex_sources=_SOURCE_FILE,
+        bib_file=_CLEAN_DATABASE_FILE,
+        output_file=None,
+    )
+    output_file = _CLEAN_DATABASE_FILE.parent / (_CLEAN_DATABASE_FILE.stem + "_simplified.bib")
+    assert output_file.is_file()
+    output_file.unlink()
+    del output_file
+
+    BibLookup.simplify_bib_file(
+        tex_sources=_SOURCE_FILE,
+        bib_file=[
+            _CLEAN_DATABASE_FILE,
+            _CLEAN_DATABASE_FILE.with_name("not-existing.bib"),
+        ],  # the latter is ignored inside the mothod
+        output_file=None,
+    )
 
 
 def test_complicated_items():
