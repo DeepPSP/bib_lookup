@@ -35,6 +35,11 @@ Removed
 Fixed
 ~~~~~
 
+- Fix handling of macros and non-entry types when loading bib files in
+  method `read_bib_file` and when simplifying bib files in static method
+  `simplify_bib_file` of `BibLookup` class.
+  (See PR `#11 <https://github.com/DeepPSP/bib_lookup/pull/11>`__)
+
 Security
 ~~~~~~~~
 
