@@ -202,7 +202,7 @@ class BibLookup(ReprMixin):
         bl_config = deepcopy(_DEFAULT_CONFIG)
         if _CONFIG_FILE.exists():
             # if config file exists, update current config
-            bl_config.update(json.loads(_CONFIG_FILE.read_text()))
+            bl_config.update(json.loads(_CONFIG_FILE.read_text(encoding="utf-8")))
         # update current config with user-defined config
         bl_config.update(kwargs)
 
@@ -390,7 +390,7 @@ class BibLookup(ReprMixin):
         format = self._format if format is None else format
         style = self._style if style is None else style
         if isinstance(identifier, Path):
-            identifier = [line for line in identifier.read_text().splitlines() if len(line) > 0]
+            identifier = [line for line in identifier.read_text(encoding="utf-8").splitlines() if len(line) > 0]
             return self(
                 identifier,
                 align,
@@ -1043,10 +1043,10 @@ class BibLookup(ReprMixin):
             )
             return
 
-        with open(_output_file, output_mode) as f:
+        with open(_output_file, output_mode, encoding="utf-8") as f:
             f.writelines("\n".join([str(self.__cached_lookup_results[i]) for i in identifiers]) + "\n")  # type: ignore
 
-        print_func(f"Bib items written to {process_text(str(_output_file), self.__info_color)}")
+        print_func(f"{len(identifiers)} Bib items written to {process_text(str(_output_file), self.__info_color)}")
 
         # remove saved bib items from the cache
         for i in identifiers:  # type: ignore
@@ -1084,14 +1084,18 @@ class BibLookup(ReprMixin):
         bib_items = []
         lines = []
         line_numbers = []
-        for idx, line in enumerate(_bib_file.read_text().splitlines()):
+        IGNORED_ENTRY_TYPES = {"string", "preamble", "comment", "bstctl"}
+        type_pattern = re.compile(r"^@\s*([a-zA-Z_]+)", re.IGNORECASE)
+        for idx, line in enumerate(_bib_file.read_text(encoding="utf-8").splitlines()):
             line = line.strip(", ")
             if re.match(self._comment_pattern, line) or len(line) == 0:
                 continue
             if line.startswith("@"):
                 line_numbers.append(idx)
                 if len(lines) > 0:
-                    if not re.search("bstctl", lines[0].lower()):
+                    header_match = type_pattern.match(lines[0])
+                    # if not re.findall("|".join(IGNORED_ENTRY_TYPES), lines[0][:lines[0].find("{")].lower()):
+                    if header_match and not re.findall("|".join(IGNORED_ENTRY_TYPES), header_match.group(1).lower()):
                         # ignore_fields should be set empty
                         # to keep it unchanged
                         bib_item = self._to_bib_item(",\n".join(lines), ignore_fields=[])
@@ -1100,11 +1104,14 @@ class BibLookup(ReprMixin):
                             self.__cached_lookup_results[bib_item.identifier] = bib_item
                     lines = []
             lines.append(line)
-        if len(lines) > 0 and not re.search("bstctl", lines[0].lower()):
-            bib_item = self._to_bib_item(",\n".join(lines), ignore_fields=[])
-            bib_items.append(bib_item)
-            if cache:
-                self.__cached_lookup_results[bib_item.identifier] = bib_item
+        # if len(lines) > 0 and not re.findall("|".join(IGNORED_ENTRY_TYPES), lines[0][: lines[0].find("{")].lower()):
+        if len(lines) > 0:
+            header_match = type_pattern.match(lines[0])
+            if header_match and not re.findall("|".join(IGNORED_ENTRY_TYPES), header_match.group(1).lower()):
+                bib_item = self._to_bib_item(",\n".join(lines), ignore_fields=[])
+                bib_items.append(bib_item)
+                if cache:
+                    self.__cached_lookup_results[bib_item.identifier] = bib_item
         if return_line_numbers:
             return bib_items, line_numbers
         return bib_items
@@ -1299,7 +1306,7 @@ class BibLookup(ReprMixin):
                     files = list(source.rglob("*.tex"))
 
                 for f in files:
-                    text = f.read_text(encoding="utf-8", errors="ignore")
+                    text = f.read_text(encoding="utf-8")
                     _contents.append(_remove_comments(text))
 
             full_tex_content = "\n".join(_contents)
@@ -1352,6 +1359,45 @@ class BibLookup(ReprMixin):
         if output_file.exists() and output_mode != "a":
             raise FileExistsError(f'Output file "{output_file}" already exists')
 
+        macros_content = []
+        macro_types = ("string", "preamble", "comment", "bstctl")
+
+        for bf in bib_files:
+            if not bf.exists():
+                continue
+            content_lines = bf.read_text(encoding="utf-8").splitlines()
+            current_block = []
+            in_macro = False
+
+            for line in content_lines:
+                stripped = line.strip()
+                if not stripped:
+                    continue
+
+                if stripped.startswith("@"):
+                    if in_macro and current_block:
+                        macros_content.append("\n".join(current_block))
+
+                    if re.findall("|".join(macro_types), stripped[: stripped.find("{")].lower()):
+                        in_macro = True
+                        current_block = [line]
+                    else:
+                        in_macro = False
+                        current_block = []
+                elif in_macro:
+                    current_block.append(line)
+
+            if in_macro and current_block:
+                macros_content.append("\n".join(current_block))
+
+        initial_mode = output_mode
+        if macros_content:
+            with open(output_file, initial_mode, encoding="utf-8") as f:
+                f.write("\n".join(macros_content) + "\n\n")
+            save_mode = "a"
+        else:
+            save_mode = output_mode
+
         # read bib files
         ref_bl = BibLookup()
         for bf in bib_files:
@@ -1374,7 +1420,7 @@ class BibLookup(ReprMixin):
         # filter and save
         cited_identifiers = [idtf for idtf in ref_bl if ref_bl[idtf].label in cited_labels]
 
-        ref_bl.save(cited_identifiers, output_file=output_file, output_mode=output_mode)
+        ref_bl.save(cited_identifiers, output_file=output_file, output_mode=save_mode)
         return str(output_file)
 
 
