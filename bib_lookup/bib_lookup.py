@@ -1378,7 +1378,7 @@ class BibLookup(ReprMixin):
                     if in_macro and current_block:
                         macros_content.append("\n".join(current_block))
 
-                    if re.findall("|".join(macro_types), stripped[: stripped.find("{")].lower()):
+                    if re.search("|".join(macro_types), stripped[: stripped.find("{")].lower()):
                         in_macro = True
                         current_block = [line]
                     else:
