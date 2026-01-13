@@ -202,7 +202,7 @@ class BibLookup(ReprMixin):
         bl_config = deepcopy(_DEFAULT_CONFIG)
         if _CONFIG_FILE.exists():
             # if config file exists, update current config
-            bl_config.update(json.loads(_CONFIG_FILE.read_text(encoding="utf-8")))
+            bl_config.update(json.loads(_CONFIG_FILE.read_text(encoding="utf-8", errors="ignore")))
         # update current config with user-defined config
         bl_config.update(kwargs)
 
@@ -238,18 +238,15 @@ class BibLookup(ReprMixin):
         # "22331878" or
         # "http://www.ncbi.nlm.nih.gov/pubmed/22331878"
         self.__pmid_pattern_prefix = f"pmid{colon}|pmcid{colon}"  # and pmcid
-        # self.__pmid_pattern = f"^(?:{self.__pmid_pattern_prefix})?(?:\\d+|pmc\\d+(?:\\.\\d+)?)$"
         self.__pmurl_pattern_prefix = (
             "(?:https?:\\/\\/)?(?:pubmed\\.ncbi\\.nlm\\.nih" "\\.gov\\/|www\\.ncbi\\.nlm\\.nih\\.gov\\/pubmed\\/)"
         )
-        # self.__pmurl_pattern = f"^(?:{self.__pmurl_pattern_prefix})?(?:\\d+|pmc\\d+(?:\\.\\d+)?)(?:\\/)?$"
         self.__pm_pattern_prefix = f"{self.__pmurl_pattern_prefix}|{self.__pmid_pattern_prefix}"
         self.__pm_pattern = f"^(?:{self.__pm_pattern_prefix})?(?:\\d+|pmc\\d+(?:\\.\\d+)?)(?:\\/)?$"
         # arXiv examples:
         # "arXiv:1501.00001v1", "arXiv:cs/0012022"
         self.__arxiv_pattern_prefix = f"((?:(?:(?:https?:\\/\\/)?arxiv.org\\/)?abs\\/)|(arxiv{colon}))"
         self.__arxiv_pattern = f"^(?:{self.__arxiv_pattern_prefix})?(?:([\\w\\-]+\\/\\d+)|(\\d+\\.\\d+(v(\\d+))?))$"
-        # self.__arxiv_pattern_old = f"^(?:{self.__arxiv_pattern_prefix})?[\\w\\-]+\\/\\d+$"
         self.__default_err = "Not Found"
         self.__network_err = "Network Error"
         self.__timeout_err = "Timeout Error"
@@ -390,7 +387,9 @@ class BibLookup(ReprMixin):
         format = self._format if format is None else format
         style = self._style if style is None else style
         if isinstance(identifier, Path):
-            identifier = [line for line in identifier.read_text(encoding="utf-8").splitlines() if len(line) > 0]
+            identifier = [
+                line for line in identifier.read_text(encoding="utf-8", errors="ignore").splitlines() if len(line) > 0
+            ]
             return self(
                 identifier,
                 align,
@@ -481,7 +480,7 @@ class BibLookup(ReprMixin):
             res = self._handle_pm(feed_content)
         elif category == "arxiv":
             res = self._handle_arxiv(feed_content)
-        elif category == "error" or re.findall("|".join(self.__exceptional_doi_domains), idtf):
+        elif category == "error" or re.search("|".join(self.__exceptional_doi_domains), idtf):
             res = self.default_err
 
         res = self._handle_network_error(res)  # type: ignore
@@ -817,7 +816,7 @@ class BibLookup(ReprMixin):
             for idx in range(len(split_indices) - 1):
                 lines.append(res[split_indices[idx] : split_indices[idx + 1]])
             lines.append(res[split_indices[-1] :])
-            if re.findall(self.__field_pattern, lines[-1].lower()):
+            if re.search(self.__field_pattern, lines[-1].lower()):
                 lines.append("}")
             lines = [re.sub("\\}[^\\w]+\\}", "}", line.strip(", ")) for line in lines if len(line.strip(", ")) > 0]
             header_dict = list(re.finditer(self.bib_header_pattern, lines[0]))[0].groupdict()
@@ -826,7 +825,6 @@ class BibLookup(ReprMixin):
                 key, *val = line.strip().split("=")  # urls might contain "="
                 val = "=".join(val)
                 if key.strip().lower() in BIB_FIELDS:
-                    # field_dict[key.strip()] = val.strip(", ")
                     field_dict[key.strip()] = val
                 else:
                     # line breaks inside a field
@@ -1086,7 +1084,7 @@ class BibLookup(ReprMixin):
         line_numbers = []
         IGNORED_ENTRY_TYPES = {"string", "preamble", "comment", "bstctl", "alias"}
         type_pattern = re.compile(r"^@\s*([a-zA-Z_]+)", re.IGNORECASE)
-        for idx, line in enumerate(_bib_file.read_text(encoding="utf-8").splitlines()):
+        for idx, line in enumerate(_bib_file.read_text(encoding="utf-8", errors="ignore").splitlines()):
             line = line.strip(", ")
             if re.match(self._comment_pattern, line) or len(line) == 0:
                 continue
@@ -1094,8 +1092,7 @@ class BibLookup(ReprMixin):
                 line_numbers.append(idx)
                 if len(lines) > 0:
                     header_match = type_pattern.match(lines[0])
-                    # if not re.findall("|".join(IGNORED_ENTRY_TYPES), lines[0][:lines[0].find("{")].lower()):
-                    if header_match and not re.findall("|".join(IGNORED_ENTRY_TYPES), header_match.group(1).lower()):
+                    if header_match and not re.search("|".join(IGNORED_ENTRY_TYPES), header_match.group(1).lower()):
                         # ignore_fields should be set empty
                         # to keep it unchanged
                         bib_item = self._to_bib_item(",\n".join(lines), ignore_fields=[])
@@ -1104,10 +1101,9 @@ class BibLookup(ReprMixin):
                             self.__cached_lookup_results[bib_item.identifier] = bib_item
                     lines = []
             lines.append(line)
-        # if len(lines) > 0 and not re.findall("|".join(IGNORED_ENTRY_TYPES), lines[0][: lines[0].find("{")].lower()):
         if len(lines) > 0:
             header_match = type_pattern.match(lines[0])
-            if header_match and not re.findall("|".join(IGNORED_ENTRY_TYPES), header_match.group(1).lower()):
+            if header_match and not re.search("|".join(IGNORED_ENTRY_TYPES), header_match.group(1).lower()):
                 bib_item = self._to_bib_item(",\n".join(lines), ignore_fields=[])
                 bib_items.append(bib_item)
                 if cache:
@@ -1306,7 +1302,7 @@ class BibLookup(ReprMixin):
                     files = list(source.rglob("*.tex"))
 
                 for f in files:
-                    text = f.read_text(encoding="utf-8")
+                    text = f.read_text(encoding="utf-8", errors="ignore")
                     _contents.append(_remove_comments(text))
 
             full_tex_content = "\n".join(_contents)
@@ -1325,8 +1321,6 @@ class BibLookup(ReprMixin):
 
                 file_strs = [s.strip() for s in match.group("files").split(",")]
                 for f_str in file_strs:
-                    # if not f_str:
-                    #     continue
                     if not f_str.lower().endswith(".bib"):
                         f_str += ".bib"
 
@@ -1365,7 +1359,7 @@ class BibLookup(ReprMixin):
         for bf in bib_files:
             if not bf.exists():
                 continue
-            content_lines = bf.read_text(encoding="utf-8").splitlines()
+            content_lines = bf.read_text(encoding="utf-8", errors="ignore").splitlines()
             current_block = []
             in_macro = False
 
