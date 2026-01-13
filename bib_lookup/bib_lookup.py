@@ -1084,7 +1084,7 @@ class BibLookup(ReprMixin):
         bib_items = []
         lines = []
         line_numbers = []
-        IGNORED_ENTRY_TYPES = {"string", "preamble", "comment", "bstctl"}
+        IGNORED_ENTRY_TYPES = {"string", "preamble", "comment", "bstctl", "alias"}
         type_pattern = re.compile(r"^@\s*([a-zA-Z_]+)", re.IGNORECASE)
         for idx, line in enumerate(_bib_file.read_text(encoding="utf-8").splitlines()):
             line = line.strip(", ")
@@ -1360,7 +1360,7 @@ class BibLookup(ReprMixin):
             raise FileExistsError(f'Output file "{output_file}" already exists')
 
         macros_content = []
-        macro_types = ("string", "preamble", "comment", "bstctl")
+        macro_types = ("string", "preamble", "comment", "bstctl", "alias")
 
         for bf in bib_files:
             if not bf.exists():
