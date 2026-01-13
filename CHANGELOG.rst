@@ -8,11 +8,29 @@ Changelog <https://keepachangelog.com/en/1.1.0/>`__, and this project
 adheres to `Semantic
 Versioning <https://semver.org/spec/v2.0.0.html>`__.
 
-`Unreleased <https://github.com/DeepPSP/bib_lookup/compare/v0.1.1...HEAD>`__
+`Unreleased <https://github.com/DeepPSP/bib_lookup/compare/v0.1.2...HEAD>`__
 ------------------------------------------------------------------------------------------------
 
 Added
 ~~~~~
+
+Changed
+~~~~~~~
+
+Deprecated
+~~~~~~~~~~
+
+Removed
+~~~~~~~
+
+Fixed
+~~~~~
+
+Security
+~~~~~~~~
+
+`0.1.2 <https://github.com/DeepPSP/bib_lookup/compare/v0.1.1...v0.1.2>`__ - 2026-01-13
+------------------------------------------------------------------------------------------------
 
 Changed
 ~~~~~~~
@@ -26,12 +44,6 @@ Changed
   it now automatically detects the bib files used in a LaTeX source file,
   and now supports multiple bib files used in one LaTeX source file.
 
-Deprecated
-~~~~~~~~~~
-
-Removed
-~~~~~~~
-
 Fixed
 ~~~~~
 
@@ -39,9 +51,6 @@ Fixed
   method `read_bib_file` and when simplifying bib files in static method
   `simplify_bib_file` of `BibLookup` class.
   (See PR `#11 <https://github.com/DeepPSP/bib_lookup/pull/11>`__)
-
-Security
-~~~~~~~~
 
 `0.1.1 <https://github.com/DeepPSP/bib_lookup/compare/v0.1.0...v0.1.1>`__ - 2025-08-28
 ------------------------------------------------------------------------------------------------
