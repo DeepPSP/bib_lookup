@@ -26,6 +26,9 @@ Removed
 Fixed
 ~~~~~
 
+- Fixed an issue in the CLI where `--output-file` and `--overwrite`
+  flags were ignored when using the `simplify_bib` command.
+
 Security
 ~~~~~~~~
 
