@@ -100,6 +100,7 @@ doi,citation
       author = {Reyna, Matthew and Andres Perez Alday, Erick and Gu, Annie and Liu, Chengyu and Seyedi, Salman and Bahrami Rad, Ali and Elola, Andoni and Li, Qiao and Sharma, Ashish and Clifford, Gari},
    booktitle = {2020 Computing in Cardiology Conference (CinC)},
       series = {CinC2020},
+      volume = {47},
         issn = {2325-887X},
          doi = {10.22489/cinc.2020.236},
    publisher = {Computing in Cardiology},
