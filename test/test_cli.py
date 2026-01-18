@@ -124,7 +124,7 @@ def test_cli():
     cmd = f"bib-lookup --gather {str(tex_entry_file)} {str(tex_output_file)} 123"
     exitcode, output_msg = execute_cmd(cmd, raise_error=False)
     assert exitcode == 1
-    cmd = f"bib-lookup --gather {str(tex_entry_file)} --overwrite"
+    cmd = f"bib-lookup --gather {str(tex_entry_file)} --overwrite --remove-comments"
     exitcode, output_msg = execute_cmd(cmd)
     assert exitcode == 0
 

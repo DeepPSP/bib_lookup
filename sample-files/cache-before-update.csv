@@ -177,7 +177,7 @@ doi,citation
         doi = {10.1101/2021.05.17.444563},
        year = {2021},
       month = {5},
-  publisher = {Cold Spring Harbor Laboratory}
+  publisher = {openRxiv}
 }"
 10.1016/j.inffus.2019.06.024,"@article{Yao_2020,
       title = {Multi-class Arrhythmia detection from 12-lead varied-length {ECG} using Attention-based Time-Incremental Convolutional Neural Network},
