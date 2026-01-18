@@ -14,6 +14,9 @@ Versioning <https://semver.org/spec/v2.0.0.html>`__.
 Added
 ~~~~~
 
+- Add `--remove-comments` flag to the CLI `simplify_bib` command
+  to control whether to keep comments when gathering .tex files.
+
 Changed
 ~~~~~~~
 

@@ -596,6 +596,8 @@ def gather_tex_source_files_in_one(
     final_content = _read_tex(entry_file, base_dir)
     if not keep_comments:
         final_content = _remove_comments(final_content)
+        # remove extra blank lines caused by comment removal
+        final_content = re.sub(r"\n\s*\n", "\n\n", final_content).strip() + "\n"
 
     if write_file:
         Path(output_file).write_text(final_content, encoding="utf-8")  # type: ignore

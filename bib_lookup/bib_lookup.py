@@ -1044,7 +1044,7 @@ class BibLookup(ReprMixin):
         with open(_output_file, output_mode, encoding="utf-8") as f:
             f.writelines("\n".join([str(self.__cached_lookup_results[i]) for i in identifiers]) + "\n")  # type: ignore
 
-        print_func(f"{len(identifiers)} Bib items written to {process_text(str(_output_file), self.__info_color)}")
+        print_func(f"{len(identifiers)} Bib items written to {process_text(str(_output_file), self.__info_color)}")  # type: ignore
 
         # remove saved bib items from the cache
         for i in identifiers:  # type: ignore

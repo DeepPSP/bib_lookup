@@ -166,7 +166,12 @@ def main():
         action="store_true",
         help="Overwrite the generated file if it already exists.",
     )
-
+    parser.add_argument(
+        "--remove-comments",
+        action="store_true",
+        help="Remove comments when gathering .tex files (only applicable with --gather).",
+        dest="remove_comments",
+    )
     args = vars(parser.parse_args())
 
     if args.get("config", None) is not None:
@@ -257,6 +262,7 @@ def main():
                 write_file=True,
                 output_file=output_file,
                 overwrite=args["overwrite"],
+                keep_comments=not args["remove_comments"],
             )
         except FileExistsError as e:
             print(f"Error: {e}".replace("overwrite=True", "--overwrite"))
