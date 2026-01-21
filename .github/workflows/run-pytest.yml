@@ -46,7 +46,7 @@ jobs:
     - name: Upload coverage to Codecov
       # Only upload coverage for Python ${MAIN_PYTHON_VERSION} and the event is not scheduled
       if: matrix.python-version == env.MAIN_PYTHON_VERSION && !contains(fromJson('["schedule"]'), github.event_name)
-      uses: codecov/codecov-action@v4
+      uses: codecov/codecov-action@v5
       with:
         fail_ci_if_error: true # optional (default = false)
         verbose: true # optional (default = false)
