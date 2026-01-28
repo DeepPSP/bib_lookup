@@ -636,67 +636,71 @@ class BibLookup(ReprMixin):
         Returns
         -------
         res : str
-            Decoded query result (BibTeX string), or an error message/manual link.
+            Decoded query result (BibTeX string, Text, etc.), or an error message.
 
         """
         # Extract URL for potential fallback use
         url = feed_content.get("url", "")
+        headers = feed_content.get("headers", {})
+
+        # Determine if we are specifically looking for BibTeX
+        # Keys in headers might be 'Accept' or 'accept'
+        accept_header = headers.get("Accept", "") or headers.get("accept", "")
+        is_requesting_bibtex = "application/x-bibtex" in accept_header
 
         # Standard Attempt: Use API (Crossref/DataCite)
-        # We use GET method which is the standard for DOI Content Negotiation.
         try:
-            # We use self.session to reuse connections
             r = self.session.get(**feed_content)
 
-            # Check if the response is successful and looks like BibTeX (starts with @)
             if r.status_code == 200:
                 res = r.content.decode("utf-8")
-                if res.strip().startswith("@"):
+
+                if is_requesting_bibtex:
+                    # If we asked for BibTeX, strictly check if it looks like BibTeX (starts with @)
+                    # This filters out ChinaDOI's HTML pages when they return status 200.
+                    if res.strip().startswith("@"):
+                        if self.verbose > 3:
+                            print_func(f"via `_handle_doi`, fetched content = {res}")
+                        return res
+                else:
+                    # If we asked for Text/XML/RIS, trust the 200 OK response.
+                    # This fixes the bug where format="text" was returning Network Error.
                     if self.verbose > 3:
                         print_func(f"via `_handle_doi`, fetched content = {res}")
                     return res
 
         except (requests.Timeout, requests.RequestException):
-            # Ignore network errors here to allow fallback to proceed
             pass
 
         # Fallback: Browser Simulation
         # Target: Resolve DOIs that do not support BibTeX negotiation (e.g., ChinaDOI, CNKI)
-        # Only proceed if it is a DOI URL
+        # Only needed if the user was looking for BibTeX (or if the standard request failed completely)
+        # Fallback is most useful when we wanted BibTeX but got something else (or nothing).
         if "doi.org" in url:
-            # Use standard browser headers (Accept HTML, not BibTeX)
-            # to avoid 403 Forbidden on ChinaDOI servers.
             browser_headers = {
                 "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
                 "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
             }
+
             try:
-                # Use a fresh request (not session) to ensure clean headers.
-                # Must enable redirects to follow the path to chndoi.org or cnki.net.
                 r_probe = requests.get(
                     url, headers=browser_headers, timeout=feed_content.get("timeout", 10), allow_redirects=True
                 )
+
                 final_url = r_probe.url
 
-                # Check if resolved URL belongs to ChinaDOI or CNKI
+                # Check for ChinaDOI / CNKI
                 if "chndoi.org" in final_url or "cnki" in final_url:
-                    # Construct a special return message.
-                    # This format allows the caller (CLI or Streamlit) to parse the URL.
-                    msg = f"{self.__REDIRECT_FLAG__} Automatic lookup failed. Please visit: {final_url}"
-
-                    # Print info for CLI users
+                    msg = f"[Manual Check Required] Automatic lookup failed. Please visit: {final_url}"
                     if self.verbose >= 0:
                         print("-" * 60)
                         print(f"[!] {msg}")
                         print("-" * 60)
-
-                    # Return the message so Streamlit can display it
                     return msg
 
             except Exception:
                 pass
 
-        # If all attempts fail, return standard network error
         return self.network_err
 
     def _handle_pm(self, feed_content: dict) -> str:
