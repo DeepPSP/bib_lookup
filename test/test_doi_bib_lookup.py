@@ -46,3 +46,8 @@ def test_doi_bib_lookup():
 
     # test no ignore fields
     bl_no_ignore("DOI: 10.1142/S1005386718000305", timeout=1000)
+
+    # test ChinaDOI
+    china_doi = "10.13748/j.cnki.issn1007-7693.20251689"
+    bib_string = bl(china_doi, timeout=1000, verbose=3)
+    assert bib_string.startswith(bib_lookup.BibLookup.__REDIRECT_FLAG__)  # type: ignore
