@@ -184,6 +184,7 @@ class BibLookup(ReprMixin):
 
     """
 
+    __REDIRECT_FLAG__ = "[Manual Check Required]"
     __URL__ = dict(
         doi="https://doi.org/",
         pm="https://www.ncbi.nlm.nih.gov/pmc/utils/idconv/v1.0/?format=json&ids=",
@@ -485,7 +486,9 @@ class BibLookup(ReprMixin):
 
         res = self._handle_network_error(res)  # type: ignore
 
-        if res not in self.lookup_errors:
+        if res.startswith(self.__REDIRECT_FLAG__):
+            pass
+        elif res not in self.lookup_errors:
             if format in ["bibtex", "bibentry"]:
                 try:
                     res = self._to_bib_item(res, idtf, align, ignore_fields, label, capitalize_title)  # type: ignore
@@ -623,29 +626,82 @@ class BibLookup(ReprMixin):
         return category, fc, idtf
 
     def _handle_doi(self, feed_content: dict) -> str:
-        """Handle a DOI query using POST method.
+        """Handle a DOI query using GET method with Fallback mechanism.
 
         Parameters
         ----------
         feed_content : dict
-            The content to feed to POST method.
+            The content to feed to the request method (url, headers, timeout, etc.).
 
         Returns
         -------
         res : str
-            Decoded query result.
+            Decoded query result (BibTeX string, Text, etc.), or an error message.
 
         """
+        # Extract URL for potential fallback use
+        url = feed_content.get("url", "")
+        headers = feed_content.get("headers", {})
+
+        # Determine if we are specifically looking for BibTeX
+        # Keys in headers might be 'Accept' or 'accept'
+        accept_header = headers.get("Accept", "") or headers.get("accept", "")
+        is_requesting_bibtex = "application/x-bibtex" in accept_header
+
+        # Standard Attempt: Use API (Crossref/DataCite)
         try:
-            r = self.session.post(**feed_content)
-            res = r.content.decode("utf-8")
-        except requests.Timeout:
-            res = self.timeout_err
-        except requests.RequestException:
-            res = self.network_err
-        if self.verbose > 3:
-            print_func(f"via `_handle_doi`, fetched content = {res}")
-        return res
+            r = self.session.get(**feed_content)
+
+            if r.status_code == 200:
+                res = r.content.decode("utf-8")
+
+                if is_requesting_bibtex:
+                    # If we asked for BibTeX, strictly check if it looks like BibTeX (starts with @)
+                    # This filters out ChinaDOI's HTML pages when they return status 200.
+                    if res.strip().startswith("@"):
+                        if self.verbose > 3:
+                            print_func(f"via `_handle_doi`, fetched content = {res}")
+                        return res
+                else:
+                    # If we asked for Text/XML/RIS, trust the 200 OK response.
+                    # This fixes the bug where format="text" was returning Network Error.
+                    if self.verbose > 3:
+                        print_func(f"via `_handle_doi`, fetched content = {res}")
+                    return res
+
+        except (requests.Timeout, requests.RequestException):
+            pass
+
+        # Fallback: Browser Simulation
+        # Target: Resolve DOIs that do not support BibTeX negotiation (e.g., ChinaDOI, CNKI)
+        # Only needed if the user was looking for BibTeX (or if the standard request failed completely)
+        # Fallback is most useful when we wanted BibTeX but got something else (or nothing).
+        if "doi.org" in url:
+            browser_headers = {
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+                "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+            }
+
+            try:
+                r_probe = requests.get(
+                    url, headers=browser_headers, timeout=feed_content.get("timeout", 10), allow_redirects=True
+                )
+
+                final_url = r_probe.url
+
+                # Check for ChinaDOI / CNKI
+                if "chndoi.org" in final_url or "cnki" in final_url:
+                    msg = f"[Manual Check Required] Automatic lookup failed. Please visit: {final_url}"
+                    if self.verbose >= 0:
+                        print("-" * 60)
+                        print(f"[!] {msg}")
+                        print("-" * 60)
+                    return msg
+
+            except Exception:
+                pass
+
+        return self.network_err
 
     def _handle_pm(self, feed_content: dict) -> str:
         """Handle a PubMed query using POST method.

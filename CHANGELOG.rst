@@ -31,6 +31,9 @@ Fixed
 
 - Fixed an issue in the CLI where `--output-file` and `--overwrite`
   flags were ignored when using the `simplify_bib` command.
+- Fixed lookup failures for ChinaDOI/CNKI DOIs (e.g., `10.13748/...`)
+  by switching request method to GET and adding a browser-header fallback
+  mechanism to retrieve the resolution URL.
 
 Security
 ~~~~~~~~
