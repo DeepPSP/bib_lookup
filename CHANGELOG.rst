@@ -20,6 +20,10 @@ Added
 Changed
 ~~~~~~~
 
+- Changed the backend storage of `CitationMixin` cache from CSV to SQLite
+  for better performance and concurrency support. The existing CSV cache
+  will be automatically migrated to SQLite upon first use.
+
 Deprecated
 ~~~~~~~~~~
 

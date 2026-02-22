@@ -1,5 +1,6 @@
 """ """
 
+import sqlite3
 import warnings
 from typing import Optional, Sequence, Union
 
@@ -20,7 +21,40 @@ class CitationMixin(object):
 
     _bl = BibLookup(timeout=1.0, ignore_errors=False)
 
-    citation_cache = CACHE_DIR / "bib-lookup-cache.csv"
+    citation_cache_csv = CACHE_DIR / "bib-lookup-cache.csv"
+    citation_cache_db = CACHE_DIR / "bib-lookup-cache.db"
+    citation_cache = citation_cache_db
+
+    def _init_db(self):
+        """Initialize sqlite db and migrate csv if exists."""
+        conn = sqlite3.connect(self.citation_cache_db)
+        cursor = conn.cursor()
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS citations (
+                doi TEXT PRIMARY KEY,
+                citation TEXT
+            )
+        """)
+
+        # Backward compatibility: Migrate CSV to SQLite
+        if self.citation_cache_csv.exists():
+            try:
+                df = pd.read_csv(self.citation_cache_csv)
+                # Batch insert data, use OR IGNORE to avoid duplicates
+                data = list(df[["doi", "citation"]].itertuples(index=False, name=None))
+                cursor.executemany(
+                    "INSERT OR IGNORE INTO citations (doi, citation) VALUES (?, ?)",
+                    data,
+                )
+                conn.commit()
+                # Delete CSV after successful migration
+                self.citation_cache_csv.unlink()
+                print(f"Migrated citation cache from CSV to SQLite: {self.citation_cache_db}")
+            except Exception as e:
+                print(f"Failed to migrate CSV cache: {e}")
+
+        conn.commit()
+        conn.close()
 
     def get_citation(
         self,
@@ -56,11 +90,7 @@ class CitationMixin(object):
 
         """
         self._bl.clear_cache()
-        if self.citation_cache.exists():
-            df_cc = pd.read_csv(self.citation_cache)
-        else:
-            df_cc = pd.DataFrame(columns=["doi", "citation"])
-            df_cc.to_csv(self.citation_cache, index=False)
+        self._init_db()
 
         if self.doi is not None:
             if isinstance(self.doi, str):
@@ -74,16 +104,39 @@ class CitationMixin(object):
                     return
                 else:
                     return citation
+
+            # Fetch from cache
+            conn = sqlite3.connect(self.citation_cache_db)
+            cursor = conn.cursor()
+
+            # Use placeholders for the IN clause
+            placeholders = ",".join("?" * len(doi))
+
             if format is not None and format != self._bl.format:
                 citation = ""  # no cache for format other than bibtex
+                existing_dois = set()
+                cached_citations = []
             else:
-                citation = "\n".join(df_cc[df_cc["doi"].isin(doi)]["citation"].tolist())
-                doi = [item for item in doi if item not in df_cc["doi"].tolist()]
-                if print_result:
+                query = f"SELECT citation FROM citations WHERE doi IN ({placeholders})"
+                cursor.execute(query, doi)
+                cached_citations = [row[0] for row in cursor.fetchall()]
+                citation = "\n".join(cached_citations)
+                if print_result and citation:
                     print(citation)
-            if len(doi) > 0:
+
+                # Find which DOIs were found
+                query_exist = f"SELECT doi FROM citations WHERE doi IN ({placeholders})"
+                cursor.execute(query_exist, doi)
+                existing_dois = {row[0] for row in cursor.fetchall()}
+
+            conn.close()
+
+            # Filter out DOIs that were found in cache
+            doi_to_fetch = [item for item in doi if item not in existing_dois]
+
+            if len(doi_to_fetch) > 0:
                 new_citations = []
-                for item in doi:
+                for item in doi_to_fetch:
                     try:
                         bl_res = self._bl(
                             item,
@@ -106,18 +159,31 @@ class CitationMixin(object):
                     except Exception:
                         if print_result:
                             print(f"Failed to lookup citation for {item}")
+
                 if format is None or format == self._bl.format:
                     # only cache bibtex format
-                    new_citations = [
-                        item for item in new_citations if item["citation"] is not None and item["citation"].startswith("@")
+                    # Filter for valid bibtex citations (starting with @)
+                    valid_new_citations = [
+                        item
+                        for item in new_citations
+                        if item["citation"] is not None and item["citation"].strip().startswith("@")
                     ]
-                    df_new = pd.DataFrame(new_citations)
-                    if len(df_new) > 0:
-                        df_new.to_csv(self.citation_cache, mode="a", header=False, index=False)
-                else:
-                    df_new = pd.DataFrame(new_citations)
-                if len(df_new) > 0:
-                    citation += "\n" + "\n".join(df_new["citation"].tolist())
+
+                    if valid_new_citations:
+                        conn = sqlite3.connect(self.citation_cache_db)
+                        cursor = conn.cursor()
+                        data_to_insert = [(item["doi"], item["citation"]) for item in valid_new_citations]
+                        cursor.executemany("INSERT OR REPLACE INTO citations (doi, citation) VALUES (?, ?)", data_to_insert)
+                        conn.commit()
+                        conn.close()
+
+                # Update the returned citation string with newly fetched citations
+                additional_citations = [item["citation"] for item in new_citations]
+                if additional_citations:
+                    if citation:
+                        citation += "\n" + "\n".join(additional_citations)
+                    else:
+                        citation = "\n".join(additional_citations)
         else:
             citation = ""
             doi = []
@@ -145,17 +211,23 @@ class CitationMixin(object):
         None
 
         """
-        if self.citation_cache.exists():
-            df_cc = pd.read_csv(self.citation_cache)
-        else:
-            df_cc = pd.DataFrame(columns=["doi", "citation"])
+        self._init_db()
+        conn = sqlite3.connect(self.citation_cache_db)
+        cursor = conn.cursor()
+
         if doi is None:
-            doi = df_cc.doi.tolist()
-        if isinstance(doi, str):
-            doi = [doi]
+            cursor.execute("SELECT doi FROM citations")
+            doi_list = [row[0] for row in cursor.fetchall()]
+        else:
+            if isinstance(doi, str):
+                doi_list = [doi]
+            else:
+                doi_list = list(doi)
+
+        conn.close()  # Close connection while fetching to avoid locking issues if fetching takes long
 
         new_citations = []
-        for item in doi:
+        for item in doi_list:
             try:
                 bl_res = self._bl(item, timeout=10.0)
                 if bl_res not in self._bl.lookup_errors:
@@ -167,6 +239,11 @@ class CitationMixin(object):
                     )
             except Exception:
                 print(f"Failed to lookup citation for {item}")
-        df_cc = pd.concat([df_cc, pd.DataFrame(new_citations)])
-        df_cc = df_cc.drop_duplicates(subset="doi", keep="last", ignore_index=True)
-        df_cc.to_csv(self.citation_cache, index=False)
+
+        if new_citations:
+            conn = sqlite3.connect(self.citation_cache_db)
+            cursor = conn.cursor()
+            data_to_insert = [(item["doi"], item["citation"]) for item in new_citations]
+            cursor.executemany("INSERT OR REPLACE INTO citations (doi, citation) VALUES (?, ?)", data_to_insert)
+            conn.commit()
+            conn.close()
