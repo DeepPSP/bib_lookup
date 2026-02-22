@@ -568,7 +568,7 @@ class BibLookup(ReprMixin):
             ).strip("/")
             _type = f"{self.__doi_format_headers[_format]}; charset=utf-8"
             if _format == "text":
-                _type = f"{_type}; style = {style}"
+                _type = f"{_type}; style = {_style}"
             headers = {"Accept": _type}
             url = self.__URL__["doi"] + idtf
             fc = dict(
@@ -651,10 +651,9 @@ class BibLookup(ReprMixin):
         # Standard Attempt: Use API (Crossref/DataCite)
         try:
             r = self.session.get(**feed_content)
+            res = r.content.decode("utf-8")
 
             if r.status_code == 200:
-                res = r.content.decode("utf-8")
-
                 if is_requesting_bibtex:
                     # If we asked for BibTeX, strictly check if it looks like BibTeX (starts with @)
                     # This filters out ChinaDOI's HTML pages when they return status 200.
@@ -668,9 +667,15 @@ class BibLookup(ReprMixin):
                     if self.verbose > 3:
                         print_func(f"via `_handle_doi`, fetched content = {res}")
                     return res
+            else:
+                # 2. Handle non-200 errors (e.g. 404 "DOI Not Found")
+                # calling _handle_network_error might return a specific error or default error
+                return self._handle_network_error(res)
 
-        except (requests.Timeout, requests.RequestException):
-            pass
+        except requests.Timeout:
+            return self.timeout_err
+        except requests.RequestException:
+            return self.network_err
 
         # Fallback: Browser Simulation
         # Target: Resolve DOIs that do not support BibTeX negotiation (e.g., ChinaDOI, CNKI)
@@ -683,7 +688,7 @@ class BibLookup(ReprMixin):
             }
 
             try:
-                r_probe = requests.get(
+                r_probe = self.session.get(
                     url, headers=browser_headers, timeout=feed_content.get("timeout", 10), allow_redirects=True
                 )
 
@@ -1041,6 +1046,7 @@ class BibLookup(ReprMixin):
             If True or "strict", skip existing bib items in the output file.
             For "strict" comparison of instances of :class:`BibItem`,
             ref. the :meth:`BibItem.__eq__` method.
+            Ignored if `output_mode` is "w" (overwrite).
         output_mode : {"w", "a"}, default "a"
             The file writing mode, by default "a".
             "w" for overwrite, "a" for append.
@@ -1073,7 +1079,8 @@ class BibLookup(ReprMixin):
         identifiers = [i for i in identifiers if i in self.__cached_lookup_results]  # type: ignore
 
         # check if the bib item is already existed in the output file
-        if skip_existing or (output_mode == "a" and _output_file.exists()):
+        # ONLY if we are appending. If we are overwriting ('w'), we don't care what was there.
+        if output_mode == "a" and _output_file.exists() and skip_existing:
             existing_bib_items = self.read_bib_file(_output_file)
             identifiers = [
                 i

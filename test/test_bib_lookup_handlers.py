@@ -23,10 +23,10 @@ def test_handle_doi_timeout(monkeypatch):
     bl = BibLookup()
 
     # fake post raises Timeout
-    def fake_post(**kwargs):
+    def fake_get(**kwargs):
         raise requests.Timeout("timeout")
 
-    monkeypatch.setattr(bl.session, "post", fake_post, raising=True)
+    monkeypatch.setattr(bl.session, "get", fake_get, raising=True)
 
     res = bl._handle_doi({"url": "http://example"})  # feed_content can be any kwargs
     assert res == bl.timeout_err
@@ -35,10 +35,10 @@ def test_handle_doi_timeout(monkeypatch):
 def test_handle_doi_request_exception(monkeypatch):
     bl = BibLookup()
 
-    def fake_post(**kwargs):
+    def fake_get(**kwargs):
         raise requests.RequestException("net")
 
-    monkeypatch.setattr(bl.session, "post", fake_post, raising=True)
+    monkeypatch.setattr(bl.session, "get", fake_get, raising=True)
 
     res = bl._handle_doi({"url": "http://example"})
     assert res == bl.network_err
@@ -48,10 +48,10 @@ def test_handle_doi_success(monkeypatch):
     bl = BibLookup()
 
     # return content bytes that decode to "OK"
-    def fake_post(**kwargs):
+    def fake_get(**kwargs):
         return FakeResp(content=b"OK")
 
-    monkeypatch.setattr(bl.session, "post", fake_post, raising=True)
+    monkeypatch.setattr(bl.session, "get", fake_get, raising=True)
 
     res = bl._handle_doi({"url": "http://example"})
     assert res == "OK"

@@ -85,8 +85,9 @@ def main():
     )
     parser.add_argument(
         "--arxiv2doi",
-        type=str2bool,
-        default=True,
+        # type=str2bool,
+        # default=True,
+        action="store_true",
         help="Convert arXiv ID to DOI to look up.",
         dest="arxiv2doi",
     )
