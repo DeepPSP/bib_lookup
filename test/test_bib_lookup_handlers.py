@@ -8,10 +8,12 @@ from bib_lookup.bib_lookup import NETWORK_ERROR_MESSAGES, BibLookup
 
 # Helper response classes
 class FakeResp:
-    def __init__(self, content: bytes = b"", text: str = "", json_obj=None):
+    def __init__(self, content: bytes = b"", text: str = "", json_obj=None, status_code: int = 200, headers: dict = {}):
         self.content = content
         self.text = text
         self._json = json_obj
+        self.status_code = status_code
+        self.headers = headers
 
     def json(self):
         if self._json is None:
@@ -23,10 +25,10 @@ def test_handle_doi_timeout(monkeypatch):
     bl = BibLookup()
 
     # fake post raises Timeout
-    def fake_post(**kwargs):
+    def fake_get(**kwargs):
         raise requests.Timeout("timeout")
 
-    monkeypatch.setattr(bl.session, "post", fake_post, raising=True)
+    monkeypatch.setattr(bl.session, "get", fake_get, raising=True)
 
     res = bl._handle_doi({"url": "http://example"})  # feed_content can be any kwargs
     assert res == bl.timeout_err
@@ -35,10 +37,10 @@ def test_handle_doi_timeout(monkeypatch):
 def test_handle_doi_request_exception(monkeypatch):
     bl = BibLookup()
 
-    def fake_post(**kwargs):
+    def fake_get(**kwargs):
         raise requests.RequestException("net")
 
-    monkeypatch.setattr(bl.session, "post", fake_post, raising=True)
+    monkeypatch.setattr(bl.session, "get", fake_get, raising=True)
 
     res = bl._handle_doi({"url": "http://example"})
     assert res == bl.network_err
@@ -48,12 +50,17 @@ def test_handle_doi_success(monkeypatch):
     bl = BibLookup()
 
     # return content bytes that decode to "OK"
-    def fake_post(**kwargs):
+    def fake_get(**kwargs):
         return FakeResp(content=b"OK")
 
-    monkeypatch.setattr(bl.session, "post", fake_post, raising=True)
+    monkeypatch.setattr(bl.session, "get", fake_get, raising=True)
 
-    res = bl._handle_doi({"url": "http://example"})
+    res = bl._handle_doi({"url": "http://example", "headers": {"Accept": "application/x-bibtex"}})
+    # If content starts with @, it returns immediately
+    # But here content is just "OK", which doesn't start with @
+    # So it proceeds to fallback
+    # However, "http://example" does NOT contain "doi.org", so fallback is skipped
+    # And it returns "OK"
     assert res == "OK"
 
 
