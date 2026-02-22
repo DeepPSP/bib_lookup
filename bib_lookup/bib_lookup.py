@@ -691,7 +691,7 @@ class BibLookup(ReprMixin):
 
                 # Check for ChinaDOI / CNKI
                 if "chndoi.org" in final_url or "cnki" in final_url:
-                    msg = f"[Manual Check Required] Automatic lookup failed. Please visit: {final_url}"
+                    msg = f"{self.__REDIRECT_FLAG__} Automatic lookup failed. Please visit: {final_url}"
                     if self.verbose >= 0:
                         print("-" * 60)
                         print(f"[!] {msg}")
