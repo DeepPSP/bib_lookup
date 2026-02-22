@@ -486,7 +486,7 @@ class BibLookup(ReprMixin):
 
         res = self._handle_network_error(res)  # type: ignore
 
-        if res.startswith(self.__REDIRECT_FLAG__):
+        if isinstance(res, str) and res.startswith(self.__REDIRECT_FLAG__):
             pass
         elif res not in self.lookup_errors:
             if format in ["bibtex", "bibentry"]:
