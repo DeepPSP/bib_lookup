@@ -34,18 +34,18 @@ def do_lookup():
                 st.session_state["history"]["doi"] == input_doi
                 and st.session_state["history"]["arxiv2doi"] == current_arxiv2doi
             ):
+                cached_bib = st.session_state["history"]["bib"]
+                if isinstance(cached_bib, str) and cached_bib.startswith(BibLookup.__REDIRECT_FLAG__):
+                    url = cached_bib.split("visit: ")[-1].strip()
+                    output_container.warning("⚠️ This DOI cannot be resolved to BibTeX automatically (ChinaDOI/CNKI).")
+                    output_container.link_button("👉 Click to visit Article Page", url)
+                    return
                 if st.session_state["history"]["fmt"] == current_fmt == "bibtex":
-                    bib = str(
-                        bl._to_bib_item(
-                            st.session_state["history"]["bib"], align=current_align, capitalize_title=current_capitalize_title
-                        )
-                    )
+                    bib = str(bl._to_bib_item(cached_bib, align=current_align, capitalize_title=current_capitalize_title))
                     output_container.code(bib, language="latex", line_numbers=False)
                     return
                 elif st.session_state["history"]["fmt"] == current_fmt:
-                    # other formats
-                    bib = st.session_state["history"]["bib"]
-                    output_container.code(bib, language="latex", line_numbers=False)
+                    output_container.code(cached_bib, language="latex", line_numbers=False)
                     return
         try:
             bib = bl(
@@ -67,7 +67,17 @@ def do_lookup():
         except Exception as e:
             output_container.error(f"Error: {e}")
         else:
-            output_container.code(bib, language="latex", line_numbers=False)
+            if bib and bib.startswith(BibLookup.__REDIRECT_FLAG__):
+                url = bib.split("visit: ")[-1].strip()
+                output_container.warning(
+                    "Automatic lookup failed. This appears to be a ChinaDOI/CNKI record that does not support standard BibTeX export."
+                )
+                output_container.markdown(f"**Redirect URL detected:** `{url}`")
+                output_container.link_button("👉 Click to visit Article Page", url)
+            elif bib in bl.lookup_errors:
+                output_container.error(f"Lookup Failed: {bib}")
+            else:
+                output_container.code(bib, language="latex", line_numbers=False)
 
     st.session_state["confirmed_doi"] = False
 
