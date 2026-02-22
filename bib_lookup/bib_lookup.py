@@ -498,7 +498,9 @@ class BibLookup(ReprMixin):
                 except Exception:
                     res = self.default_err
             elif format == "text":
-                res = BeautifulSoup(res, "html.parser").get_text()
+                with warnings.catch_warnings():
+                    warnings.filterwarnings("ignore", category=MarkupResemblesLocatorWarning)
+                    res = BeautifulSoup(res, "html.parser").get_text()
 
         if self.verbose >= 1:
             if res in self.lookup_errors:
@@ -569,7 +571,10 @@ class BibLookup(ReprMixin):
             _type = f"{self.__doi_format_headers[_format]}; charset=utf-8"
             if _format == "text":
                 _type = f"{_type}; style = {_style}"
-            headers = {"Accept": _type}
+            headers = {
+                "Accept": _type,
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+            }
             url = self.__URL__["doi"] + idtf
             fc = dict(
                 **fc,
@@ -670,18 +675,18 @@ class BibLookup(ReprMixin):
             else:
                 # 2. Handle non-200 errors (e.g. 404 "DOI Not Found")
                 # calling _handle_network_error might return a specific error or default error
-                return self._handle_network_error(res)
+                res = self._handle_network_error(res)
 
         except requests.Timeout:
-            return self.timeout_err
+            res = self.timeout_err
         except requests.RequestException:
-            return self.network_err
+            res = self.network_err
 
         # Fallback: Browser Simulation
         # Target: Resolve DOIs that do not support BibTeX negotiation (e.g., ChinaDOI, CNKI)
         # Only needed if the user was looking for BibTeX (or if the standard request failed completely)
         # Fallback is most useful when we wanted BibTeX but got something else (or nothing).
-        if "doi.org" in url:
+        if "doi.org" in url and (res in self.lookup_errors or not res.strip().startswith("@")):
             browser_headers = {
                 "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
                 "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
@@ -703,8 +708,20 @@ class BibLookup(ReprMixin):
                         print("-" * 60)
                     return msg
 
+                res = r_probe.content.decode("utf-8")
+                if self.verbose > 3:
+                    print_func(f"via `_handle_doi` (fallback), fetched content = {res}")
+
             except Exception:
                 pass
+
+        if res in self.lookup_errors:
+            return res
+
+        # If we successfully got content (even if it doesn't look like BibTeX but wasn't an error), return it.
+        # This handles the case where we asked for BibTeX, got something else (200 OK), fallback skipped (no doi.org), and we just return what we got.
+        if res:
+            return res
 
         return self.network_err
 
@@ -925,7 +942,9 @@ class BibLookup(ReprMixin):
                 field_dict[k] = v[1:-1]
             elif (tmp_v.startswith("{") and tmp_v.endswith("}")) or len(tmp_v) == 0:
                 field_dict[k] = v[1:-1]
-            field_dict[k] = BeautifulSoup(field_dict[k], "html.parser").get_text()
+            with warnings.catch_warnings():
+                warnings.filterwarnings("ignore", category=MarkupResemblesLocatorWarning)
+                field_dict[k] = BeautifulSoup(field_dict[k], "html.parser").get_text()
             # replace the "&" in field content with "\&"
             field_dict[k] = field_dict[k].replace("&", r"\&").replace(r"\\&", r"\&")
 
