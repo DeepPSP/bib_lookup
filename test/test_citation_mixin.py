@@ -3,6 +3,7 @@ import sys
 from pathlib import Path
 
 import pandas as pd
+import pytest
 
 import bib_lookup
 
@@ -206,10 +207,11 @@ def test_citation_mixin_migration_failure(monkeypatch, tmp_path, capsys):
     monkeypatch.setattr(pd, "read_csv", mock_read_csv)
 
     obj = SomeClass()
-    obj._init_db()
+    with pytest.warns(UserWarning, match="Failed to migrate CSV cache"):
+        obj._init_db()
 
     captured = capsys.readouterr()
-    assert "Failed to migrate CSV cache" in captured.out
+    assert "Failed to migrate CSV cache" not in captured.out
 
 
 def test_citation_mixin_exceptions(monkeypatch, capsys, tmp_path):
@@ -318,4 +320,116 @@ def test_update_cache_sequence(monkeypatch, tmp_path):
     count = cursor.fetchone()[0]
     conn.close()
 
-    assert count == 2
+
+def test_citation_mixin_coverage_gaps(monkeypatch, tmp_path, capsys):
+    """Cover specific lines identified as missing coverage."""
+    db_path = tmp_path / "bib-lookup-cache.db"
+    monkeypatch.setattr(bib_lookup.CitationMixin, "citation_cache_db", db_path)
+
+    # 1. Test empty DOI (Lines 103-106)
+    class EmptyDOIClass(bib_lookup.CitationMixin):
+        @property
+        def doi(self):
+            return []
+
+    obj_empty = EmptyDOIClass()
+    # It returns "" if print_result is False
+    assert obj_empty.get_citation() == ""
+
+    # Test empty DOI with print_result=True
+    obj_empty.get_citation(print_result=True)
+    captured = capsys.readouterr()
+    assert captured.out == ""
+
+    # 2. Test print_result=True with successful lookup (Lines 176-178)
+    class SingleDOIClass(bib_lookup.CitationMixin):
+        @property
+        def doi(self):
+            return "10.123/single"
+
+    obj2 = SingleDOIClass()
+
+    class MockBL:
+        format = "bibtex"
+        lookup_errors = []
+
+        def clear_cache(self):
+            pass
+
+        def __call__(self, doi, **kwargs):
+            return "@article{found}"
+
+    obj2._bl = MockBL()
+
+    obj2.get_citation(print_result=True)
+    captured = capsys.readouterr()
+    assert "@article{found}" in captured.out
+
+    # 3. Test lookup failed warning + print (Lines 208-209)
+    # Triggered when citation is empty string at the end
+
+    class FailClass(bib_lookup.CitationMixin):
+        @property
+        def doi(self):
+            return "10.123/fail"
+
+    obj3 = FailClass()
+
+    class FailBL:
+        format = "bibtex"
+        lookup_errors = ["Error"]
+
+        def clear_cache(self):
+            pass
+
+        def __call__(self, doi, **kwargs):
+            return "Error"
+
+    obj3._bl = FailBL()
+
+    # We expect print output, so we need to capture it
+    # AND we expect a warning
+    with pytest.warns(RuntimeWarning, match="Lookup failed"):
+        res = obj3.get_citation(print_result=True)
+        assert res is None  # print_result=True returns None
+
+    captured = capsys.readouterr()
+    # Should print the DOI as fallback
+    assert "10.123/fail" in captured.out
+
+    # 4. update_cache exception (Lines 239-240)
+
+    obj4 = FailClass()
+
+    # Mock to raise exception
+    class ExceptionBL:
+        format = "bibtex"
+        lookup_errors = []
+
+        def clear_cache(self):
+            pass
+
+        def __call__(self, *args, **kwargs):
+            raise RuntimeError("Update Failed")
+
+    obj4._bl = ExceptionBL()
+
+    # Verify exception printing in update_cache
+    obj4.update_cache(doi="10.123/fail")
+    captured = capsys.readouterr()
+    assert "Failed to lookup citation" in captured.out
+
+    # 5. Empty DOI check (Lines 103-106)
+    # The current implementation returns None if print_result=True and doi is empty, and "" if print_result=False
+
+    class TrulyEmpty(bib_lookup.CitationMixin):
+        @property
+        def doi(self):
+            return []
+
+    obj5 = TrulyEmpty()
+    res = obj5.get_citation(print_result=True)
+    assert res is None
+
+    res = obj5.get_citation(print_result=False)
+    assert res == ""

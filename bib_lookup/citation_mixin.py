@@ -49,9 +49,9 @@ class CitationMixin(object):
                 conn.commit()
                 # Delete CSV after successful migration
                 self.citation_cache_csv.unlink()
-                print(f"Migrated citation cache from CSV to SQLite: {self.citation_cache_db}")
+                warnings.warn(f"Migrated citation cache from CSV to SQLite: {self.citation_cache_db}", UserWarning)
             except Exception as e:
-                print(f"Failed to migrate CSV cache: {e}")
+                warnings.warn(f"Failed to migrate CSV cache: {e}", UserWarning)
 
         conn.commit()
         conn.close()
@@ -97,6 +97,14 @@ class CitationMixin(object):
                 doi = [self.doi]
             else:
                 doi = self.doi
+
+            # If doi is empty, return empty result
+            if not doi:
+                if print_result:
+                    return
+                else:
+                    return ""
+
             if not lookup:
                 citation = "\n".join(doi)
                 if print_result:
@@ -109,25 +117,37 @@ class CitationMixin(object):
             conn = sqlite3.connect(self.citation_cache_db)
             cursor = conn.cursor()
 
-            # Use placeholders for the IN clause
-            placeholders = ",".join("?" * len(doi))
+            cached_citations = []
+            existing_dois = set()
+
+            # SQLite has a limit on the number of variables in a query (default 999).
+            # We chunk the DOIs to avoid hitting this limit.
+            chunk_size = 900
+            for i in range(0, len(doi), chunk_size):
+                chunk = doi[i : i + chunk_size]
+                if not chunk:
+                    continue
+
+                placeholders = ",".join("?" * len(chunk))
+
+                if format is not None and format != self._bl.format:
+                    # no cache for format other than bibtex
+                    pass
+                else:
+                    query = f"SELECT citation FROM citations WHERE doi IN ({placeholders})"
+                    cursor.execute(query, chunk)
+                    cached_citations.extend([row[0] for row in cursor.fetchall()])
+
+                    query_exist = f"SELECT doi FROM citations WHERE doi IN ({placeholders})"
+                    cursor.execute(query_exist, chunk)
+                    existing_dois.update({row[0] for row in cursor.fetchall()})
 
             if format is not None and format != self._bl.format:
-                citation = ""  # no cache for format other than bibtex
-                existing_dois = set()
-                cached_citations = []
+                citation = ""
             else:
-                query = f"SELECT citation FROM citations WHERE doi IN ({placeholders})"
-                cursor.execute(query, doi)
-                cached_citations = [row[0] for row in cursor.fetchall()]
                 citation = "\n".join(cached_citations)
                 if print_result and citation:
                     print(citation)
-
-                # Find which DOIs were found
-                query_exist = f"SELECT doi FROM citations WHERE doi IN ({placeholders})"
-                cursor.execute(query_exist, doi)
-                existing_dois = {row[0] for row in cursor.fetchall()}
 
             conn.close()
 
