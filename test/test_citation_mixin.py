@@ -111,7 +111,7 @@ def test_citation_mixin_original(tmp_path, monkeypatch):
     finally:
         sys.stdout = sys.__stdout__
 
-    # 2. Test format != bibtex (Lines 115-118)
+    # 2. Test format != bibtex
     # This should bypass cache logic for retrieval, but still fetch
 
     # Mock BibLookup to handle format="text"
@@ -142,7 +142,7 @@ def test_citation_mixin_original(tmp_path, monkeypatch):
     # Should NOT return cached value
     assert "@article{cached...}" not in res
 
-    # 3. Test print_result=True with cache hit (Lines 124-125)
+    # 3. Test print_result=True with cache hit
     # Request with default format (should hit cache)
     captured = StringIO()
     sys.stdout = captured
@@ -249,6 +249,8 @@ def test_citation_mixin_exceptions(monkeypatch, capsys, tmp_path):
     captured = capsys.readouterr()
     assert "Failed to lookup citation" in captured.out
 
+    obj.update_cache(doi=None)
+
 
 def test_citation_mixin_append_logic(monkeypatch, tmp_path):
     """Test appending new citations to existing ones."""
@@ -326,7 +328,7 @@ def test_citation_mixin_coverage_gaps(monkeypatch, tmp_path, capsys):
     db_path = tmp_path / "bib-lookup-cache.db"
     monkeypatch.setattr(bib_lookup.CitationMixin, "citation_cache_db", db_path)
 
-    # 1. Test empty DOI (Lines 103-106)
+    # 1. Test empty DOI
     class EmptyDOIClass(bib_lookup.CitationMixin):
         @property
         def doi(self):
@@ -341,7 +343,7 @@ def test_citation_mixin_coverage_gaps(monkeypatch, tmp_path, capsys):
     captured = capsys.readouterr()
     assert captured.out == ""
 
-    # 2. Test print_result=True with successful lookup (Lines 176-178)
+    # 2. Test print_result=True with successful lookup
     class SingleDOIClass(bib_lookup.CitationMixin):
         @property
         def doi(self):
@@ -365,7 +367,7 @@ def test_citation_mixin_coverage_gaps(monkeypatch, tmp_path, capsys):
     captured = capsys.readouterr()
     assert "@article{found}" in captured.out
 
-    # 3. Test lookup failed warning + print (Lines 208-209)
+    # 3. Test lookup failed warning + print
     # Triggered when citation is empty string at the end
 
     class FailClass(bib_lookup.CitationMixin):
@@ -397,7 +399,7 @@ def test_citation_mixin_coverage_gaps(monkeypatch, tmp_path, capsys):
     # Should print the DOI as fallback
     assert "10.123/fail" in captured.out
 
-    # 4. update_cache exception (Lines 239-240)
+    # 4. update_cache exception
 
     obj4 = FailClass()
 
@@ -419,7 +421,7 @@ def test_citation_mixin_coverage_gaps(monkeypatch, tmp_path, capsys):
     captured = capsys.readouterr()
     assert "Failed to lookup citation" in captured.out
 
-    # 5. Empty DOI check (Lines 103-106)
+    # 5. Empty DOI check
     # The current implementation returns None if print_result=True and doi is empty, and "" if print_result=False
 
     class TrulyEmpty(bib_lookup.CitationMixin):
@@ -432,4 +434,13 @@ def test_citation_mixin_coverage_gaps(monkeypatch, tmp_path, capsys):
     assert res is None
 
     res = obj5.get_citation(print_result=False)
+    assert res == ""
+
+    obj6 = AnotherClass()
+    res = obj6.get_citation()
+    assert "10.1088/1361-6579/ac9451" in res
+    assert "10.5281/ZENODO.6435017" in res
+
+    obj7 = YetAnotherClass()
+    res = obj7.get_citation()
     assert res == ""
