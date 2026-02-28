@@ -91,16 +91,13 @@ def test_cli():
     exitcode, output_msg = execute_cmd(cmd)
     assert exitcode == 0
 
-    cmd = (
-        "bib-lookup 10.1109/CVPR.2016.90 10.1109/tpami.2019.2913372 "
-        "--format text --style apa --ignore-errors true --timeout 10"
-    )
+    cmd = "bib-lookup 10.1109/CVPR.2016.90 10.1109/tpami.2019.2913372 " "--format text --style apa --ignore-errors --timeout 10"
     exitcode, output_msg = execute_cmd(cmd)
     assert exitcode == 0
 
     cmd = (
         f"bib-lookup --input {str(SAMPLE_INPUT_TXT)} --output {str(OUTPUT_FILE)} "
-        "--check-file y --timeout 10 --ignore-errors true --verbose 3"
+        "--check-file y --timeout 10 --ignore-errors --verbose 3"
     )
     exitcode, output_msg = execute_cmd(cmd)
     OUTPUT_FILE.unlink(missing_ok=True)
