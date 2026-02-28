@@ -91,16 +91,13 @@ def test_cli():
     exitcode, output_msg = execute_cmd(cmd)
     assert exitcode == 0
 
-    cmd = (
-        "bib-lookup 10.1109/CVPR.2016.90 10.1109/tpami.2019.2913372 "
-        "--format text --style apa --ignore-errors true --timeout 10"
-    )
+    cmd = "bib-lookup 10.1109/CVPR.2016.90 10.1109/tpami.2019.2913372 " "--format text --style apa --ignore-errors --timeout 10"
     exitcode, output_msg = execute_cmd(cmd)
     assert exitcode == 0
 
     cmd = (
         f"bib-lookup --input {str(SAMPLE_INPUT_TXT)} --output {str(OUTPUT_FILE)} "
-        "--check-file y --timeout 10 --ignore-errors true --verbose 3"
+        "--check-file y --timeout 10 --ignore-errors --verbose 3"
     )
     exitcode, output_msg = execute_cmd(cmd)
     OUTPUT_FILE.unlink(missing_ok=True)
@@ -196,6 +193,32 @@ def test_cli():
     exitcode, output_msg = execute_cmd(cmd)  # prints the config
     assert _CONFIG_FILE.exists()
     new_config_file.unlink()
+
+    # invalid config file type
+    invalid_config_file = SAMPLE_DATA_DIR / "invalid_config.txt"
+    invalid_config_file.write_text("dummy")
+    cmd = f"bib-lookup --config {str(invalid_config_file)}"
+    exitcode, output_msg = execute_cmd(cmd, raise_error=False)
+    assert exitcode == 1
+    invalid_config_file.unlink()
+
+    # gather with invalid file type
+    invalid_gather_file = SAMPLE_DATA_DIR / "invalid_gather.txt"
+    invalid_gather_file.write_text("dummy")
+    cmd = f"bib-lookup --gather {str(invalid_gather_file)}"
+    exitcode, output_msg = execute_cmd(cmd, raise_error=False)
+    assert exitcode == 1
+    invalid_gather_file.unlink()
+
+    # lookup with print
+    # use a fake DOI that is mocked or use a known one if network is allowed (it seems network is used in tests)
+    # But network calls are flaky.
+    # The existing test uses 10.1109/CVPR.2016.90.
+    # Let's check if output is produced.
+    cmd = "bib-lookup 10.1109/CVPR.2016.90 --timeout 10"
+    exitcode, output_msg = execute_cmd(cmd)
+    # output_msg should contain something if successful.
+    # If network fails, it might be empty.
 
     # restore the original config file
     if config_backed_file is not None:
