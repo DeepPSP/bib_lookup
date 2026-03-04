@@ -26,6 +26,13 @@ Changed
 - Refactored the CLI entry point `bib_lookup/cli.py` to break down the monolithic
   `main` function into modular helper functions for better maintainability.
 
+Added
+~~~~~
+
+- Added a new NiceGUI-based web interface (`nicegui_app.py`) featuring
+  a modern glassmorphism design while retaining all original functionalities.
+  The original Streamlit app remains available.
+
 Deprecated
 ~~~~~~~~~~
 
