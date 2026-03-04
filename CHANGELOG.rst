@@ -23,6 +23,8 @@ Changed
 - Changed the backend storage of `CitationMixin` cache from CSV to SQLite
   for better performance and concurrency support. The existing CSV cache
   will be automatically migrated to SQLite upon first use.
+- Refactored the CLI entry point `bib_lookup/cli.py` to break down the monolithic
+  `main` function into modular helper functions for better maintainability.
 
 Deprecated
 ~~~~~~~~~~

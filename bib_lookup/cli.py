@@ -8,14 +8,145 @@ import json
 import sys
 import warnings
 from pathlib import Path
+from typing import Any, Dict
 
-import yaml
+try:
+    import yaml
+except ImportError:
+    yaml = None  # type: ignore
 
 from bib_lookup._const import CONFIG_FILE as _CONFIG_FILE
 from bib_lookup._const import DEFAULT_CONFIG as _DEFAULT_CONFIG
 from bib_lookup.bib_lookup import BibLookup
 from bib_lookup.utils import str2bool
 from bib_lookup.version import __version__ as bl_version
+
+
+def _handle_config(config_arg: str) -> None:
+    """Handle configuration commands."""
+    if config_arg == "show":
+        if not _CONFIG_FILE.is_file():
+            print("User-defined configuration file does not exist.")
+            print("Using default configurations:")
+            print(json.dumps(_DEFAULT_CONFIG, indent=4))
+        else:
+            user_config = json.loads(_CONFIG_FILE.read_text())
+            print("User-defined configurations:")
+            print(json.dumps(user_config, indent=4))
+            print("The rest default configurations:")
+            print(
+                json.dumps(
+                    {k: v for k, v in _DEFAULT_CONFIG.items() if k not in user_config},
+                    indent=4,
+                )
+            )
+        return
+    elif config_arg == "reset":
+        if _CONFIG_FILE.is_file():
+            _CONFIG_FILE.unlink()
+            print("User-defined configuration file deleted.")
+        else:
+            print("User-defined configuration file does not exist. No need to reset.")
+        return
+    else:
+        if "=" in config_arg:
+            config = dict([kv.strip().split("=") for kv in config_arg.split(";")])
+        else:
+            config_path = Path(config_arg)
+            assert config_path.is_file(), f"Configuration file ``{config_arg}`` does not exist. Please check and try again."
+
+            if config_path.suffix == ".json":
+                config = json.loads(config_path.read_text())
+            elif config_path.suffix in [".yaml", ".yml"]:
+                if yaml is None:
+                    raise ImportError(
+                        "PyYAML is required to parse yaml config files. Please install it via `pip install PyYAML`."
+                    )
+                config = yaml.safe_load(config_path.read_text())
+            else:
+                raise ValueError(
+                    f"Unknown configuration file type ``{config_path.suffix}``. " "Only json and yaml files are supported."
+                )
+
+        # discard unknown keys
+        unknown_keys = set(config.keys()) - set(_DEFAULT_CONFIG.keys())
+        config = {k: v for k, v in config.items() if k in _DEFAULT_CONFIG}
+        # parse lists in the config
+        for k, v in config.items():
+            if isinstance(v, str) and v.startswith("[") and v.endswith("]"):
+                config[k] = [vv.strip() for vv in v.strip("[]").split(",")]
+        if len(unknown_keys) > 0:
+            verb = "are" if len(unknown_keys) > 1 else "is"
+            warnings.warn(
+                f"Unknown configuration keys ``{unknown_keys}`` {verb} discarded.",
+                RuntimeWarning,
+            )
+        print(f"Setting configurations:\n{json.dumps(config, indent=4)}")
+        _CONFIG_FILE.write_text(json.dumps(config, indent=4))
+        return
+
+
+def _handle_gather(args: Dict[str, Any]) -> None:
+    """Handle the gather command."""
+    from bib_lookup.utils import gather_tex_source_files_in_one
+
+    try:
+        gather_args = args["gather"]
+        if len(gather_args) == 1:
+            entry_file = Path(gather_args[0]).resolve()
+            output_file = None  # let the function use default naming
+        elif len(gather_args) == 2:
+            entry_file = Path(gather_args[0]).resolve()
+            output_file = Path(gather_args[1]).resolve()
+        else:
+            print("Error: --gather accepts one or two arguments only.")
+            sys.exit(1)
+
+        if entry_file.exists() and (not entry_file.is_file() or entry_file.suffix != ".tex"):
+            print(f"Error: File {entry_file} is not a valid .tex file.")
+            sys.exit(1)
+
+        if len(args["identifiers"]) > 0 or args["input_file"] is not None:
+            warnings.warn(
+                "Identifiers and input file are ignored when gathering .tex files.",
+                RuntimeWarning,
+            )
+
+        gather_tex_source_files_in_one(
+            entry_file,
+            write_file=True,
+            output_file=output_file,
+            overwrite=args["overwrite"],
+            keep_comments=not args["remove_comments"],
+        )
+    except FileExistsError as e:
+        print(f"Error: {e}".replace("overwrite=True", "--overwrite"))
+        print("Use the --overwrite flag to overwrite the existing file.")
+        sys.exit(1)
+    except FileNotFoundError as e:
+        print(f"Error: {e}")
+        print("Please check the file path and try again.")
+        sys.exit(1)
+    except Exception as e:
+        print(f"Unexpected error: {e}")  # pragma: no cover
+        sys.exit(1)  # pragma: no cover
+
+
+def _handle_simplify_bib(args: Dict[str, Any]) -> None:
+    """Handle the simplify bib command."""
+    if args.get("input_file", None) is not None:
+        input_file = Path(args["input_file"]).resolve()
+        if not input_file.is_file() or input_file.suffix != ".bib":
+            print(f"Input bib file {args['input_file']} is not a valid .bib file. Please check and try again.")
+            sys.exit(1)
+    else:
+        input_file = None
+    output_file = args["output_file"]
+    output_mode = "w" if args["overwrite"] else "a"
+
+    BibLookup.simplify_bib_file(
+        tex_sources=args["simplify_bib"], bib_file=input_file, output_file=output_file, output_mode=output_mode
+    )
 
 
 def main():
@@ -85,16 +216,13 @@ def main():
     )
     parser.add_argument(
         "--arxiv2doi",
-        # type=str2bool,
-        # default=True,
         action="store_true",
         help="Convert arXiv ID to DOI to look up.",
         dest="arxiv2doi",
     )
     parser.add_argument(
         "--ignore-errors",
-        type=str2bool,
-        default=True,
+        action="store_true",
         help="Ignore errors when looking up",
         dest="ignore_errors",
     )
@@ -102,7 +230,7 @@ def main():
         "--timeout",
         type=int,
         default=6,
-        help="Ignore errors when looking up",
+        help="Timeout for the lookup request. Unit is seconds. Default is 6 seconds.",
         dest="timeout",
     )
     parser.add_argument(
@@ -176,141 +304,39 @@ def main():
     args = vars(parser.parse_args())
 
     if args.get("config", None) is not None:
-        if args["config"] == "show":
-            if not _CONFIG_FILE.is_file():
-                print("User-defined configuration file does not exist.")
-                print("Using default configurations:")
-                print(json.dumps(_DEFAULT_CONFIG, indent=4))
-            else:
-                user_config = json.loads(_CONFIG_FILE.read_text())
-                print("User-defined configurations:")
-                print(json.dumps(user_config, indent=4))
-                print("The rest default configurations:")
-                print(
-                    json.dumps(
-                        {k: v for k, v in _DEFAULT_CONFIG.items() if k not in user_config},
-                        indent=4,
-                    )
-                )
-            return
-        elif args["config"] == "reset":
-            if _CONFIG_FILE.is_file():
-                _CONFIG_FILE.unlink()
-                print("User-defined configuration file deleted.")
-            else:
-                print("User-defined configuration file does not exist. No need to reset.")
-            return
-        else:
-            if "=" in args["config"]:
-                config = dict([kv.strip().split("=") for kv in args["config"].split(";")])
-            else:
-                assert Path(
-                    args["config"]
-                ).is_file(), f"Configuration file ``{args['config']}`` does not exist. Please check and try again."
-                if Path(args["config"]).suffix == ".json":
-                    config = json.loads(Path(args["config"]).read_text())
-                elif Path(args["config"]).suffix in [".yaml", ".yml"]:
-                    config = yaml.safe_load(Path(args["config"]).read_text())
-                else:
-                    raise ValueError(
-                        f"Unknown configuration file type ``{Path(args['config']).suffix}``. "
-                        "Only json and yaml files are supported."
-                    )
-            # discard unknown keys
-            unknown_keys = set(config.keys()) - set(_DEFAULT_CONFIG.keys())
-            config = {k: v for k, v in config.items() if k in _DEFAULT_CONFIG}
-            # parse lists in the config
-            for k, v in config.items():
-                if isinstance(v, str) and v.startswith("[") and v.endswith("]"):
-                    config[k] = [vv.strip() for vv in v.strip("[]").split(",")]
-            if len(unknown_keys) > 0:
-                verb = "are" if len(unknown_keys) > 1 else "is"
-                warnings.warn(
-                    f"Unknown configuration keys ``{unknown_keys}`` {verb} discarded.",
-                    RuntimeWarning,
-                )
-            print(f"Setting configurations:\n{json.dumps(config, indent=4)}")
-            _CONFIG_FILE.write_text(json.dumps(config, indent=4))
-            return
+        _handle_config(args["config"])
+        return
 
     if args.get("gather", None) is not None:
-        from bib_lookup.utils import gather_tex_source_files_in_one
-
-        try:
-            gather_args = args["gather"]
-            if len(gather_args) == 1:
-                entry_file = Path(gather_args[0]).resolve()
-                output_file = None  # let the function use default naming
-            elif len(gather_args) == 2:
-                entry_file = Path(gather_args[0]).resolve()
-                output_file = Path(gather_args[1]).resolve()
-            else:
-                print("Error: --gather accepts one or two arguments only.")
-                sys.exit(1)
-
-            if entry_file.exists() and (not entry_file.is_file() or entry_file.suffix != ".tex"):
-                print(f"Error: File {entry_file} is not a valid .tex file.")
-                sys.exit(1)
-
-            if len(args["identifiers"]) > 0 or args["input_file"] is not None:
-                warnings.warn(
-                    "Identifiers and input file are ignored when gathering .tex files.",
-                    RuntimeWarning,
-                )
-
-            gather_tex_source_files_in_one(
-                entry_file,
-                write_file=True,
-                output_file=output_file,
-                overwrite=args["overwrite"],
-                keep_comments=not args["remove_comments"],
-            )
-        except FileExistsError as e:
-            print(f"Error: {e}".replace("overwrite=True", "--overwrite"))
-            print("Use the --overwrite flag to overwrite the existing file.")
-            sys.exit(1)
-        except FileNotFoundError as e:
-            print(f"Error: {e}")
-            print("Please check the file path and try again.")
-            sys.exit(1)
-        except Exception as e:
-            print(f"Unexpected error: {e}")  # pragma: no cover
-            sys.exit(1)  # pragma: no cover
+        _handle_gather(args)
         return
 
     if args.get("simplify_bib", None) is not None:
-        if args.get("input_file", None) is not None:
-            input_file = Path(args["input_file"]).resolve()
-            if not input_file.is_file() or input_file.suffix != ".bib":
-                print(f"Input bib file {args['input_file']} is not a valid .bib file. Please check and try again.")
-                sys.exit(1)
-        else:
-            input_file = None
-        output_file = args["output_file"]
-        output_mode = "w" if args["overwrite"] else "a"
-
-        simplified_bib_file = BibLookup.simplify_bib_file(
-            tex_sources=args["simplify_bib"], bib_file=input_file, output_file=output_file, output_mode=output_mode
-        )
+        _handle_simplify_bib(args)
         return
 
     check_file = args["check_file"]
     if check_file is not None:
         if Path(check_file).is_file() and Path(check_file).suffix == ".bib":
-            # check this file, other augments are ignored
+            # check this file, other arguments are ignored
             check_file = Path(check_file)
         else:
             check_file = str2bool(check_file)
 
-    # fmt: off
-    init_args = dict()
-    for k in [
-        "align", "ignore_fields", "output_file", "email", "ordering",
-        "arxiv2doi", "format", "style", "timeout", "ignore_errors", "verbose"
-    ]:
-        if args[k] is not None:
-            init_args[k] = args[k]
-    # fmt: on
+    init_keys = [
+        "align",
+        "ignore_fields",
+        "output_file",
+        "email",
+        "ordering",
+        "arxiv2doi",
+        "format",
+        "style",
+        "timeout",
+        "ignore_errors",
+        "verbose",
+    ]
+    init_args = {k: args[k] for k in init_keys if args[k] is not None}
 
     bl = BibLookup(**init_args)
 
