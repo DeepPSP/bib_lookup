@@ -5,3 +5,5 @@ pandas
 beautifulsoup4
 PyYAML
 packaging
+pybtex
+nicegui

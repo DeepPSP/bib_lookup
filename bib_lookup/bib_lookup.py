@@ -498,9 +498,43 @@ class BibLookup(ReprMixin):
                 except Exception:
                     res = self.default_err
             elif format == "text":
-                with warnings.catch_warnings():
-                    warnings.filterwarnings("ignore", category=MarkupResemblesLocatorWarning)
-                    res = BeautifulSoup(res, "html.parser").get_text()
+                # Check for custom local styles
+                if style and style.lower() in ["gbt7714", "gbt", "gbt-7714"]:
+                    try:
+                        # res is currently BibTeX string because we forced format="bibtex" in _obtain_feed_content
+                        # Now parse and format using our local style
+                        import io
+
+                        from pybtex.backends.plaintext import Backend as TextBackend
+                        from pybtex.database import parse_string
+
+                        from bib_lookup.styles import GBT7714Style
+
+                        # Parsing
+                        bib_data = parse_string(res, bib_format="bibtex")
+
+                        # Formatting
+                        custom_style = GBT7714Style()
+                        formatted_entries = custom_style.format_entries(bib_data.entries.values())
+
+                        backend = TextBackend()
+                        output = io.StringIO()
+
+                        # Write all entries (usually just one)
+                        for entry in formatted_entries:
+                            backend.write_to_stream([entry], output)
+
+                        res = output.getvalue().strip()
+
+                    except Exception as e:
+                        if self.verbose > 0:
+                            print(f"Error formatting with local style {style}: {e}")
+                        res = self.default_err
+                else:
+                    # Original text handling
+                    with warnings.catch_warnings():
+                        warnings.filterwarnings("ignore", category=MarkupResemblesLocatorWarning)
+                        res = BeautifulSoup(res, "html.parser").get_text()
 
         if self.verbose >= 1:
             if res in self.lookup_errors:
@@ -562,6 +596,11 @@ class BibLookup(ReprMixin):
         _format = self._format if format is None else format
         _style = self._style if style is None else style
         fc = {"timeout": self.timeout if timeout is None else timeout}
+
+        # Force bibtex for GBT style
+        if _format == "text" and _style.lower() in ["gbt7714", "gbt", "gbt-7714"]:
+            _format = "bibtex"
+
         if re.search(self.doi_pattern, idtf):
             idtf = re.sub(
                 self.doi_pattern_prefix,

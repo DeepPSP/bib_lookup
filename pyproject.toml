@@ -32,11 +32,13 @@ dependencies = [
     "pandas",
     "PyYAML",
     "requests",
+    "pybtex",
 ]
 
 [project.optional-dependencies]
 app = [
     "streamlit",
+    "nicegui",
 ]
 dev = [
     "IPython",
