@@ -32,6 +32,8 @@ Added
 - Added a new NiceGUI-based web interface (`nicegui_app.py`) featuring
   a modern glassmorphism design while retaining all original functionalities.
   The original Streamlit app remains available.
+- Added native Python support for GB/T 7714-2015 citation style (`style="gbt7714"`),
+  enabling Chinese standard citation formatting without LaTeX dependencies.
 
 Deprecated
 ~~~~~~~~~~
