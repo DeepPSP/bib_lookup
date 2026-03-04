@@ -323,6 +323,9 @@ def main():
         else:
             check_file = str2bool(check_file)
 
+    if args.get("format", None) == "text":
+        args["arxiv2doi"] = True  # avoid warnings in BibLookup
+
     init_keys = [
         "align",
         "ignore_fields",
@@ -346,16 +349,22 @@ def main():
     else:
         assert len(args["identifiers"]) > 0 or args["input_file"] is not None, "No identifiers given."
 
+    extra_kw = {}
+    if args["format"] is not None and args["format"] not in ["bibtex", "bibentry"]:
+        extra_kw["print_result"] = True
+    else:
+        extra_kw["print_result"] = False
+
     if len(args["identifiers"]) > 0:
-        bl(args["identifiers"])
+        bl(args["identifiers"], **extra_kw)
     if args["input_file"] is not None:
-        bl(args["input_file"])
+        bl(args["input_file"], **extra_kw)
     if args["output_file"] is not None:
         bl.save(skip_existing=not args["allow_duplicates"])
         if check_file:
             bl.check_bib_file(bl.output_file)  # type: ignore
     else:
-        if len(bl) == 0:
+        if len(bl) == 0 and not extra_kw["print_result"]:
             print("No entries found.")
         else:
             bl.print()

@@ -220,6 +220,12 @@ def test_cli():
     # output_msg should contain something if successful.
     # If network fails, it might be empty.
 
+    # test with format that prints result directly (e.g., text)
+    cmd = "bib-lookup 10.1142/S1005386718000305 --format text --style gbt"
+    exitcode, output_msg = execute_cmd(cmd)
+    assert exitcode == 0
+    # output_msg should contain something if successful.
+
     # restore the original config file
     if config_backed_file is not None:
         config_backed_file.rename(_CONFIG_FILE)

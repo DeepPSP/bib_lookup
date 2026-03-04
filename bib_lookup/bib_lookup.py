@@ -391,6 +391,7 @@ class BibLookup(ReprMixin):
         ignore_errors = self.ignore_errors if ignore_errors is None else ignore_errors
         format = self._format if format is None else format
         style = self._style if style is None else style
+        capitalize_title = self.__capitalize_title if capitalize_title is None else capitalize_title
         if isinstance(identifier, Path):
             identifier = [
                 line for line in identifier.read_text(encoding="utf-8", errors="ignore").splitlines() if len(line) > 0
