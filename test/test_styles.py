@@ -32,6 +32,9 @@ def test_gbt7714_style():
     assert "[J]" in res
     assert "Information Fusion" in res
     assert "2020" in res
+    # Verify colon separator for pages in Article
+    # Volume 53, Pages 174-182 -> "53: 174"
+    assert "53: 174" in res
 
 
 def test_gbt7714_book():
@@ -67,6 +70,8 @@ def test_gbt7714_inproceedings():
     # Expected: Vaswani, Ashish, others. Attention is All You Need[C] // Advances in Neural Information Processing Systems. Long Beach, CA, USA: Curran Associates, Inc., 2017: 5998–6008.
     assert "Attention is All You Need[C] // Advances in Neural Information Processing Systems" in res
     assert "Long Beach, CA, USA: Curran Associates, Inc., 2017" in res
+    # Verify colon separator for pages in InProceedings: Year: Pages
+    assert "2017: 5998" in res
 
 
 def test_gbt7714_phdthesis():

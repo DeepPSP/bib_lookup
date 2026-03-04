@@ -14,26 +14,8 @@ Versioning <https://semver.org/spec/v2.0.0.html>`__.
 Added
 ~~~~~
 
-- Add `--remove-comments` flag to the CLI `simplify_bib` command
-  to control whether to keep comments when gathering .tex files.
-
 Changed
 ~~~~~~~
-
-- Changed the backend storage of `CitationMixin` cache from CSV to SQLite
-  for better performance and concurrency support. The existing CSV cache
-  will be automatically migrated to SQLite upon first use.
-- Refactored the CLI entry point `bib_lookup/cli.py` to break down the monolithic
-  `main` function into modular helper functions for better maintainability.
-
-Added
-~~~~~
-
-- Added a new NiceGUI-based web interface (`nicegui_app.py`) featuring
-  a modern glassmorphism design while retaining all original functionalities.
-  The original Streamlit app remains available.
-- Added native Python support for GB/T 7714-2015 citation style (`style="gbt7714"`),
-  enabling Chinese standard citation formatting without LaTeX dependencies.
 
 Deprecated
 ~~~~~~~~~~
@@ -44,14 +26,40 @@ Removed
 Fixed
 ~~~~~
 
+Security
+~~~~~~~~
+
+`0.1.3 <https://github.com/DeepPSP/bib_lookup/compare/v0.1.2...v0.1.3>`__ - 2026-03-04
+------------------------------------------------------------------------------------------------
+
+Added
+~~~~~
+
+- Add `--remove-comments` flag to the CLI `simplify_bib` command
+  to control whether to keep comments when gathering .tex files.
+- Added a new NiceGUI-based web interface (`nicegui_app.py`) featuring
+  a modern glassmorphism design while retaining all original functionalities.
+  The original Streamlit app remains available.
+- Added native Python support for GB/T 7714-2015 citation style (`style="gbt7714"`),
+  enabling Chinese standard citation formatting without LaTeX dependencies.
+
+Changed
+~~~~~~~
+
+- Changed the backend storage of `CitationMixin` cache from CSV to SQLite
+  for better performance and concurrency support. The existing CSV cache
+  will be automatically migrated to SQLite upon first use.
+- Refactored the CLI entry point `bib_lookup/cli.py` to break down the monolithic
+  `main` function into modular helper functions for better maintainability.
+
+Fixed
+~~~~~
+
 - Fixed an issue in the CLI where `--output-file` and `--overwrite`
   flags were ignored when using the `simplify_bib` command.
 - Fixed lookup failures for ChinaDOI/CNKI DOIs (e.g., `10.13748/...`)
   by switching request method to GET and adding a browser-header fallback
   mechanism to retrieve the resolution URL.
-
-Security
-~~~~~~~~
 
 `0.1.2 <https://github.com/DeepPSP/bib_lookup/compare/v0.1.1...v0.1.2>`__ - 2026-01-13
 ------------------------------------------------------------------------------------------------

@@ -49,8 +49,10 @@ class GBT7714Style(UnsrtStyle):
             join(sep=", ")[
                 field("journal"),
                 field("year"),
-                join[field("volume"), optional["(", field("number"), ")"]],
-                optional[field("pages")],
+                join(sep=": ")[
+                    join[field("volume"), optional["(", field("number"), ")"]],
+                    optional[field("pages")],
+                ],
             ],
         ]
 
@@ -78,8 +80,10 @@ class GBT7714Style(UnsrtStyle):
                     optional_field("address"),
                     field("publisher"),
                 ],
-                field("year"),
-                optional[field("pages")],
+                join(sep=": ")[
+                    field("year"),
+                    optional[field("pages")],
+                ],
             ],
         ]
 

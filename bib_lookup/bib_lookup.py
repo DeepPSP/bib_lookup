@@ -12,6 +12,7 @@ Requirements
 
 """
 
+import io
 import json
 import re
 import warnings
@@ -25,10 +26,13 @@ import feedparser
 import numpy as np
 import requests
 from bs4 import BeautifulSoup, MarkupResemblesLocatorWarning
+from pybtex.backends.plaintext import Backend as TextBackend
+from pybtex.database import parse_string
 
 from ._bib import BIB_FIELDS, DF_BIB_ENTRY_TYPES, BibItem
 from ._const import CONFIG_FILE as _CONFIG_FILE
 from ._const import DEFAULT_CONFIG as _DEFAULT_CONFIG
+from .styles import GBT7714Style
 from .utils import (
     NETWORK_ERROR_MESSAGES,
     ReprMixin,
@@ -503,12 +507,6 @@ class BibLookup(ReprMixin):
                     try:
                         # res is currently BibTeX string because we forced format="bibtex" in _obtain_feed_content
                         # Now parse and format using our local style
-                        import io
-
-                        from pybtex.backends.plaintext import Backend as TextBackend
-                        from pybtex.database import parse_string
-
-                        from bib_lookup.styles import GBT7714Style
 
                         # Parsing
                         bib_data = parse_string(res, bib_format="bibtex")
@@ -526,7 +524,7 @@ class BibLookup(ReprMixin):
 
                         res = output.getvalue().strip()
 
-                    except Exception as e:
+                    except Exception as e:  # pragma: no cover
                         if self.verbose > 0:
                             print(f"Error formatting with local style {style}: {e}")
                         res = self.default_err
