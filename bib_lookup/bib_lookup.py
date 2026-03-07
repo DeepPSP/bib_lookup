@@ -125,6 +125,9 @@ class BibLookup(ReprMixin):
         - "capitalize_title": bool,
           default False,
           whether to capitalize the title of the bib items or not.
+        - "max_names": int,
+          default 3,
+          maximum number of authors to display in GBT7714 style before truncation.
 
     Example
     -------
@@ -285,6 +288,7 @@ class BibLookup(ReprMixin):
             )
 
         self.__capitalize_title = str2bool(bl_config["capitalize_title"])  # type: ignore
+        self.max_names = int(bl_config["max_names"])  # type: ignore
 
         self.__field_pattern = f""",\\s*({"|".join(list(BIB_FIELDS))})\\s*=\\s*"""
 
@@ -513,7 +517,7 @@ class BibLookup(ReprMixin):
                         bib_data = parse_string(res, bib_format="bibtex")
 
                         # Formatting
-                        custom_style = GBT7714Style()
+                        custom_style = GBT7714Style(max_names=self.max_names)
                         formatted_entries = custom_style.format_entries(bib_data.entries.values())
 
                         backend = TextBackend()
