@@ -16,6 +16,8 @@ Added
 
 Changed
 ~~~~~~~
+- The maximum number of authors displayed before truncation for
+  GB/T 7714-2015 citation style can be configured via `max_names` (default: 3).
 
 Deprecated
 ~~~~~~~~~~

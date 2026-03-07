@@ -23,4 +23,5 @@ DEFAULT_CONFIG = dict(
     ordering=["title", "author", "journal", "booktitle"],
     cache_limit=1e6,
     capitalize_title=False,
+    max_names=3,
 )
