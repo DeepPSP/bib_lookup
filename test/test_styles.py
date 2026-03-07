@@ -345,3 +345,6 @@ def test_gbt7714_coverage_edge_cases():
     # Test BibLookup validation
     with pytest.raises(ValueError, match="must be an integer >= 1"):
         BibLookup(max_names=0)
+
+    with pytest.raises(ValueError, match="must be an integer >= 1"):
+        BibLookup(max_names="1.5")
