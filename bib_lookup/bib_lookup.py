@@ -288,7 +288,15 @@ class BibLookup(ReprMixin):
             )
 
         self.__capitalize_title = str2bool(bl_config["capitalize_title"])  # type: ignore
-        self.max_names = int(bl_config["max_names"])  # type: ignore
+
+        max_names_raw = bl_config["max_names"]  # type: ignore
+        try:
+            self.max_names = int(max_names_raw)
+        except (TypeError, ValueError) as exc:
+            raise ValueError(f"`max_names` must be an integer >= 1, but got `{max_names_raw}`") from exc
+
+        if self.max_names < 1:
+            raise ValueError(f"`max_names` must be an integer >= 1, but got `{max_names_raw}`")
 
         self.__field_pattern = f""",\\s*({"|".join(list(BIB_FIELDS))})\\s*=\\s*"""
 

@@ -16,6 +16,8 @@ from pybtex.style.template import (
 
 class GBTNames(Node):
     def __init__(self, role, formatter, limit=3):
+        if not isinstance(limit, int) or limit < 1:
+            raise ValueError(f"`limit` must be an integer >= 1, but got `{limit}`")
         self.role = role
         self.formatter = formatter
         self.limit = limit
@@ -83,10 +85,19 @@ class GBT7714Style(UnsrtStyle):
         # Surname with prelast (von)
         prelast = " ".join(person.prelast_names)
         last = " ".join(person.last_names)
+        lineage = " ".join(person.lineage_names)
+
+        parts = []
         if prelast:
-            surname = f"{prelast} {last}"
-        else:
-            surname = last
+            parts.append(prelast)
+        if last:
+            parts.append(last)
+        if lineage:
+            # Strip dots from lineage for consistency
+            lineage = lineage.replace(".", "")
+            parts.append(lineage)
+
+        surname = " ".join(parts)
 
         # First and Middle Initials (no dot)
         initials_list = []

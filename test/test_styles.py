@@ -22,7 +22,7 @@ def _format_bibtex_string(bib_str: str) -> str:
 
 
 def test_gbt7714_style(monkeypatch):
-    bl = BibLookup(verbose=0)
+    bl = BibLookup(verbose=0, max_names=3)
 
     class MockResponse:
         status_code = 200
@@ -315,3 +315,33 @@ def test_gbt7714_coverage_edge_cases():
     """
     res = _format_bibtex_string(bib_tech_doi)
     assert "DOI: 10.1000/tech_doi" in res
+
+    # 4. Test Lineage
+    bib_lineage = """
+    @article{test_lineage,
+        author = {King, Jr., Martin Luther and Gates, III, William H.},
+        title = {I Have a Dream},
+        year = {1963},
+        journal = {Journal of Lineage}
+    }
+    """
+    res = _format_bibtex_string(bib_lineage)
+    # Expected: King Jr M L, Gates III W H (dots stripped)
+    assert "King Jr M L" in res
+    assert "Gates III W H" in res
+
+    # 5. Test Invalid max_names
+    import pytest
+
+    with pytest.raises(ValueError, match="must be an integer >= 1"):
+        GBTNames("author", str, limit=0)
+
+    with pytest.raises(ValueError, match="must be an integer >= 1"):
+        GBTNames("author", str, limit=-1)
+
+    with pytest.raises(ValueError, match="must be an integer >= 1"):
+        GBTNames("author", str, limit="3")
+
+    # Test BibLookup validation
+    with pytest.raises(ValueError, match="must be an integer >= 1"):
+        BibLookup(max_names=0)
