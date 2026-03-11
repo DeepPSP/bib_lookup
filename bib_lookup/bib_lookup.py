@@ -32,7 +32,7 @@ from pybtex.database import parse_string
 from ._bib import BIB_FIELDS, DF_BIB_ENTRY_TYPES, BibItem
 from ._const import CONFIG_FILE as _CONFIG_FILE
 from ._const import DEFAULT_CONFIG as _DEFAULT_CONFIG
-from .styles import GBT7714Style
+from .styles import APAStyle, ChicagoStyle, GBT7714Style, IEEEStyle
 from .utils import (
     NETWORK_ERROR_MESSAGES,
     ReprMixin,
@@ -516,7 +516,15 @@ class BibLookup(ReprMixin):
                     res = self.default_err
             elif format == "text":
                 # Check for custom local styles
-                if style and style.lower() in ["gbt7714", "gbt", "gbt-7714"]:
+                supported_styles = {
+                    "gbt7714": GBT7714Style,
+                    "gbt": GBT7714Style,
+                    "gbt-7714": GBT7714Style,
+                    "ieee": IEEEStyle,
+                    "apa": APAStyle,
+                    "chicago": ChicagoStyle,
+                }
+                if style and style.lower() in supported_styles:
                     try:
                         # res is currently BibTeX string because we forced format="bibtex" in _obtain_feed_content
                         # Now parse and format using our local style
@@ -525,7 +533,13 @@ class BibLookup(ReprMixin):
                         bib_data = parse_string(res, bib_format="bibtex")
 
                         # Formatting
-                        custom_style = GBT7714Style(max_names=self.max_names)
+                        style_class = supported_styles[style.lower()]
+                        # For APA/Chicago style, we prefer their default max_names (20/10)
+                        # if the global max_names is still at default (3)
+                        if style.lower() in ["apa", "chicago"] and self.max_names == 3:
+                            custom_style = style_class()
+                        else:
+                            custom_style = style_class(max_names=self.max_names)
                         formatted_entries = custom_style.format_entries(bib_data.entries.values())
 
                         backend = TextBackend()
@@ -536,6 +550,11 @@ class BibLookup(ReprMixin):
                             backend.write_to_stream([entry], output)
 
                         res = output.getvalue().strip()
+
+                        # Strip labels like [1] or [ ] if the style returns an empty label
+                        # but the backend still adds brackets.
+                        if style.lower() in ["apa", "chicago"]:
+                            res = re.sub(r"^\[\d*\]\s*", "", res)
 
                     except Exception as e:  # pragma: no cover
                         if self.verbose > 0:
@@ -608,8 +627,9 @@ class BibLookup(ReprMixin):
         _style = self._style if style is None else style
         fc = {"timeout": self.timeout if timeout is None else timeout}
 
-        # Force bibtex for GBT style
-        if _format == "text" and _style.lower() in ["gbt7714", "gbt", "gbt-7714"]:
+        # Force bibtex for custom local styles
+        supported_styles = ["gbt7714", "gbt", "gbt-7714", "ieee", "apa", "chicago"]
+        if _format == "text" and _style.lower() in supported_styles:
             _format = "bibtex"
 
         if re.search(self.doi_pattern, idtf):
