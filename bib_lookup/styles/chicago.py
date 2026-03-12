@@ -64,6 +64,8 @@ class ChicagoNames(Node):
 def chicago_pages(children, data):
     if isinstance(data, dict) and "entry" in data:
         data = data["entry"]
+    if not hasattr(data, "fields"):
+        return ""
     pages = data.fields.get("pages", "")
     if not pages:
         return ""
@@ -74,6 +76,8 @@ def chicago_pages(children, data):
 def chicago_date(children, data):
     if isinstance(data, dict) and "entry" in data:
         data = data["entry"]
+    if not hasattr(data, "fields"):
+        return ""
     month = data.fields.get("month", "")
     year = data.fields.get("year", "")
     if month and year:

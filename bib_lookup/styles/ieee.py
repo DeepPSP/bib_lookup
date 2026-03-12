@@ -61,6 +61,8 @@ def ieee_pages(children, data):
     """Format pages as p. or pp."""
     if isinstance(data, dict) and "entry" in data:
         data = data["entry"]
+    if not hasattr(data, "fields"):
+        return ""
     pages = data.fields.get("pages", "")
     if not pages:
         return ""
@@ -101,6 +103,8 @@ def ieee_month(children, data):
     }
     if isinstance(data, dict) and "entry" in data:
         data = data["entry"]
+    if not hasattr(data, "fields"):
+        return ""
     month = data.fields.get("month", "")
     if not month:
         return ""
@@ -148,7 +152,7 @@ class IEEEStyle(UnsrtStyle):
             join(sep=" ")[ieee_month, field("year")],
         ]
         if "doi" in e.fields:
-            template = join(sep=", ")[template, join["doi: ", field("doi")]]
+            template = join(sep=". ")[template, join["DOI: ", field("doi")]]
         return sentence[template]
 
     def get_book_template(self, e):
@@ -159,7 +163,7 @@ class IEEEStyle(UnsrtStyle):
             field("year"),
         ]
         if "doi" in e.fields:
-            template = join(sep=", ")[template, join["doi: ", field("doi")]]
+            template = join(sep=". ")[template, join["DOI: ", field("doi")]]
         return sentence[template]
 
     def get_inproceedings_template(self, e):
@@ -170,7 +174,7 @@ class IEEEStyle(UnsrtStyle):
             optional[ieee_pages],
         ]
         if "doi" in e.fields:
-            template = join(sep=", ")[template, join["doi: ", field("doi")]]
+            template = join(sep=". ")[template, join["DOI: ", field("doi")]]
         return sentence[template]
 
     def get_phdthesis_template(self, e):
@@ -182,6 +186,8 @@ class IEEEStyle(UnsrtStyle):
             optional_field("address"),
             field("year"),
         ]
+        if "doi" in e.fields:
+            template = join(sep=". ")[template, join["DOI: ", field("doi")]]
         return sentence[template]
 
     def get_mastersthesis_template(self, e):
@@ -193,4 +199,6 @@ class IEEEStyle(UnsrtStyle):
             optional_field("address"),
             field("year"),
         ]
+        if "doi" in e.fields:
+            template = join(sep=". ")[template, join["DOI: ", field("doi")]]
         return sentence[template]

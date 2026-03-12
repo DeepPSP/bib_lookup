@@ -27,7 +27,7 @@ class GBTNames(Node):
         if isinstance(data, dict) and "entry" in data:
             data = data["entry"]
 
-        if not data or not hasattr(data, "persons"):
+        if not hasattr(data, "persons"):
             return ""
 
         if self.role not in data.persons:
@@ -93,13 +93,13 @@ class GBT7714Style(UnsrtStyle):
     def get_article_template(self, e):
         template = join(sep=". ")[
             self.format_names("author", as_sentence=False),
-            join[optional_field("title"), "[J]"],
+            join[field("title"), "[J]"],
             join(sep=", ")[
-                optional_field("journal"),
-                optional_field("year"),
+                field("journal"),
+                field("year"),
                 join(sep=": ")[
-                    join[optional_field("volume"), optional["(", optional_field("number"), ")"]],
-                    optional_field("pages"),
+                    join[optional_field("volume"), optional["(", field("number"), ")"]],
+                    field("pages"),
                 ],
             ],
         ]
@@ -110,10 +110,10 @@ class GBT7714Style(UnsrtStyle):
     def get_book_template(self, e):
         template = join(sep=". ")[
             self.format_names("author", as_sentence=False),
-            join[optional_field("title"), "[M]"],
+            join[field("title"), "[M]"],
             join(sep=", ")[
-                join(sep=": ")[optional_field("address"), optional_field("publisher")],
-                optional_field("year"),
+                join(sep=": ")[optional_field("address"), field("publisher")],
+                field("year"),
             ],
         ]
         if "doi" in e.fields:
@@ -123,10 +123,10 @@ class GBT7714Style(UnsrtStyle):
     def get_inproceedings_template(self, e):
         template = join(sep=". ")[
             self.format_names("author", as_sentence=False),
-            join(sep=" // ")[join[optional_field("title"), "[C]"], optional_field("booktitle")],
+            join(sep=" // ")[join[field("title"), "[C]"], field("booktitle")],
             join(sep=", ")[
-                join(sep=": ")[optional_field("address"), optional_field("publisher")],
-                join(sep=": ")[optional_field("year"), optional_field("pages")],
+                join(sep=": ")[optional_field("address"), field("publisher")],
+                join(sep=": ")[field("year"), field("pages")],
             ],
         ]
         if "doi" in e.fields:
@@ -136,10 +136,10 @@ class GBT7714Style(UnsrtStyle):
     def get_phdthesis_template(self, e):
         template = join(sep=". ")[
             self.format_names("author", as_sentence=False),
-            join[optional_field("title"), "[D]"],
+            join[field("title"), "[D]"],
             join(sep=", ")[
-                join(sep=": ")[optional_field("address"), optional_field("school")],
-                optional_field("year"),
+                join(sep=": ")[optional_field("address"), field("school")],
+                field("year"),
             ],
         ]
         if "doi" in e.fields:
@@ -152,10 +152,10 @@ class GBT7714Style(UnsrtStyle):
     def get_techreport_template(self, e):
         template = join(sep=". ")[
             self.format_names("author", as_sentence=False),
-            join[optional_field("title"), "[R]"],
+            join[field("title"), "[R]"],
             join(sep=", ")[
-                join(sep=": ")[optional_field("address"), optional_field("institution")],
-                optional_field("year"),
+                join(sep=": ")[optional_field("address"), field("institution")],
+                field("year"),
             ],
         ]
         if "doi" in e.fields:

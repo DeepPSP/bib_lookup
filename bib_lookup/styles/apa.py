@@ -9,6 +9,7 @@ from pybtex.style.template import (
     field,
     join,
     optional,
+    optional_field,
     sentence,
     tag,
 )
@@ -38,9 +39,11 @@ class APANames(Node):
 
         display_limit = self.limit
         if num_persons <= display_limit:
+            # APA 7th: For 2-20 authors, use ampersand before the last author.
             formatted_persons = [self.formatter(p) for p in persons]
             return ", ".join(formatted_persons[:-1]) + ", & " + formatted_persons[-1]
         else:
+            # APA 7th: For 21+ authors, list first 19, ellipsis, then last author.
             idx = max(1, display_limit - 1)
             first_part = [self.formatter(p) for p in persons[:idx]]
             last_one = self.formatter(persons[-1])
@@ -82,26 +85,27 @@ class APAStyle(UnsrtStyle):
         return ""
 
     def get_article_template(self, e):
+        # Last, F. M. (Year). Title. Journal, Volume(Issue), Pages.
         template = join[
             self.format_names("author", as_sentence=False),
             " ",
             join(sep="", last_sep="")[
                 "(",
-                field("year"),
+                optional_field("year"),
                 ").",
             ],
             " ",
-            field("title"),
+            optional_field("title"),
             ". ",
-            tag("em")[field("journal")],
+            tag("em")[optional_field("journal")],
             optional[
                 join(sep="")[
                     ", ",
-                    tag("em")[field("volume")],
-                    optional[join(sep="", last_sep="")["(", field("number"), ")"]],
+                    tag("em")[optional_field("volume")],
+                    optional[join(sep="", last_sep="")["(", optional_field("number"), ")"]],
                 ]
             ],
-            optional[join(sep="", last_sep="")[", ", field("pages")]],
+            optional[join(sep="", last_sep="")[", ", optional_field("pages")]],
             ".",
         ]
         if "doi" in e.fields:
@@ -114,15 +118,17 @@ class APAStyle(UnsrtStyle):
             " ",
             join(sep="", last_sep="")[
                 "(",
-                field("year"),
+                optional_field("year"),
                 ").",
             ],
             " ",
-            tag("em")[field("title")],
+            tag("em")[optional_field("title")],
             ". ",
-            field("publisher"),
+            optional_field("publisher"),
             ".",
         ]
+        if "doi" in e.fields:
+            template = join(sep=" ")[template, join["https://doi.org/", field("doi")]]
         return template
 
     def get_inproceedings_template(self, e):
@@ -131,14 +137,16 @@ class APAStyle(UnsrtStyle):
             " ",
             join(sep="", last_sep="")[
                 "(",
-                field("year"),
+                optional_field("year"),
                 ").",
             ],
             " ",
-            field("title"),
+            optional_field("title"),
             ". In ",
-            tag("em")[field("booktitle")],
-            optional[join(sep="", last_sep="")[" (pp. ", field("pages"), ")"]],
+            tag("em")[optional_field("booktitle")],
+            optional[join(sep="", last_sep="")[" (pp. ", optional_field("pages"), ")"]],
             ".",
         ]
+        if "doi" in e.fields:
+            template = join(sep=" ")[template, join["https://doi.org/", field("doi")]]
         return template
