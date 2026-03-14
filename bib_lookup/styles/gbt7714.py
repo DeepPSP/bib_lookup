@@ -111,7 +111,7 @@ class GBT7714Style(UnsrtStyle):
                 field("year"),
                 join(sep=": ")[
                     join[optional_field("volume"), optional["(", field("number"), ")"]],
-                    field("pages"),
+                    optional_field("pages"),
                 ],
             ],
         ]
@@ -140,7 +140,7 @@ class GBT7714Style(UnsrtStyle):
             join(sep=" // ")[join[field("title"), "[C]"], field("booktitle")],
             join(sep=", ")[
                 join(sep=": ")[optional_field("address"), field("publisher")],
-                join(sep=": ")[field("year"), field("pages")],
+                join(sep=": ")[field("year"), optional_field("pages")],
             ],
         ]
         if "doi" in e.fields:
