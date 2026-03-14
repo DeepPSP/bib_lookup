@@ -3,6 +3,9 @@ Custom Pybtex style for APA (7th Edition).
 Simplified implementation focusing on Article, Book, and InProceedings.
 """
 
+from typing import Any, Callable, Union
+
+from pybtex.database import Entry, Person
 from pybtex.style.formatting.unsrt import Style as UnsrtStyle
 from pybtex.style.template import (
     Node,
@@ -16,12 +19,12 @@ from pybtex.style.template import (
 
 
 class APANames(Node):
-    def __init__(self, role, formatter, limit=20):
+    def __init__(self, role: str, formatter: Callable[[Person], str], limit: int = 20):
         self.role = role
         self.formatter = formatter
         self.limit = limit
 
-    def format_data(self, data):
+    def format_data(self, data: Union[dict, Entry]) -> str:
         if isinstance(data, dict) and "entry" in data:
             data = data["entry"]
 
@@ -51,18 +54,18 @@ class APANames(Node):
 
 
 class APAStyle(UnsrtStyle):
-    def __init__(self, max_names=20, **kwargs):
+    def __init__(self, max_names: int = 20, **kwargs: Any):
         super().__init__(**kwargs)
         self.max_names = max_names
 
-    def format_names(self, role, as_sentence=True):
+    def format_names(self, role: str, as_sentence: bool = True) -> Union[Node, sentence]:
         formatted_names = APANames(role, self._format_person, limit=self.max_names)
         if as_sentence:
             return sentence[formatted_names]
         else:
             return formatted_names
 
-    def _format_person(self, person):
+    def _format_person(self, person: Person) -> str:
         """Format a single person as 'Last, F. M.'."""
         last_name = " ".join(person.prelast_names + person.last_names)
         if person.lineage_names:
@@ -81,10 +84,10 @@ class APAStyle(UnsrtStyle):
             return f"{last_name}, {initials_str}"
         return last_name
 
-    def format_label(self, entry):
+    def format_label(self, entry: Entry) -> str:
         return ""
 
-    def get_article_template(self, e):
+    def get_article_template(self, e: Entry) -> Node:
         # Last, F. M. (Year). Title. Journal, Volume(Issue), Pages.
         template = join[
             self.format_names("author", as_sentence=False),
@@ -120,7 +123,7 @@ class APAStyle(UnsrtStyle):
             template = join(sep=" ")[template, field("url")]
         return template
 
-    def get_book_template(self, e):
+    def get_book_template(self, e: Entry) -> Node:
         template = join[
             self.format_names("author", as_sentence=False),
             " ",
@@ -139,7 +142,7 @@ class APAStyle(UnsrtStyle):
             template = join(sep=" ")[template, join["https://doi.org/", field("doi")]]
         return template
 
-    def get_inproceedings_template(self, e):
+    def get_inproceedings_template(self, e: Entry) -> Node:
         template = join[
             self.format_names("author", as_sentence=False),
             " ",

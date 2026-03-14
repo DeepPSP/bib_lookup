@@ -3,6 +3,9 @@ Custom Pybtex style for GB/T 7714-2015.
 Simplified implementation focusing on Article, Book, and InProceedings.
 """
 
+from typing import Any, Callable, Optional, Union
+
+from pybtex.database import Entry, Person
 from pybtex.style.formatting.unsrt import Style as UnsrtStyle
 from pybtex.style.template import (
     Node,
@@ -15,14 +18,14 @@ from pybtex.style.template import (
 
 
 class GBTNames(Node):
-    def __init__(self, role, formatter, limit=3):
+    def __init__(self, role: str, formatter: Callable[[Person], str], limit: int = 3):
         if not isinstance(limit, int) or limit < 1:
             raise ValueError(f"`limit` must be an integer >= 1, but got `{limit}`")
         self.role = role
         self.formatter = formatter
         self.limit = limit
 
-    def format_data(self, data):
+    def format_data(self, data: Union[dict, Entry]) -> str:
         # Handle both Entry object and Context dict
         if isinstance(data, dict) and "entry" in data:
             data = data["entry"]
@@ -58,19 +61,26 @@ class GBTNames(Node):
 
 
 class GBT7714Style(UnsrtStyle):
-    def __init__(self, label_style=None, name_style=None, sorting_style=None, max_names=3, **kwargs):
+    def __init__(
+        self,
+        label_style: Optional[Any] = None,
+        name_style: Optional[Any] = None,
+        sorting_style: Optional[Any] = None,
+        max_names: int = 3,
+        **kwargs: Any,
+    ):
         sorting_style = "none"
         super().__init__(label_style, name_style, sorting_style, **kwargs)
         self.max_names = max_names
 
-    def format_names(self, role, as_sentence=True):
+    def format_names(self, role: str, as_sentence: bool = True) -> Union[Node, sentence]:
         formatted_names = GBTNames(role, self._format_person, limit=self.max_names)
         if as_sentence:
             return sentence[formatted_names]
         else:
             return formatted_names
 
-    def _format_person(self, person):
+    def _format_person(self, person: Person) -> str:
         prelast = " ".join(person.prelast_names)
         last = " ".join(person.last_names)
         lineage = " ".join(person.lineage_names)
@@ -90,7 +100,7 @@ class GBT7714Style(UnsrtStyle):
         initials = " ".join(initials_list)
         return f"{surname} {initials}".strip()
 
-    def get_article_template(self, e):
+    def get_article_template(self, e: Entry) -> Node:
         # Use [J/OL] for online articles (with DOI or URL), [J] for print
         medium_tag = "[J/OL]" if ("doi" in e.fields or "url" in e.fields) else "[J]"
         template = join(sep=". ")[
@@ -111,7 +121,7 @@ class GBT7714Style(UnsrtStyle):
             template = join(sep=". ")[template, join["DOI: ", field("doi")]]
         return sentence[template]
 
-    def get_book_template(self, e):
+    def get_book_template(self, e: Entry) -> Node:
         template = join(sep=". ")[
             self.format_names("author", as_sentence=False),
             join[field("title"), "[M]"],
@@ -124,7 +134,7 @@ class GBT7714Style(UnsrtStyle):
             template = join(sep=". ")[template, join["DOI: ", field("doi")]]
         return sentence[template]
 
-    def get_inproceedings_template(self, e):
+    def get_inproceedings_template(self, e: Entry) -> Node:
         template = join(sep=". ")[
             self.format_names("author", as_sentence=False),
             join(sep=" // ")[join[field("title"), "[C]"], field("booktitle")],
@@ -137,7 +147,7 @@ class GBT7714Style(UnsrtStyle):
             template = join(sep=". ")[template, join["DOI: ", field("doi")]]
         return sentence[template]
 
-    def get_phdthesis_template(self, e):
+    def get_phdthesis_template(self, e: Entry) -> Node:
         template = join(sep=". ")[
             self.format_names("author", as_sentence=False),
             join[field("title"), "[D]"],
@@ -150,10 +160,10 @@ class GBT7714Style(UnsrtStyle):
             template = join(sep=". ")[template, join["DOI: ", field("doi")]]
         return sentence[template]
 
-    def get_mastersthesis_template(self, e):
+    def get_mastersthesis_template(self, e: Entry) -> Node:
         return self.get_phdthesis_template(e)
 
-    def get_techreport_template(self, e):
+    def get_techreport_template(self, e: Entry) -> Node:
         template = join(sep=". ")[
             self.format_names("author", as_sentence=False),
             join[field("title"), "[R]"],

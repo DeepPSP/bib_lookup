@@ -3,6 +3,9 @@ Custom Pybtex style for IEEE.
 Simplified implementation focusing on Article, Book, and InProceedings.
 """
 
+from typing import Any, Callable, Union
+
+from pybtex.database import Entry, Person
 from pybtex.style.formatting.unsrt import Style as UnsrtStyle
 from pybtex.style.template import (
     Node,
@@ -18,13 +21,19 @@ from pybtex.style.template import (
 
 
 class IEEENames(Node):
-    def __init__(self, role, formatter, limit=6, use_first_author_full=False):
+    def __init__(
+        self,
+        role: str,
+        formatter: Callable[[Person], str],
+        limit: int = 6,
+        use_first_author_full: bool = False,
+    ):
         self.role = role
         self.formatter = formatter
         self.limit = limit
         self.use_first_author_full = use_first_author_full
 
-    def format_data(self, data):
+    def format_data(self, data: Union[dict, Entry]) -> str:
         if isinstance(data, dict) and "entry" in data:
             data = data["entry"]
 
@@ -62,7 +71,7 @@ class IEEENames(Node):
 
         return result
 
-    def _format_person_full_first(self, person):
+    def _format_person_full_first(self, person: Person) -> str:
         """Format with full first name."""
         first = " ".join(person.first_names)
         last = " ".join(person.prelast_names + person.last_names)
@@ -74,7 +83,7 @@ class IEEENames(Node):
 
 
 @node
-def ieee_pages(children, data):
+def ieee_pages(children: Node, data: Union[dict, Entry]) -> str:
     """Format pages as p. or pp."""
     if isinstance(data, dict) and "entry" in data:
         data = data["entry"]
@@ -101,9 +110,9 @@ def ieee_pages(children, data):
 
 
 @node
-def ieee_month(children, data):
+def ieee_month(children: Node, data: Union[dict, Entry]) -> str:
     """Abbreviate months according to IEEE."""
-    MONTH_MAP = {
+    MONTH_MAP: dict[str, str] = {
         "january": "Jan.",
         "february": "Feb.",
         "march": "Mar.",
@@ -161,11 +170,11 @@ def ieee_month(children, data):
 
 
 class IEEEStyle(UnsrtStyle):
-    def __init__(self, max_names=6, **kwargs):
+    def __init__(self, max_names: int = 6, **kwargs: Any):
         super().__init__(**kwargs)
         self.max_names = max_names
 
-    def _format_person(self, person):
+    def _format_person(self, person: Person) -> str:
         """Format a single person as 'F. M. Last'."""
         initials = []
         for names_list in [person.first_names, person.middle_names]:
@@ -183,7 +192,7 @@ class IEEEStyle(UnsrtStyle):
             return f"{initials_str} {last_name}"
         return last_name
 
-    def get_article_template(self, e):
+    def get_article_template(self, e: Entry) -> Node:
         # Check if we have many authors (use et al. format)
         use_compact_format = False
         if "author" in e.persons and len(e.persons["author"]) > self.max_names:
@@ -233,7 +242,7 @@ class IEEEStyle(UnsrtStyle):
                 template = join(sep="")[template, "."]
         return sentence[template]
 
-    def format_names(self, role, as_sentence=True, use_first_author_full=False):
+    def format_names(self, role: str, as_sentence: bool = True, use_first_author_full: bool = False) -> Union[Node, sentence]:
         formatted_names = IEEENames(
             role, self._format_person, limit=self.max_names, use_first_author_full=use_first_author_full
         )
@@ -242,13 +251,13 @@ class IEEEStyle(UnsrtStyle):
         else:
             return formatted_names
 
-    def format_label(self, entry):
+    def format_label(self, entry: Entry) -> str:
         """Return the label for an entry (e.g., [1], [2], etc.)."""
         # The actual label number would be assigned by the bibliography formatter
         # For template purposes, return a placeholder that gets replaced
         return ""
 
-    def get_book_template(self, e):
+    def get_book_template(self, e: Entry) -> Node:
         template = join(sep=", ")[
             self.format_names("author", as_sentence=False),
             tag("em")[field("title")],
@@ -259,7 +268,7 @@ class IEEEStyle(UnsrtStyle):
             template = join(sep=". ")[template, join["DOI: ", field("doi")]]
         return sentence[template]
 
-    def get_inproceedings_template(self, e):
+    def get_inproceedings_template(self, e: Entry) -> Node:
         template = join(sep=", ")[
             self.format_names("author", as_sentence=False),
             join(sep=" ")[join(sep="")["“", field("title"), ",”"], words["in", tag("em")[field("booktitle")]]],
@@ -270,7 +279,7 @@ class IEEEStyle(UnsrtStyle):
             template = join(sep=". ")[template, join["DOI: ", field("doi")]]
         return sentence[template]
 
-    def get_phdthesis_template(self, e):
+    def get_phdthesis_template(self, e: Entry) -> Node:
         template = join(sep=", ")[
             self.format_names("author", as_sentence=False),
             join(sep="")["“", field("title"), ",”"],
@@ -283,7 +292,7 @@ class IEEEStyle(UnsrtStyle):
             template = join(sep=". ")[template, join["DOI: ", field("doi")]]
         return sentence[template]
 
-    def get_mastersthesis_template(self, e):
+    def get_mastersthesis_template(self, e: Entry) -> Node:
         template = join(sep=", ")[
             self.format_names("author", as_sentence=False),
             join(sep="")["“", field("title"), ",”"],

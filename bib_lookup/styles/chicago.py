@@ -3,6 +3,9 @@ Custom Pybtex style for Chicago (Notes and Bibliography).
 Simplified implementation focusing on Article, Book, and InProceedings.
 """
 
+from typing import Any, Callable, Union
+
+from pybtex.database import Entry, Person
 from pybtex.style.formatting.unsrt import Style as UnsrtStyle
 from pybtex.style.template import (
     Node,
@@ -18,12 +21,12 @@ from pybtex.style.template import (
 
 
 class ChicagoNames(Node):
-    def __init__(self, role, formatter, limit=10):
+    def __init__(self, role: str, formatter: Callable[[Person, bool], str], limit: int = 10):
         self.role = role
         self.formatter = formatter
         self.limit = limit
 
-    def format_data(self, data):
+    def format_data(self, data: Union[dict, Entry]) -> str:
         if isinstance(data, dict) and "entry" in data:
             data = data["entry"]
 
@@ -61,7 +64,7 @@ class ChicagoNames(Node):
 
 
 @node
-def chicago_pages(children, data):
+def chicago_pages(children: Node, data: Union[dict, Entry]) -> str:
     if isinstance(data, dict) and "entry" in data:
         data = data["entry"]
     if not hasattr(data, "fields"):
@@ -73,7 +76,7 @@ def chicago_pages(children, data):
 
 
 @node
-def chicago_date(children, data):
+def chicago_date(children: Node, data: Union[dict, Entry]) -> str:
     if isinstance(data, dict) and "entry" in data:
         data = data["entry"]
     if not hasattr(data, "fields"):
@@ -82,7 +85,7 @@ def chicago_date(children, data):
     year = data.fields.get("year", "")
     if month and year:
         # Full month name for Chicago
-        MONTH_MAP = {
+        MONTH_MAP: dict[str, str] = {
             "1": "January",
             "01": "January",
             "2": "February",
@@ -125,18 +128,18 @@ def chicago_date(children, data):
 
 
 class ChicagoStyle(UnsrtStyle):
-    def __init__(self, max_names=10, **kwargs):
+    def __init__(self, max_names: int = 10, **kwargs: Any):
         super().__init__(**kwargs)
         self.max_names = max_names
 
-    def format_names(self, role, as_sentence=True):
+    def format_names(self, role: str, as_sentence: bool = True) -> Union[Node, sentence]:
         formatted_names = ChicagoNames(role, self._format_person, limit=self.max_names)
         if as_sentence:
             return sentence[formatted_names]
         else:
             return formatted_names
 
-    def _format_person(self, person, first_author=True):
+    def _format_person(self, person: Person, first_author: bool = True) -> str:
         """Format a single person."""
         first = " ".join(person.first_names + person.middle_names)
         last = " ".join(person.prelast_names + person.last_names)
@@ -147,10 +150,10 @@ class ChicagoStyle(UnsrtStyle):
         else:
             return f"{first} {last}"
 
-    def format_label(self, entry):
+    def format_label(self, entry: Entry) -> str:
         return ""
 
-    def get_article_template(self, e):
+    def get_article_template(self, e: Entry) -> Node:
         # Author. "Title." Journal Volume (Month Year): Pages. https://doi.org/...
         template = join(sep=". ")[
             self.format_names("author", as_sentence=False),
@@ -181,7 +184,7 @@ class ChicagoStyle(UnsrtStyle):
             template = join(sep=". ")[template, field("url")]
         return sentence[template]
 
-    def get_book_template(self, e):
+    def get_book_template(self, e: Entry) -> Node:
         template = join(sep=". ")[
             self.format_names("author", as_sentence=False),
             tag("em")[field("title")],
@@ -195,7 +198,7 @@ class ChicagoStyle(UnsrtStyle):
             template = join(sep=". ")[template, doi]
         return sentence[template]
 
-    def get_inproceedings_template(self, e):
+    def get_inproceedings_template(self, e: Entry) -> Node:
         template = join(sep=". ")[
             self.format_names("author", as_sentence=False),
             join(sep="")["“", field("title"), ".”"],
