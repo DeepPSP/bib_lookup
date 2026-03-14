@@ -81,19 +81,21 @@ class GBT7714Style(UnsrtStyle):
             parts.append(last)
         if lineage:
             parts.append(lineage.replace(".", ""))
-        surname = " ".join(parts)
+        surname = " ".join(parts).upper()  # GB/T 7714 requires uppercase surnames
         initials_list = []
         for names_list in [person.first_names, person.middle_names]:
             for name in names_list:
                 if name:
-                    initials_list.append(name[0])
+                    initials_list.append(name[0].upper())  # Uppercase initials
         initials = " ".join(initials_list)
         return f"{surname} {initials}".strip()
 
     def get_article_template(self, e):
+        # Use [J/OL] for online articles (with DOI or URL), [J] for print
+        medium_tag = "[J/OL]" if ("doi" in e.fields or "url" in e.fields) else "[J]"
         template = join(sep=". ")[
             self.format_names("author", as_sentence=False),
-            join[field("title"), "[J]"],
+            join[field("title"), medium_tag],
             join(sep=", ")[
                 field("journal"),
                 field("year"),
@@ -103,6 +105,8 @@ class GBT7714Style(UnsrtStyle):
                 ],
             ],
         ]
+        if "url" in e.fields:
+            template = join(sep=". ")[template, field("url")]
         if "doi" in e.fields:
             template = join(sep=". ")[template, join["DOI: ", field("doi")]]
         return sentence[template]

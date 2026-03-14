@@ -81,8 +81,43 @@ def chicago_date(children, data):
     month = data.fields.get("month", "")
     year = data.fields.get("year", "")
     if month and year:
-        # Full month name for Chicago usually
-        month_full = month.capitalize()
+        # Full month name for Chicago
+        MONTH_MAP = {
+            "1": "January",
+            "01": "January",
+            "2": "February",
+            "02": "February",
+            "3": "March",
+            "03": "March",
+            "4": "April",
+            "04": "April",
+            "5": "May",
+            "05": "May",
+            "6": "June",
+            "06": "June",
+            "7": "July",
+            "07": "July",
+            "8": "August",
+            "08": "August",
+            "9": "September",
+            "09": "September",
+            "10": "October",
+            "11": "November",
+            "12": "December",
+            "january": "January",
+            "february": "February",
+            "march": "March",
+            "april": "April",
+            "may": "May",
+            "june": "June",
+            "july": "July",
+            "august": "August",
+            "september": "September",
+            "october": "October",
+            "november": "November",
+            "december": "December",
+        }
+        month_full = MONTH_MAP.get(str(month).lower(), str(month).capitalize())
         return f"({month_full} {year})"
     elif year:
         return f"({year})"
@@ -119,24 +154,31 @@ class ChicagoStyle(UnsrtStyle):
         # Author. "Title." Journal Volume (Month Year): Pages. https://doi.org/...
         template = join(sep=". ")[
             self.format_names("author", as_sentence=False),
-            join(sep="")['"', field("title"), '."'],
+            join(sep="")["“", field("title"), ".”"],
         ]
 
         journal_info = join(sep=" ")[
             tag("em")[field("journal")],
             join(sep="")[
                 optional_field("volume"),
+                optional[join(sep="")[", no. ", field("number")]],
                 " ",
                 chicago_date,
                 optional[join(sep="", last_sep="")[": ", chicago_pages]],
             ],
         ]
         template = join(sep=" ")[template, journal_info]
+        # Add ISSN if present
+        if "issn" in e.fields:
+            template = join(sep=". ")[template, join["ISSN: ", field("issn")]]
         if "doi" in e.fields:
             doi = e.fields["doi"]
             if not doi.startswith("http"):
                 doi = f"https://doi.org/{doi}"
             template = join(sep=". ")[template, doi]
+        if "url" in e.fields:
+            # Add URL even if DOI is present (per expected output)
+            template = join(sep=". ")[template, field("url")]
         return sentence[template]
 
     def get_book_template(self, e):
@@ -156,7 +198,7 @@ class ChicagoStyle(UnsrtStyle):
     def get_inproceedings_template(self, e):
         template = join(sep=". ")[
             self.format_names("author", as_sentence=False),
-            join(sep="")['"', field("title"), '."'],
+            join(sep="")["“", field("title"), ".”"],
             words["In", tag("em")[field("booktitle")]],
             join(sep=": ")[optional_field("address"), field("publisher")],
             field("year"),

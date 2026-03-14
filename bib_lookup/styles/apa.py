@@ -102,7 +102,13 @@ class APAStyle(UnsrtStyle):
                 join(sep="")[
                     ", ",
                     tag("em")[optional_field("volume")],
-                    optional[join(sep="", last_sep="")["(", optional_field("number"), ")"]],
+                ]
+            ],
+            optional[
+                join(sep="", last_sep="")[
+                    "(",
+                    field("number"),
+                    ")",
                 ]
             ],
             optional[join(sep="", last_sep="")[", ", optional_field("pages")]],
@@ -110,6 +116,8 @@ class APAStyle(UnsrtStyle):
         ]
         if "doi" in e.fields:
             template = join(sep=" ")[template, join["https://doi.org/", field("doi")]]
+        elif "url" in e.fields:
+            template = join(sep=" ")[template, field("url")]
         return template
 
     def get_book_template(self, e):
