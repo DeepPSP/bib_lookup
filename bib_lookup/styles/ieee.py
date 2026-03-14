@@ -253,9 +253,9 @@ class IEEEStyle(UnsrtStyle):
 
     def format_label(self, entry: Entry) -> str:
         """Return the label for an entry (e.g., [1], [2], etc.)."""
-        # The actual label number would be assigned by the bibliography formatter
-        # For template purposes, return a placeholder that gets replaced
-        return ""
+        # Delegate to the base style so that the label_style / backend
+        # can assign the appropriate numeric IEEE label.
+        return super().format_label(entry)
 
     def get_book_template(self, e: Entry) -> Node:
         template = join(sep=", ")[
