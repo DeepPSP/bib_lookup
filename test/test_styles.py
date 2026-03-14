@@ -267,38 +267,38 @@ def test_additional_coverage():
 
     p1 = Person(first="A", last="B")
 
-    # Test APA with empty persons list (line 33)
+    # Test APA with empty persons list
     style_apa = APAStyle()
     empty_entry = Entry("a", persons={"author": []})
     an = APANames("author", str)
     assert an.format_data(ctx(empty_entry)) == ""
 
-    # Test APA format_names with as_sentence=True (line 61)
+    # Test APA format_names with as_sentence=True
     entry_with_author = Entry("a", persons={"author": [p1]})
     result = style_apa.format_names("author", as_sentence=True).format_data(ctx(entry_with_author))
     assert result is not None
 
-    # Test APA inproceedings template without DOI (line 85)
+    # Test APA inproceedings template without DOI
     inproc_no_doi = Entry("c", fields={"title": "T", "year": "2021", "booktitle": "BT"})
     inproc_no_doi.persons["author"] = [p1]
     apa_inproc_result = str(style_apa.get_inproceedings_template(inproc_no_doi).format_data(ctx(inproc_no_doi))).strip()
     assert "BT" in apa_inproc_result
 
-    # Test APA with URL (line 139 - book template with doi)
+    # Test APA with URL (book template with doi)
     book_with_doi = Entry("b", fields={"title": "T", "year": "2021", "publisher": "P", "doi": "10.1"})
     apa_book_result = str(style_apa.get_book_template(book_with_doi).format_data(ctx(book_with_doi))).strip()
     assert "https://doi.org/10.1" in apa_book_result
 
-    # Test APA with its `format_label` method (line 140)
+    # Test APA with its `format_label` method
     assert style_apa.format_label(Entry("a")) == ""  # APA doesn't use labels, should return empty string
 
-    # Test IEEE with empty persons list (line 36)
+    # Test IEEE with empty persons list
     style_ieee = IEEEStyle()
     ieee_empty = Entry("a", persons={"author": []})
     in_names = IEEENames("author", str)
     assert in_names.format_data(ctx(ieee_empty)) == ""
 
-    # Test IEEE pages with no pages field (lines 70, 73)
+    # Test IEEE pages with no pages field
     entry_no_pages = Entry("a")
     assert "" == _r(ieee_pages, entry_no_pages)
 
@@ -315,7 +315,7 @@ def test_additional_coverage():
     ieee_book_doi_result = str(style_ieee.get_book_template(ieee_book_doi).format_data(ctx(ieee_book_doi))).strip()
     assert "DOI" in ieee_book_doi_result
 
-    # Test IEEE inproceedings template without DOI (lines 178, 182)
+    # Test IEEE inproceedings template without DOI
     ieee_inproc_no_doi = Entry("c", fields={"title": "T", "booktitle": "BT", "year": "2021", "pages": "10-20"})
     ieee_inproc_no_doi.persons["author"] = [p1]
     ieee_inproc_no_doi_result = str(
@@ -323,34 +323,34 @@ def test_additional_coverage():
     ).strip()
     assert "BT" in ieee_inproc_no_doi_result
 
-    # Test IEEE format_names with as_sentence=True (line 209)
+    # Test IEEE format_names with as_sentence=True
     ieee_names_result = style_ieee.format_names("author", as_sentence=True).format_data(ctx(entry_with_author))
     assert ieee_names_result is not None
 
-    # Test IEEE with URL but no DOI (line 237)
+    # Test IEEE with URL but no DOI
     ieee_url_only = Entry("a", fields={"title": "T", "journal": "J", "year": "2021", "url": "http://example.com"})
     ieee_url_only.persons["author"] = [p1]
     ieee_url_result = str(style_ieee.get_article_template(ieee_url_only).format_data(ctx(ieee_url_only))).strip()
     assert "[Online]. Available:" in ieee_url_result
 
-    # Test IEEE with both DOI and URL (line 245)
+    # Test IEEE with both DOI and URL
     ieee_both = Entry("a", fields={"title": "T", "journal": "J", "year": "2021", "doi": "10.1", "url": "http://example.com"})
     ieee_both.persons["author"] = [p1]
     ieee_both_result = str(style_ieee.get_article_template(ieee_both).format_data(ctx(ieee_both))).strip()
     assert "DOI:" in ieee_both_result
     assert "URL:" in ieee_both_result
 
-    # Test GBT7714 with empty persons (line 69)
+    # Test GBT7714 with empty persons
     style_gbt = GBT7714Style()
     gbt_empty = Entry("a", persons={"author": []})
     gn = GBTNames("author", str)
     assert gn.format_data(ctx(gbt_empty)) == ""
 
-    # Test GBT7714 format_names with as_sentence=True (line 69)
+    # Test GBT7714 format_names with as_sentence=True
     gbt_names_sentence = style_gbt.format_names("author", as_sentence=True).format_data(ctx(entry_with_author))
     assert gbt_names_sentence is not None
 
-    # Test GBT7714 _format_person with prelast and lineage (lines 79, 83)
+    # Test GBT7714 _format_person with prelast and lineage
     person_with_prelast = Person(first="F", prelast="Pre", last="L")
     gbt_prelast_result = style_gbt._format_person(person_with_prelast)
     assert "PRE L" in gbt_prelast_result  # GBT uses uppercase
@@ -359,13 +359,13 @@ def test_additional_coverage():
     gbt_lineage_result = style_gbt._format_person(person_with_lineage)
     assert "JR" in gbt_lineage_result  # GBT uses uppercase
 
-    # Test GBT7714 book template without DOI (line 79)
+    # Test GBT7714 book template without DOI
     gbt_book_no_doi = Entry("b", fields={"title": "T", "publisher": "P", "year": "2021", "address": "A"})
     gbt_book_no_doi.persons["author"] = [p1]
     gbt_book_no_doi_result = str(style_gbt.get_book_template(gbt_book_no_doi).format_data(ctx(gbt_book_no_doi))).strip()
     assert "[M]" in gbt_book_no_doi_result
 
-    # Test GBT7714 inproceedings template without DOI (line 83)
+    # Test GBT7714 inproceedings template without DOI
     gbt_inproc_no_doi = Entry(
         "c", fields={"title": "T", "booktitle": "BT", "year": "2021", "pages": "10-20", "address": "A", "publisher": "P"}
     )
@@ -375,13 +375,13 @@ def test_additional_coverage():
     ).strip()
     assert "[C]" in gbt_inproc_no_doi_result
 
-    # Test GBT7714 phdthesis template without DOI (line 154)
+    # Test GBT7714 phdthesis template without DOI
     gbt_phd_no_doi = Entry("d", fields={"title": "T", "school": "S", "year": "2021", "address": "A"})
     gbt_phd_no_doi.persons["author"] = [p1]
     gbt_phd_no_doi_result = str(style_gbt.get_phdthesis_template(gbt_phd_no_doi).format_data(ctx(gbt_phd_no_doi))).strip()
     assert "[D]" in gbt_phd_no_doi_result
 
-    # Test GBT7714 mastersthesis template (line 154)
+    # Test GBT7714 mastersthesis template
     gbt_masters = Entry("d", fields={"title": "T", "school": "S", "year": "2021"})
     gbt_masters.persons["author"] = [p1]
     gbt_masters_result = str(style_gbt.get_mastersthesis_template(gbt_masters).format_data(ctx(gbt_masters))).strip()
@@ -393,13 +393,13 @@ def test_additional_coverage():
     gbt_tech_result = str(style_gbt.get_techreport_template(gbt_tech).format_data(ctx(gbt_tech))).strip()
     assert "[R]" in gbt_tech_result
 
-    # Test Chicago with empty persons (line 35)
+    # Test Chicago with empty persons
     style_chi = ChicagoStyle()
     chi_empty = Entry("a", persons={"author": []})
     cn = ChicagoNames("author", lambda p, first_author=False: "N")
     assert cn.format_data(ctx(chi_empty)) == ""
 
-    # Test Chicago date with only year (lines 118, 127)
+    # Test Chicago date with only year
     entry_year_only = Entry("a", fields={"year": "2021"})
     chi_date_result = _r(chicago_date, entry_year_only)
     assert "(2021)" in chi_date_result
@@ -409,6 +409,12 @@ def test_additional_coverage():
     chi_book_no_doi.persons["author"] = [p1]
     chi_book_no_doi_result = str(style_chi.get_book_template(chi_book_no_doi).format_data(ctx(chi_book_no_doi))).strip()
     assert "T" in chi_book_no_doi_result
+
+    # Test Chicago book template with DOI
+    chi_book_doi = Entry("b", fields={"title": "T", "publisher": "P", "year": "2021", "doi": "10.1"})
+    chi_book_doi.persons["author"] = [p1]
+    chi_book_doi_result = str(style_chi.get_book_template(chi_book_doi).format_data(ctx(chi_book_doi))).strip()
+    assert "https://doi.org/10.1" in chi_book_doi_result
 
     # Test Chicago inproceedings template without DOI
     chi_inproc_no_doi = Entry(
@@ -420,6 +426,23 @@ def test_additional_coverage():
     ).strip()
     assert "BT" in chi_inproc_no_doi_result
 
+    # Test Chicago inproceedings template with DOI
+    chi_inproc_doi = Entry(
+        "c", fields={"title": "T", "booktitle": "BT", "year": "2021", "pages": "10-20", "publisher": "P", "doi": "10.1"}
+    )
+    chi_inproc_doi.persons["author"] = [p1]
+    chi_inproc_doi_result = str(style_chi.get_inproceedings_template(chi_inproc_doi).format_data(ctx(chi_inproc_doi))).strip()
+    assert "https://doi.org/10.1" in chi_inproc_doi_result
+
+    # Test Chicago _format_person with lineage
+    person_with_lineage = Person(first="First", last="Last", lineage="Jr.")
+    chi_lineage_result = style_chi._format_person(person_with_lineage, first_author=True)
+    assert "Jr." in chi_lineage_result
+
+    # Test Chicago _format_person with first_author=False
+    chi_not_first_result = style_chi._format_person(p1, first_author=False)
+    assert "A B" in chi_not_first_result
+
     # Test chicago_pages with no pages
     entry_no_pages = Entry("a")
     assert "" == _r(chicago_pages, entry_no_pages)
@@ -427,6 +450,48 @@ def test_additional_coverage():
     # Test ieee_month with no month
     entry_no_month = Entry("a")
     assert "" == _r(ieee_month, entry_no_month)
+
+    # Test IEEE _format_person_full_first with lineage
+    person_with_lineage_ieee = Person(first="First", last="Last", lineage="Jr.")
+    ieee_lineage_result = style_ieee._format_person(person_with_lineage_ieee)
+    assert "Jr." in ieee_lineage_result
+
+    # Test IEEE _format_person without initials
+    person_no_initials = Person(last="OnlyLast")
+    ieee_no_initials_result = style_ieee._format_person(person_no_initials)
+    assert "OnlyLast" == ieee_no_initials_result
+
+    # Test IEEE compact format without DOI
+    ieee_compact_no_doi = Entry("a", fields={"title": "T", "journal": "J", "year": "2021", "volume": "1"})
+    ieee_compact_no_doi.persons["author"] = [Person(str(i)) for i in range(10)]  # More than max_names (6)
+    ieee_compact_no_doi_result = str(
+        style_ieee.get_article_template(ieee_compact_no_doi).format_data(ctx(ieee_compact_no_doi))
+    ).strip()
+    assert "et al." in ieee_compact_no_doi_result
+
+    # Test IEEE standard format without DOI or URL
+    ieee_standard_nothing = Entry("a", fields={"title": "T", "journal": "J", "year": "2021"})
+    ieee_standard_nothing.persons["author"] = [p1]
+    ieee_standard_nothing_result = str(
+        style_ieee.get_article_template(ieee_standard_nothing).format_data(ctx(ieee_standard_nothing))
+    ).strip()
+    assert "T" in ieee_standard_nothing_result
+
+    # Test IEEE mastersthesis template
+    ieee_masters = Entry("d", fields={"title": "T", "school": "S", "year": "2021", "doi": "10.1"})
+    ieee_masters.persons["author"] = [p1]
+    ieee_masters_result = str(style_ieee.get_mastersthesis_template(ieee_masters).format_data(ctx(ieee_masters))).strip()
+    assert "M.S. thesis" in ieee_masters_result
+    assert "DOI" in ieee_masters_result
+
+    # Test IEEE _format_person_full_first with lineage
+    person_lineage_full = Person(first="First", last="Last", lineage="III")
+    ieee_names_class = IEEENames("author", style_ieee._format_person)
+    ieee_full_lineage = ieee_names_class._format_person_full_first(person_lineage_full)
+    assert "III" in ieee_full_lineage
+
+    # Test IEEE format_label
+    assert style_ieee.format_label(Entry("a")) == ""
 
 
 def test_misc():
