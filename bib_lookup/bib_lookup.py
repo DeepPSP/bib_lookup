@@ -32,7 +32,6 @@ from pybtex.database import parse_string
 from ._bib import BIB_FIELDS, DF_BIB_ENTRY_TYPES, BibItem
 from ._const import CONFIG_FILE as _CONFIG_FILE
 from ._const import DEFAULT_CONFIG as _DEFAULT_CONFIG
-from .styles import APAStyle, ChicagoStyle, GBT7714Style, IEEEStyle
 from .utils import (
     NETWORK_ERROR_MESSAGES,
     ReprMixin,
@@ -113,6 +112,10 @@ class BibLookup(ReprMixin):
           default "apa", case insensitive,
           style of the final output,
           valid only when "format" is "text".
+          Supported styles are auto-discovered from:
+
+          - Custom local styles in ``bib_lookup.styles`` module
+          - pybtex built-in styles (``unsrt``, ``alpha``, ``plain``, ``unsrtalpha``)
         - "timeout": float,
           default 6.0,
           timeout for requests.
@@ -127,7 +130,9 @@ class BibLookup(ReprMixin):
           whether to capitalize the title of the bib items or not.
         - "max_names": int,
           default 3,
-          maximum number of authors to display in GBT7714 style before truncation.
+          maximum number of authors to display before truncation.
+          Style-specific defaults: GBT7714=3, IEEE=6, APA=20, Chicago=10.
+          Only applies when different from the global default (3).
 
     Example
     -------
@@ -328,6 +333,73 @@ class BibLookup(ReprMixin):
                 requests.adapters.HTTPAdapter(pool_connections=20, max_retries=2),
             )
 
+        # Get all supported styles (custom local + pybtex built-in)
+        self.__supported_styles = self._get_supported_styles()
+
+    @staticmethod
+    def _get_supported_styles():
+        """Dynamically discover all available citation styles.
+
+        Returns
+        -------
+        dict
+            Dictionary mapping style names to style classes.
+            Includes both custom local styles and pybtex built-in styles.
+        """
+        import glob
+        import importlib
+        import os
+
+        supported_styles = {}
+
+        # 1. Discover custom local styles from bib_lookup.styles
+        try:
+            from . import styles as local_styles_module
+
+            for name in getattr(local_styles_module, "__all__", []):
+                style_class = getattr(local_styles_module, name, None)
+                if style_class is not None:
+                    # Add style name mappings (e.g., "gbt7714", "gbt", "gbt-7714" all map to GBT7714Style)
+                    if name == "GBT7714Style":
+                        supported_styles.update(
+                            {
+                                "gbt7714": style_class,
+                                "gbt": style_class,
+                                "gbt-7714": style_class,
+                            }
+                        )
+                    elif name == "IEEEStyle":
+                        supported_styles["ieee"] = style_class
+                    elif name == "APAStyle":
+                        supported_styles["apa"] = style_class
+                    elif name == "ChicagoStyle":
+                        supported_styles["chicago"] = style_class
+                    else:
+                        supported_styles[name.lower()] = style_class
+        except Exception:
+            pass
+
+        # 2. Discover pybtex built-in styles
+        try:
+            import pybtex.style.formatting
+
+            style_dir = os.path.dirname(pybtex.style.formatting.__file__)
+            style_files = glob.glob(os.path.join(style_dir, "*.py"))
+
+            for f in style_files:
+                name = os.path.basename(f)[:-3]  # Remove .py
+                if not name.startswith("_"):
+                    try:
+                        module = importlib.import_module(f"pybtex.style.formatting.{name}")
+                        if hasattr(module, "Style"):
+                            supported_styles[name] = getattr(module, "Style")
+                    except Exception:
+                        pass
+        except Exception:
+            pass
+
+        return supported_styles
+
     def __call__(
         self,
         identifier: Union[Path, str, Sequence[str]],
@@ -515,16 +587,7 @@ class BibLookup(ReprMixin):
                 except Exception:
                     res = self.default_err
             elif format == "text":
-                # Check for custom local styles
-                supported_styles = {
-                    "gbt7714": GBT7714Style,
-                    "gbt": GBT7714Style,
-                    "gbt-7714": GBT7714Style,
-                    "ieee": IEEEStyle,
-                    "apa": APAStyle,
-                    "chicago": ChicagoStyle,
-                }
-                if style and style.lower() in supported_styles:
+                if style and style.lower() in self.supported_styles:
                     try:
                         # res is currently BibTeX string because we forced format="bibtex" in _obtain_feed_content
                         # Now parse and format using our local style
@@ -532,14 +595,25 @@ class BibLookup(ReprMixin):
                         # Parsing
                         bib_data = parse_string(res, bib_format="bibtex")
 
+                        # Remove ignored fields before formatting
+                        if self._ignore_fields:
+                            for entry in bib_data.entries.values():
+                                for field in self._ignore_fields:
+                                    if field in entry.fields:
+                                        del entry.fields[field]
+
                         # Formatting
-                        style_class = supported_styles[style.lower()]
-                        # For APA/Chicago style, we prefer their default max_names (20/10)
-                        # if the global max_names is still at default (3)
-                        if style.lower() in ["apa", "chicago"] and self.max_names == 3:
-                            custom_style = style_class()
-                        else:
+                        style_class = self.supported_styles[style.lower()]
+                        # Use style-specific defaults for max_names unless user explicitly configured it
+                        # Default max_names: GBT=3, IEEE=6, APA=20, Chicago=10
+                        style_defaults = {"gbt7714": 3, "gbt": 3, "gbt-7714": 3, "ieee": 6, "apa": 20, "chicago": 10}
+                        style_default_max = style_defaults.get(style.lower(), 3)
+
+                        # Only pass max_names if user explicitly configured it (different from global default of 3)
+                        if self.max_names != 3 or style.lower() in ["gbt7714", "gbt", "gbt-7714"]:
                             custom_style = style_class(max_names=self.max_names)
+                        else:
+                            custom_style = style_class()
                         formatted_entries = custom_style.format_entries(bib_data.entries.values())
 
                         backend = TextBackend()
@@ -627,9 +701,8 @@ class BibLookup(ReprMixin):
         _style = self._style if style is None else style
         fc = {"timeout": self.timeout if timeout is None else timeout}
 
-        # Force bibtex for custom local styles
-        supported_styles = ["gbt7714", "gbt", "gbt-7714", "ieee", "apa", "chicago"]
-        if _format == "text" and _style.lower() in supported_styles:
+        # Force bibtex for custom local styles and pybtex built-in styles
+        if _format == "text" and _style.lower() in self.supported_styles:
             _format = "bibtex"
 
         if re.search(self.doi_pattern, idtf):
@@ -1107,6 +1180,11 @@ class BibLookup(ReprMixin):
     @property
     def cache_limit(self) -> Union[int, float]:
         return self.__cache_limit
+
+    @property
+    def supported_styles(self) -> dict:
+        # Get all supported styles (custom local + pybtex built-in)
+        return self.__supported_styles
 
     def debug(self) -> None:
         self.verbose = 2

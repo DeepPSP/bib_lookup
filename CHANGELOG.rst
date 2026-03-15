@@ -13,11 +13,17 @@ Versioning <https://semver.org/spec/v2.0.0.html>`__.
 
 Added
 ~~~~~
+- Added three new citation styles: APA 7th Edition, IEEE, and Chicago 17th Edition.
+- Added support for pybtex built-in styles (``unsrt``, ``alpha``, ``plain``, ``unsrtalpha``).
+- Added ``ignore_fields`` support for text format output with custom/pybtex styles.
 
 Changed
 ~~~~~~~
 - The maximum number of authors displayed before truncation for
   GB/T 7714-2015 citation style can be configured via `max_names` (default: 3).
+- GB/T 7714-2015 style now uses uppercase for author names and initials per the standard.
+- GB/T 7714-2015 style now uses ``[J/OL]`` medium tag for online articles with DOI or URL.
+- IEEE style now uses its own default ``max_names=6`` instead of inheriting the global default (3).
 
 Deprecated
 ~~~~~~~~~~
