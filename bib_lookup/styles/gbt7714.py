@@ -3,6 +3,9 @@ Custom Pybtex style for GB/T 7714-2015.
 Simplified implementation focusing on Article, Book, and InProceedings.
 """
 
+from typing import Any, Callable, Optional, Union
+
+from pybtex.database import Entry, Person
 from pybtex.style.formatting.unsrt import Style as UnsrtStyle
 from pybtex.style.template import (
     Node,
@@ -15,14 +18,14 @@ from pybtex.style.template import (
 
 
 class GBTNames(Node):
-    def __init__(self, role, formatter, limit=3):
+    def __init__(self, role: str, formatter: Callable[[Person], str], limit: int = 3):
         if not isinstance(limit, int) or limit < 1:
             raise ValueError(f"`limit` must be an integer >= 1, but got `{limit}`")
         self.role = role
         self.formatter = formatter
         self.limit = limit
 
-    def format_data(self, data):
+    def format_data(self, data: Union[dict, Entry]) -> str:
         # Handle both Entry object and Context dict
         if isinstance(data, dict) and "entry" in data:
             data = data["entry"]
@@ -58,87 +61,72 @@ class GBTNames(Node):
 
 
 class GBT7714Style(UnsrtStyle):
-    def __init__(self, label_style=None, name_style=None, sorting_style=None, max_names=3, **kwargs):
-        # GB/T 7714 uses numeric labels [1]
-        # Names are formatted as "Family Name First Name" (no comma) usually, or "Family Name, First Name"
-        # Standard GB/T 7714-2015: "Author. Title[M]. Publisher, Year."
-        # Names: "Last F M" (uppercase)
-
-        # We use 'lastfirst' plugin as a base, but we might need uppercase
-        sorting_style = "none"  # Default to no sorting (citation order)
+    def __init__(
+        self,
+        label_style: Optional[Any] = None,
+        name_style: Optional[Any] = None,
+        sorting_style: Optional[Any] = None,
+        max_names: int = 3,
+        **kwargs: Any,
+    ):
+        sorting_style = "none"
         super().__init__(label_style, name_style, sorting_style, **kwargs)
         self.max_names = max_names
 
-    def format_names(self, role, as_sentence=True):
-        # GB/T 7714: Names are separated by commas, ending with dot if sentence
-        # Max 3 authors, then "et al." (or "等" for Chinese)
-        # We use a custom Node to handle truncation and formatting
+    def format_names(self, role: str, as_sentence: bool = True) -> Union[Node, sentence]:
         formatted_names = GBTNames(role, self._format_person, limit=self.max_names)
-
         if as_sentence:
             return sentence[formatted_names]
         else:
             return formatted_names
 
-    def _format_person(self, person):
-        """Format a single person as 'Surname FirstInitial MiddleInitial' (e.g. 'Lai Y', 'Knuth D E')."""
-        # Surname with prelast (von)
+    def _format_person(self, person: Person) -> str:
         prelast = " ".join(person.prelast_names)
         last = " ".join(person.last_names)
         lineage = " ".join(person.lineage_names)
-
         parts = []
         if prelast:
             parts.append(prelast)
         if last:
             parts.append(last)
         if lineage:
-            # Strip dots from lineage for consistency
-            lineage = lineage.replace(".", "")
-            parts.append(lineage)
-
-        surname = " ".join(parts)
-
-        # First and Middle Initials (no dot)
+            parts.append(lineage.replace(".", ""))
+        surname = " ".join(parts).upper()  # GB/T 7714 requires uppercase surnames
         initials_list = []
         for names_list in [person.first_names, person.middle_names]:
             for name in names_list:
                 if name:
-                    initials_list.append(name[0])
-
+                    initials_list.append(name[0].upper())  # Uppercase initials
         initials = " ".join(initials_list)
+        return f"{surname} {initials}".strip()
 
-        name_str = f"{surname} {initials}".strip()
-        return name_str
-
-    def get_article_template(self, e):
-        # [1] AUTHOR. Title[J]. Journal, Year, Volume(Issue): Pages.
+    def get_article_template(self, e: Entry) -> Node:
+        # Use [J/OL] for online articles (with DOI or URL), [J] for print
+        medium_tag = "[J/OL]" if ("doi" in e.fields or "url" in e.fields) else "[J]"
         template = join(sep=". ")[
             self.format_names("author", as_sentence=False),
-            join[field("title"), "[J]"],
+            join[field("title"), medium_tag],
             join(sep=", ")[
                 field("journal"),
                 field("year"),
                 join(sep=": ")[
                     join[optional_field("volume"), optional["(", field("number"), ")"]],
-                    optional[field("pages")],
+                    optional_field("pages"),
                 ],
             ],
         ]
+        if "url" in e.fields:
+            template = join(sep=". ")[template, field("url")]
         if "doi" in e.fields:
             template = join(sep=". ")[template, join["DOI: ", field("doi")]]
         return sentence[template]
 
-    def get_book_template(self, e):
-        # [2] AUTHOR. Title[M]. Address: Publisher, Year.
+    def get_book_template(self, e: Entry) -> Node:
         template = join(sep=". ")[
             self.format_names("author", as_sentence=False),
             join[field("title"), "[M]"],
             join(sep=", ")[
-                join(sep=": ")[
-                    optional_field("address"),
-                    field("publisher"),
-                ],
+                join(sep=": ")[optional_field("address"), field("publisher")],
                 field("year"),
             ],
         ]
@@ -146,36 +134,25 @@ class GBT7714Style(UnsrtStyle):
             template = join(sep=". ")[template, join["DOI: ", field("doi")]]
         return sentence[template]
 
-    def get_inproceedings_template(self, e):
-        # [3] AUTHOR. Title[C] // Booktitle. Address: Publisher, Year: Pages.
+    def get_inproceedings_template(self, e: Entry) -> Node:
         template = join(sep=". ")[
             self.format_names("author", as_sentence=False),
             join(sep=" // ")[join[field("title"), "[C]"], field("booktitle")],
             join(sep=", ")[
-                join(sep=": ")[
-                    optional_field("address"),
-                    field("publisher"),
-                ],
-                join(sep=": ")[
-                    field("year"),
-                    optional[field("pages")],
-                ],
+                join(sep=": ")[optional_field("address"), field("publisher")],
+                join(sep=": ")[field("year"), optional_field("pages")],
             ],
         ]
         if "doi" in e.fields:
             template = join(sep=". ")[template, join["DOI: ", field("doi")]]
         return sentence[template]
 
-    def get_phdthesis_template(self, e):
-        # [4] AUTHOR. Title[D]. Address: School, Year.
+    def get_phdthesis_template(self, e: Entry) -> Node:
         template = join(sep=". ")[
             self.format_names("author", as_sentence=False),
             join[field("title"), "[D]"],
             join(sep=", ")[
-                join(sep=": ")[
-                    optional_field("address"),
-                    field("school"),
-                ],
+                join(sep=": ")[optional_field("address"), field("school")],
                 field("year"),
             ],
         ]
@@ -183,19 +160,15 @@ class GBT7714Style(UnsrtStyle):
             template = join(sep=". ")[template, join["DOI: ", field("doi")]]
         return sentence[template]
 
-    def get_mastersthesis_template(self, e):
+    def get_mastersthesis_template(self, e: Entry) -> Node:
         return self.get_phdthesis_template(e)
 
-    def get_techreport_template(self, e):
-        # [5] AUTHOR. Title[R]. Address: Institution, Year.
+    def get_techreport_template(self, e: Entry) -> Node:
         template = join(sep=". ")[
             self.format_names("author", as_sentence=False),
             join[field("title"), "[R]"],
             join(sep=", ")[
-                join(sep=": ")[
-                    optional_field("address"),
-                    field("institution"),
-                ],
+                join(sep=": ")[optional_field("address"), field("institution")],
                 field("year"),
             ],
         ]

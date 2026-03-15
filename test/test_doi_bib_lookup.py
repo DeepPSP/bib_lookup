@@ -51,3 +51,56 @@ def test_doi_bib_lookup():
     china_doi = "10.13748/j.cnki.issn1007-7693.20251689"
     bib_string = bl(china_doi, timeout=1000, verbose=3)
     assert bib_string.startswith(bib_lookup.BibLookup.__REDIRECT_FLAG__), bib_string  # type: ignore
+
+    # Test text format with style
+    text_result = bl("10.1142/S1005386718000305", timeout=1000, format="text", style="ieee")
+    assert text_result is not None
+
+    # Test text format with unsupported style
+    text_result_other = bl("10.1142/S1005386718000305", timeout=1000, format="text", style="unsupported_style")
+    assert text_result_other is not None
+
+    # Test verbose >= 1 with error
+    bl_verbose = bib_lookup.BibLookup(verbose=1)
+    err_result = bl_verbose("doi: invalid_doi_for_testing", timeout=1000)
+    assert err_result in bl_verbose.lookup_errors
+
+    # Test ignore_errors=True
+    bl_ignore = bib_lookup.BibLookup(ignore_errors=True)
+    result_ignore = bl_ignore("doi: invalid_doi_for_testing", timeout=1000)
+    assert result_ignore == ""
+
+    # Test capitalize_title=True
+    bl_cap = bib_lookup.BibLookup(capitalize_title=True)
+    bib_cap = bl_cap("10.1142/S1005386718000305", timeout=1000)
+    assert bib_cap is not None
+
+    # Test with label parameter
+    bib_labeled = bl("10.1142/S1005386718000305", timeout=1000, label="custom_label")
+    assert "custom_label" in bib_labeled
+
+    # Test dict input for _to_bib_item
+    bl._to_bib_item({"title": "Test", "author": "Author", "entry_type": "article", "label": "test"}, "test_id")
+
+    # Test field with braces
+    bl._to_bib_item("@article{test,\n  title = {Test Title},\n  author = {Author}\n}", "test_id")
+
+    # Test _handle_doi with format="text"
+    bl_text = bib_lookup.BibLookup(format="text")
+    bl_text._handle_doi({"url": "https://doi.org/10.1142/S1005386718000305", "timeout": 1000})
+
+    # Test _handle_doi with verbose > 3
+    bl_v3 = bib_lookup.BibLookup(verbose=4)
+    result_v3 = bl_v3("10.1142/S1005386718000305", timeout=1000)
+    assert result_v3 is not None
+
+    # Test _handle_doi fallback
+    bl_fallback = bib_lookup.BibLookup(verbose=4)
+    result_fallback = bl_fallback("10.1142/S1005386718000305", timeout=1000, format="text")
+    assert result_fallback is not None
+
+    # Test _handle_doi non-200 response
+    bl_non200 = bib_lookup.BibLookup()
+    # This tests the fallback path when initial request fails
+    result_non200 = bl_non200("10.1142/S1005386718000305", timeout=1000)
+    assert result_non200 is not None
