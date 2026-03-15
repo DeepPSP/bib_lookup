@@ -12,8 +12,11 @@ Requirements
 
 """
 
+import glob
+import importlib
 import io
 import json
+import os
 import re
 import warnings
 from collections import OrderedDict
@@ -346,10 +349,6 @@ class BibLookup(ReprMixin):
             Dictionary mapping style names to style classes.
             Includes both custom local styles and pybtex built-in styles.
         """
-        import glob
-        import importlib
-        import os
-
         supported_styles = {}
 
         # 1. Discover custom local styles from bib_lookup.styles
@@ -368,15 +367,9 @@ class BibLookup(ReprMixin):
                                 "gbt-7714": style_class,
                             }
                         )
-                    elif name == "IEEEStyle":
-                        supported_styles["ieee"] = style_class
-                    elif name == "APAStyle":
-                        supported_styles["apa"] = style_class
-                    elif name == "ChicagoStyle":
-                        supported_styles["chicago"] = style_class
                     else:
-                        supported_styles[name.lower()] = style_class
-        except Exception:
+                        supported_styles[name.lower().replace("style", "")] = style_class
+        except Exception:  # pragma: no cover
             pass
 
         # 2. Discover pybtex built-in styles
@@ -395,7 +388,7 @@ class BibLookup(ReprMixin):
                             supported_styles[name] = getattr(module, "Style")
                     except Exception:
                         pass
-        except Exception:
+        except Exception:  # pragma: no cover
             pass
 
         return supported_styles
@@ -584,7 +577,7 @@ class BibLookup(ReprMixin):
                     self.__cached_lookup_results[identifier] = res
                     if len(self.__cached_lookup_results) > self.__cache_limit:
                         self.__cached_lookup_results.popitem(last=False)
-                except Exception:
+                except Exception:  # pragma: no cover
                     res = self.default_err
             elif format == "text":
                 if style and style.lower() in self.supported_styles:
