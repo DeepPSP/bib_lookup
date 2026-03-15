@@ -386,7 +386,7 @@ class BibLookup(ReprMixin):
                         module = importlib.import_module(f"pybtex.style.formatting.{name}")
                         if hasattr(module, "Style"):
                             supported_styles[name] = getattr(module, "Style")
-                    except Exception:
+                    except Exception:  # pragma: no cover
                         pass
         except Exception:  # pragma: no cover
             pass
