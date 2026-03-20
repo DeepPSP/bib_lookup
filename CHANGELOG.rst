@@ -34,6 +34,11 @@ Removed
 Fixed
 ~~~~~
 
+- Fixed ``CitationMixin._init_db()`` being called repeatedly on every
+  ``get_citation()`` or ``update_cache()`` call, which could cause SQLite
+  database lock issues when used by external packages. The database now
+  only initializes once when it doesn't exist.
+
 Security
 ~~~~~~~~
 

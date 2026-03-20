@@ -26,7 +26,17 @@ class CitationMixin(object):
     citation_cache = citation_cache_db
 
     def _init_db(self):
-        """Initialize sqlite db and migrate csv if exists."""
+        """Initialize sqlite db and migrate csv if exists.
+
+        This method only initializes the database if it doesn't exist yet.
+        """
+        # Only initialize if database doesn't exist
+        if self.citation_cache_db.exists():
+            return
+
+        # Ensure the cache directory exists
+        self.citation_cache_db.parent.mkdir(parents=True, exist_ok=True)
+
         conn = sqlite3.connect(self.citation_cache_db)
         cursor = conn.cursor()
         cursor.execute("""
