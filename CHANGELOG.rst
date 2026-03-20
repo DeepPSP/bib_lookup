@@ -8,7 +8,7 @@ Changelog <https://keepachangelog.com/en/1.1.0/>`__, and this project
 adheres to `Semantic
 Versioning <https://semver.org/spec/v2.0.0.html>`__.
 
-`Unreleased <https://github.com/DeepPSP/bib_lookup/compare/v0.1.2...HEAD>`__
+`Unreleased <https://github.com/DeepPSP/bib_lookup/compare/v0.1.3...HEAD>`__
 ------------------------------------------------------------------------------------------------
 
 Added
