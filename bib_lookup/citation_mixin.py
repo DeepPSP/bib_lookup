@@ -26,25 +26,36 @@ class CitationMixin(object):
     citation_cache = citation_cache_db
 
     def _init_db(self):
-        """Initialize sqlite db and migrate csv if exists.
-
-        This method only initializes the database if it doesn't exist yet.
-        """
-        # Only initialize if database doesn't exist
-        if self.citation_cache_db.exists():
-            return
-
-        # Ensure the cache directory exists
+        """Initialize sqlite db and migrate csv if exists."""
         self.citation_cache_db.parent.mkdir(parents=True, exist_ok=True)
+
+        # If the file exists but is not a valid SQLite database (e.g. left
+        # from a previously interrupted write), remove it and start fresh.
+        if self.citation_cache_db.exists():
+            try:
+                with sqlite3.connect(self.citation_cache_db) as _probe:
+                    _probe.execute("SELECT * FROM sqlite_master LIMIT 1")
+            except sqlite3.DatabaseError:
+                warnings.warn(
+                    f"Citation cache database is corrupt and will be recreated: {self.citation_cache_db}",
+                    UserWarning,
+                )
+                self.citation_cache_db.unlink()
 
         conn = sqlite3.connect(self.citation_cache_db)
         cursor = conn.cursor()
+        # WAL mode allows concurrent readers alongside a writer, reducing
+        # contention and corruption risk when multiple processes share the db.
+        cursor.execute("PRAGMA journal_mode=WAL")
+        # CREATE TABLE IF NOT EXISTS is idempotent: safe to call every time,
+        # including when multiple xdist workers race through this method.
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS citations (
                 doi TEXT PRIMARY KEY,
                 citation TEXT
             )
         """)
+        conn.commit()
 
         # Backward compatibility: Migrate CSV to SQLite
         if self.citation_cache_csv.exists():
@@ -63,7 +74,6 @@ class CitationMixin(object):
             except Exception as e:
                 warnings.warn(f"Failed to migrate CSV cache: {e}", UserWarning)
 
-        conn.commit()
         conn.close()
 
     def get_citation(
