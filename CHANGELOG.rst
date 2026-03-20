@@ -34,10 +34,10 @@ Removed
 Fixed
 ~~~~~
 
-- Fixed ``CitationMixin._init_db()`` being called repeatedly on every
-  ``get_citation()`` or ``update_cache()`` call, which could cause SQLite
-  database lock issues when used by external packages. The database now
-  only initializes once when it doesn't exist.
+- Fixed ``CitationMixin._init_db()`` raising ``"file is not a database"``
+  in parallel test environments (e.g. pytest-xdist): corrupt leftover db
+  files are now detected and recreated, schema creation is idempotent, and
+  WAL journal mode is enabled for safer concurrent access.
 
 Security
 ~~~~~~~~

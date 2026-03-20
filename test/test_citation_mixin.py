@@ -451,6 +451,7 @@ def test_init_db_corrupt_file(monkeypatch, tmp_path):
     db_path = tmp_path / "bib-lookup-cache.db"
     monkeypatch.setattr(bib_lookup.CitationMixin, "citation_cache_db", db_path)
     monkeypatch.setattr(bib_lookup.CitationMixin, "citation_cache", db_path)
+    monkeypatch.setattr(bib_lookup.CitationMixin, "citation_cache_csv", tmp_path / "bib-lookup-cache.csv")
 
     # Write garbage bytes — not a valid SQLite file
     db_path.write_bytes(b"this is definitely not a sqlite database file")
@@ -477,6 +478,7 @@ def test_init_db_idempotent(monkeypatch, tmp_path):
     db_path = tmp_path / "bib-lookup-cache.db"
     monkeypatch.setattr(bib_lookup.CitationMixin, "citation_cache_db", db_path)
     monkeypatch.setattr(bib_lookup.CitationMixin, "citation_cache", db_path)
+    monkeypatch.setattr(bib_lookup.CitationMixin, "citation_cache_csv", tmp_path / "bib-lookup-cache.csv")
 
     obj = SomeClass()
     obj._init_db()
