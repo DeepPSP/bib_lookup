@@ -26,7 +26,8 @@ jobs:
     steps:
     - uses: actions/checkout@v6
       with:
-        fetch-depth: 0 # Fetch all history for versioning
+        fetch-depth: 20  # Use shallow history for faster CI while keeping tags
+        fetch-tags: true # Ensure tags are available for versioning
     - name: Set up Python
       uses: actions/setup-python@v6
       with:
