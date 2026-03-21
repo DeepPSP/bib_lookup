@@ -4,15 +4,17 @@
 # fall back to the placeholder only if the distribution is not installed.
 try:
     from importlib import metadata as _metadata
-except Exception:
+    from importlib.metadata import PackageNotFoundError as _PackageNotFoundError
+except ImportError:
     _metadata = None
+    _PackageNotFoundError = Exception
 
-_PACKAGE_NAME = (__package__ or __name__).split(".")[0]
+_DIST_NAME = "bib-lookup"
 
 if _metadata is not None:
     try:
-        __version__ = _metadata.version(_PACKAGE_NAME)
-    except Exception:
+        __version__ = _metadata.version(_DIST_NAME)
+    except _PackageNotFoundError:
         __version__ = "0.0.0"  # placeholder, overwritten at build time
 else:
     __version__ = "0.0.0"  # placeholder, overwritten at build time
