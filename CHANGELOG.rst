@@ -8,7 +8,28 @@ Changelog <https://keepachangelog.com/en/1.1.0/>`__, and this project
 adheres to `Semantic
 Versioning <https://semver.org/spec/v2.0.0.html>`__.
 
-`Unreleased <https://github.com/DeepPSP/bib_lookup/compare/v0.1.3...HEAD>`__
+`Unreleased <https://github.com/DeepPSP/bib_lookup/compare/v0.1.4...HEAD>`__
+------------------------------------------------------------------------------------------------
+
+Added
+~~~~~
+
+Changed
+~~~~~~~
+
+Deprecated
+~~~~~~~~~~
+
+Removed
+~~~~~~~
+
+Fixed
+~~~~~
+
+Security
+~~~~~~~~
+
+`0.1.4 <https://github.com/DeepPSP/bib_lookup/compare/v0.1.3...v0.1.4>`__ - 2026-03-21
 ------------------------------------------------------------------------------------------------
 
 Added
@@ -25,12 +46,6 @@ Changed
 - GB/T 7714-2015 style now uses ``[J/OL]`` medium tag for online articles with DOI or URL.
 - IEEE style now uses its own default ``max_names=6`` instead of inheriting the global default (3).
 
-Deprecated
-~~~~~~~~~~
-
-Removed
-~~~~~~~
-
 Fixed
 ~~~~~
 
@@ -38,9 +53,6 @@ Fixed
   in parallel test environments (e.g. pytest-xdist): corrupt leftover db
   files are now detected and recreated, schema creation is idempotent, and
   WAL journal mode is enabled for safer concurrent access.
-
-Security
-~~~~~~~~
 
 `0.1.3 <https://github.com/DeepPSP/bib_lookup/compare/v0.1.2...v0.1.3>`__ - 2026-03-04
 ------------------------------------------------------------------------------------------------
