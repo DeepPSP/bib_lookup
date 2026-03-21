@@ -444,3 +444,51 @@ def test_citation_mixin_coverage_gaps(monkeypatch, tmp_path, capsys):
     obj7 = YetAnotherClass()
     res = obj7.get_citation()
     assert res == ""
+
+
+def test_init_db_corrupt_file(monkeypatch, tmp_path):
+    """Test that a corrupt (non-SQLite) db file is detected, warned about, and recreated."""
+    db_path = tmp_path / "bib-lookup-cache.db"
+    monkeypatch.setattr(bib_lookup.CitationMixin, "citation_cache_db", db_path)
+    monkeypatch.setattr(bib_lookup.CitationMixin, "citation_cache", db_path)
+    monkeypatch.setattr(bib_lookup.CitationMixin, "citation_cache_csv", tmp_path / "bib-lookup-cache.csv")
+
+    # Write garbage bytes — not a valid SQLite file
+    db_path.write_bytes(b"this is definitely not a sqlite database file")
+
+    obj = SomeClass()
+    with pytest.warns(UserWarning, match="corrupt"):
+        obj._init_db()
+
+    # File must be recreated as a valid SQLite database with the citations table
+    assert db_path.exists()
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+    cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='citations'")
+    assert cursor.fetchone() is not None
+    conn.close()
+
+
+def test_init_db_idempotent(monkeypatch, tmp_path):
+    """Test that _init_db() is safe to call multiple times (idempotent).
+
+    This exercises the path where the db file already exists and is valid —
+    simulating concurrent xdist workers both calling _init_db().
+    """
+    db_path = tmp_path / "bib-lookup-cache.db"
+    monkeypatch.setattr(bib_lookup.CitationMixin, "citation_cache_db", db_path)
+    monkeypatch.setattr(bib_lookup.CitationMixin, "citation_cache", db_path)
+    monkeypatch.setattr(bib_lookup.CitationMixin, "citation_cache_csv", tmp_path / "bib-lookup-cache.csv")
+
+    obj = SomeClass()
+    obj._init_db()
+    obj._init_db()  # second call must not corrupt or raise
+
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+    cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='citations'")
+    assert cursor.fetchone() is not None, "citations table must survive repeated _init_db() calls"
+    # WAL mode should be set
+    cursor.execute("PRAGMA journal_mode")
+    assert cursor.fetchone()[0] == "wal"
+    conn.close()
