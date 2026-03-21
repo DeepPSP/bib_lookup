@@ -1,5 +1,5 @@
 [build-system]
-requires = ["hatchling"]
+requires = ["hatchling", "hatch-vcs"]
 build-backend = "hatchling.build"
 
 [project]
@@ -63,7 +63,10 @@ bib-lookup = "bib_lookup.cli:main"
 Homepage = "https://github.com/DeepPSP/bib_lookup"
 
 [tool.hatch.version]
-path = "bib_lookup/version.py"
+source = "vcs"
+
+[tool.hatch.build.hooks.vcs]
+version-file = "bib_lookup/version.py"
 
 [tool.hatch.build.targets.sdist]
 include = [
