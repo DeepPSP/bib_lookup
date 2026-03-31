@@ -11,7 +11,7 @@ from pybtex.style.template import (
     Node,
     field,
     join,
-    optional,
+    node,
     optional_field,
     sentence,
 )
@@ -58,6 +58,38 @@ class GBTNames(Node):
             result += ", et al"
 
         return result
+
+
+@node
+def gbt_year_vol_pages(children: Node, data: Union[dict, Entry]) -> str:
+    """Format year, volume, number and pages per GB/T 7714-2015.
+
+    - With volume: ``year, vol(num): pages``
+    - Without volume: ``year: pages``
+
+    Page ranges are normalized to use a regular hyphen (not en-dash).
+    """
+    if isinstance(data, dict) and "entry" in data:
+        data = data["entry"]
+    if not hasattr(data, "fields"):
+        return ""
+    year = data.fields.get("year", "")
+    volume = data.fields.get("volume", "")
+    number = data.fields.get("number", "")
+    # Normalize page-range separators: en-dash / double-hyphen → single hyphen
+    pages = data.fields.get("pages", "").replace("\u2013", "-").replace("--", "-")
+
+    vol_str = ""
+    if volume:
+        vol_str = f"{volume}({number})" if number else volume
+
+    if vol_str and pages:
+        return f"{year}, {vol_str}: {pages}"
+    if vol_str:
+        return f"{year}, {vol_str}"
+    if pages:
+        return f"{year}: {pages}"
+    return year
 
 
 class GBT7714Style(UnsrtStyle):
@@ -108,11 +140,7 @@ class GBT7714Style(UnsrtStyle):
             join[field("title"), medium_tag],
             join(sep=", ")[
                 field("journal"),
-                field("year"),
-                join(sep=": ")[
-                    join[optional_field("volume"), optional["(", field("number"), ")"]],
-                    optional_field("pages"),
-                ],
+                gbt_year_vol_pages,
             ],
         ]
         if "url" in e.fields:

@@ -104,7 +104,7 @@ class APAStyle(UnsrtStyle):
             optional[
                 join(sep="")[
                     ", ",
-                    tag("em")[optional_field("volume")],
+                    tag("em")[field("volume")],
                 ]
             ],
             optional[
@@ -114,7 +114,7 @@ class APAStyle(UnsrtStyle):
                     ")",
                 ]
             ],
-            optional[join(sep="", last_sep="")[", ", optional_field("pages")]],
+            optional[join(sep="", last_sep="")[", ", field("pages")]],
             ".",
         ]
         if "doi" in e.fields:

@@ -3,8 +3,8 @@ from pybtex.database import Entry, Person
 from pybtex.style.template import Node
 
 from bib_lookup.styles.apa import APANames, APAStyle
-from bib_lookup.styles.chicago import ChicagoNames, ChicagoStyle, chicago_date, chicago_pages
-from bib_lookup.styles.gbt7714 import GBT7714Style, GBTNames
+from bib_lookup.styles.chicago import ChicagoNames, ChicagoStyle, chicago_date, chicago_date_plain, chicago_pages
+from bib_lookup.styles.gbt7714 import GBT7714Style, GBTNames, gbt_year_vol_pages
 from bib_lookup.styles.ieee import IEEENames, IEEEStyle, ieee_month, ieee_pages
 
 EXAMPLES = [
@@ -109,6 +109,25 @@ EXAMPLES = [
         "ieee": """[1] H. Wen and J. Kang, “A Novel Deep Learning Package for Electrocardiography Research,” Physiological Measurement, vol. 43, no. 11, p. 115 006, Nov. 2022, ISSN: 1361-6579. DOI: 10.1088/1361-6579/ac9451. URL: https://doi.org/10.1088/1361-6579/ac9451.""",
         "gbt7714": """[1] WEN H, KANG J. A Novel Deep Learning Package for Electrocardiography Research[J/OL]. Physiological Measurement, 2022, 43(11): 115006. https://doi.org/10.1088/1361-6579/ac9451. DOI: 10.1088/1361-6579/ac9451.""",
         "chicago": """Wen, Hao, and Jingsu Kang. “A Novel Deep Learning Package for Electrocardiography Research.” Physiological Measurement 43, no. 11 (November 2022): 115006. ISSN: 1361-6579. https://doi.org/10.1088/1361-6579/ac9451. https://doi.org/10.1088/1361-6579/ac9451.""",
+    },
+    # no volume / no number (page-range with en-dash)
+    {
+        "entry": """
+@article{Groot_Bruinderink_2018,
+      title = {{Differential Fault Attacks on Deterministic Lattice Signatures}},
+     author = {Groot Bruinderink, Leon and Pessl, Peter},
+    journal = {{IACR Transactions on Cryptographic Hardware and Embedded Systems}},
+       issn = {2569-2925},
+        doi = {10.46586/tches.v2018.i3.21-43},
+  publisher = {{Universitatsbibliothek der Ruhr-Universitat Bochum}},
+       year = {2018},
+      month = {8},
+      pages = {21–43}
+}""",
+        "apa": """Groot Bruinderink, L., & Pessl, P. (2018). Differential Fault Attacks on Deterministic Lattice Signatures. IACR Transactions on Cryptographic Hardware and Embedded Systems, 21–43. https://doi.org/10.46586/tches.v2018.i3.21-43""",
+        "ieee": """[1] L. Groot Bruinderink and P. Pessl, “Differential Fault Attacks on Deterministic Lattice Signatures,” IACR Transactions on Cryptographic Hardware and Embedded Systems, pp. 21–43, Aug. 2018, ISSN: 2569-2925. DOI: 10.46586/tches.v2018.i3.21-43.""",
+        "gbt7714": """[1] GROOT BRUINDERINK L, PESSL P. Differential Fault Attacks on Deterministic Lattice Signatures[J/OL]. IACR Transactions on Cryptographic Hardware and Embedded Systems, 2018: 21-43. DOI: 10.46586/tches.v2018.i3.21-43.""",
+        "chicago": """Groot Bruinderink, Leon, and Peter Pessl. “Differential Fault Attacks on Deterministic Lattice Signatures.” IACR Transactions on Cryptographic Hardware and Embedded Systems, August 2018, 21–43. ISSN: 2569-2925. https://doi.org/10.46586/tches.v2018.i3.21-43.""",
     },
 ]
 
@@ -492,6 +511,33 @@ def test_additional_coverage():
 
     # Test IEEE format_label
     assert style_ieee.format_label(Entry("a")) == ""
+
+    # Test chicago_date_plain with month + year
+    entry_month_year = Entry("a", fields={"month": "8", "year": "2018"})
+    assert _r(chicago_date_plain, entry_month_year) == "August 2018"
+
+    # Test chicago_date_plain with year only
+    entry_year_only2 = Entry("a", fields={"year": "2021"})
+    assert _r(chicago_date_plain, entry_year_only2) == "2021"
+
+    # Test chicago_date_plain with no fields
+    assert _r(chicago_date_plain, Entry("a")) == ""
+
+    # Test gbt_year_vol_pages: no volume, with pages (uses colon separator, hyphen in range)
+    entry_no_vol = Entry("a", fields={"year": "2018", "pages": "21\u201343"})
+    assert _r(gbt_year_vol_pages, entry_no_vol) == "2018: 21-43"
+
+    # Test gbt_year_vol_pages: with volume and number
+    entry_vol_num = Entry("a", fields={"year": "2022", "volume": "43", "number": "11", "pages": "115006"})
+    assert _r(gbt_year_vol_pages, entry_vol_num) == "2022, 43(11): 115006"
+
+    # Test gbt_year_vol_pages: with volume only (no number, no pages)
+    entry_vol_only = Entry("a", fields={"year": "2021", "volume": "120"})
+    assert _r(gbt_year_vol_pages, entry_vol_only) == "2021, 120"
+
+    # Test gbt_year_vol_pages: year only (no volume, no pages)
+    entry_year_only3 = Entry("a", fields={"year": "2021"})
+    assert _r(gbt_year_vol_pages, entry_year_only3) == "2021"
 
 
 def test_misc():
