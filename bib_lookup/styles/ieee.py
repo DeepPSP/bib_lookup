@@ -92,9 +92,10 @@ def ieee_pages(children: Node, data: Union[dict, Entry]) -> str:
     pages = data.fields.get("pages", "")
     if not pages:
         return ""
-    # If pages contains range (- or --)
-    if "-" in pages or "," in pages:
-        return f"pp. {pages.replace('--', '–')}"
+    # If pages contains range (-, -- or en-dash –)
+    if "-" in pages or "\u2013" in pages or "," in pages:
+        en_dash = "\u2013"
+        return f"pp. {pages.replace('--', en_dash)}"
     else:
         # For page numbers >= 100000 (6+ digits), add space between groups of three digits
         # e.g., 115006 -> 115 006, but 103834 stays as 103834 (per expected output)

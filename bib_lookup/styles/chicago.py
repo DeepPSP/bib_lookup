@@ -19,6 +19,42 @@ from pybtex.style.template import (
     words,
 )
 
+_CHICAGO_MONTH_MAP: dict[str, str] = {
+    "1": "January",
+    "01": "January",
+    "2": "February",
+    "02": "February",
+    "3": "March",
+    "03": "March",
+    "4": "April",
+    "04": "April",
+    "5": "May",
+    "05": "May",
+    "6": "June",
+    "06": "June",
+    "7": "July",
+    "07": "July",
+    "8": "August",
+    "08": "August",
+    "9": "September",
+    "09": "September",
+    "10": "October",
+    "11": "November",
+    "12": "December",
+    "january": "January",
+    "february": "February",
+    "march": "March",
+    "april": "April",
+    "may": "May",
+    "june": "June",
+    "july": "July",
+    "august": "August",
+    "september": "September",
+    "october": "October",
+    "november": "November",
+    "december": "December",
+}
+
 
 class ChicagoNames(Node):
     def __init__(self, role: str, formatter: Callable[[Person, bool], str], limit: int = 10):
@@ -84,46 +120,27 @@ def chicago_date(children: Node, data: Union[dict, Entry]) -> str:
     month = data.fields.get("month", "")
     year = data.fields.get("year", "")
     if month and year:
-        # Full month name for Chicago
-        MONTH_MAP: dict[str, str] = {
-            "1": "January",
-            "01": "January",
-            "2": "February",
-            "02": "February",
-            "3": "March",
-            "03": "March",
-            "4": "April",
-            "04": "April",
-            "5": "May",
-            "05": "May",
-            "6": "June",
-            "06": "June",
-            "7": "July",
-            "07": "July",
-            "8": "August",
-            "08": "August",
-            "9": "September",
-            "09": "September",
-            "10": "October",
-            "11": "November",
-            "12": "December",
-            "january": "January",
-            "february": "February",
-            "march": "March",
-            "april": "April",
-            "may": "May",
-            "june": "June",
-            "july": "July",
-            "august": "August",
-            "september": "September",
-            "october": "October",
-            "november": "November",
-            "december": "December",
-        }
-        month_full = MONTH_MAP.get(str(month).lower(), str(month).capitalize())
+        month_full = _CHICAGO_MONTH_MAP.get(str(month).lower(), str(month).capitalize())
         return f"({month_full} {year})"
     elif year:
         return f"({year})"
+    return ""
+
+
+@node
+def chicago_date_plain(children: Node, data: Union[dict, Entry]) -> str:
+    """Like chicago_date but without surrounding parentheses."""
+    if isinstance(data, dict) and "entry" in data:
+        data = data["entry"]
+    if not hasattr(data, "fields"):
+        return ""
+    month = data.fields.get("month", "")
+    year = data.fields.get("year", "")
+    if month and year:
+        month_full = _CHICAGO_MONTH_MAP.get(str(month).lower(), str(month).capitalize())
+        return f"{month_full} {year}"
+    elif year:
+        return year
     return ""
 
 
@@ -154,22 +171,32 @@ class ChicagoStyle(UnsrtStyle):
         return ""
 
     def get_article_template(self, e: Entry) -> Node:
-        # Author. "Title." Journal Volume (Month Year): Pages. https://doi.org/...
+        # Author. "Title." Journal ...
         template = join(sep=". ")[
             self.format_names("author", as_sentence=False),
             join(sep="")["“", field("title"), ".”"],
         ]
 
-        journal_info = join(sep=" ")[
-            tag("em")[field("journal")],
-            join(sep="")[
-                optional_field("volume"),
-                optional[join(sep="")[", no. ", field("number")]],
-                " ",
-                chicago_date,
-                optional[join(sep="", last_sep="")[": ", chicago_pages]],
-            ],
-        ]
+        if e.fields.get("volume"):
+            # With volume: Journal Vol, no. N (Month Year): Pages
+            journal_info = join(sep=" ")[
+                tag("em")[field("journal")],
+                join(sep="")[
+                    optional_field("volume"),
+                    optional[join(sep="")[", no. ", field("number")]],
+                    " ",
+                    chicago_date,
+                    optional[join(sep="", last_sep="")[": ", chicago_pages]],
+                ],
+            ]
+        else:
+            # Without volume: Journal, Month Year, Pages (comma-separated, no parens)
+            journal_info = join(sep=", ")[
+                tag("em")[field("journal")],
+                chicago_date_plain,
+                chicago_pages,
+            ]
+
         template = join(sep=" ")[template, journal_info]
         # Add ISSN if present
         if "issn" in e.fields:
