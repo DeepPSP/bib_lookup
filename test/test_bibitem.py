@@ -5,7 +5,7 @@ from collections import OrderedDict
 
 import pytest
 
-from bib_lookup._bib import BIB_ENTRY_TYPES, BIB_FIELDS, BibItem
+from bib_lookup._bib import _MONTH_TO_INT, BIB_ENTRY_TYPES, BIB_FIELDS, BibItem
 
 
 class TestBibItem:
@@ -252,3 +252,69 @@ class TestBibItem:
             match="`align` must be one of \\['middle', 'left', 'left-middle', 'left_middle'\\], but got `xxx`",
         ):
             self.bibitem.set_alignment("xxx")
+
+
+class TestMonthNormalisation:
+    """Verify that month field values are always normalised to integers."""
+
+    _base_fields = OrderedDict(
+        title="T",
+        author="A",
+        journal="J",
+        year="2020",
+    )
+
+    def _make_item(self, month_value):
+        fields = OrderedDict(self._base_fields)
+        fields["month"] = month_value
+        return BibItem("id", "article", fields)
+
+    @pytest.mark.parametrize(
+        "raw, expected",
+        [
+            # Standard 3-letter BibTeX abbreviations
+            ("jan", 1),
+            ("Jan", 1),
+            ("feb", 2),
+            ("mar", 3),
+            ("apr", 4),
+            ("may", 5),
+            ("jun", 6),
+            ("Jul", 7),
+            ("aug", 8),
+            ("sep", 9),
+            ("oct", 10),
+            ("nov", 11),
+            ("dec", 12),
+            # Non-standard abbreviation returned by some resolvers
+            ("sept", 9),
+            ("SEPT", 9),
+            # Full English month names (new resolver format)
+            ("january", 1),
+            ("February", 2),
+            ("march", 3),
+            ("April", 4),
+            ("june", 6),
+            ("july", 7),
+            ("August", 8),
+            ("september", 9),
+            ("October", 10),
+            ("november", 11),
+            ("December", 12),
+        ],
+    )
+    def test_month_normalised_to_int(self, raw, expected):
+        item = self._make_item(raw)
+        assert item.fields["month"] == expected
+
+    def test_numeric_month_passed_through(self):
+        """Numeric month values (int or digit-string) are left unchanged."""
+        # Integer inputs are coerced to strings by BibItem's normalisation
+        item_int = self._make_item(8)
+        assert item_int.fields["month"] == "8"
+        item_str = self._make_item("8")
+        assert item_str.fields["month"] == "8"
+
+    def test_month_to_int_coverage(self):
+        """Every integer 1-12 must be reachable via _MONTH_TO_INT."""
+        assert set(_MONTH_TO_INT.values()) == set(range(1, 13))
