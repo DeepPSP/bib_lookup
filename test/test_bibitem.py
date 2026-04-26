@@ -255,7 +255,7 @@ class TestBibItem:
 
 
 class TestMonthNormalisation:
-    """Verify that month field values are always normalised to integers."""
+    """Verify textual month values are normalised to integers, while numeric inputs are preserved as digit-strings."""
 
     _base_fields = OrderedDict(
         title="T",
