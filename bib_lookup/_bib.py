@@ -5,14 +5,42 @@ and from https://www.openoffice.org/bibliographic/bibtex-defs.html
 
 """
 
-import calendar
 import re
 import warnings
 from collections import OrderedDict
-from time import strptime
 from typing import Any, Optional, Sequence, Set, Union
 
 import pandas as pd
+
+# Map all common month representations (lower-case) to their integer value.
+# Covers: standard 3-letter BibTeX abbreviations, full English names,
+# and non-standard abbreviations (e.g. "sept") that some resolvers return.
+_MONTH_TO_INT = {
+    "jan": 1,
+    "january": 1,
+    "feb": 2,
+    "february": 2,
+    "mar": 3,
+    "march": 3,
+    "apr": 4,
+    "april": 4,
+    "may": 5,
+    "jun": 6,
+    "june": 6,
+    "jul": 7,
+    "july": 7,
+    "aug": 8,
+    "august": 8,
+    "sep": 9,
+    "sept": 9,
+    "september": 9,
+    "oct": 10,
+    "october": 10,
+    "nov": 11,
+    "november": 11,
+    "dec": 12,
+    "december": 12,
+}
 
 
 class BibItem(object):
@@ -155,8 +183,10 @@ class BibItem(object):
             if braces_count >= 2:
                 self.__double_braces_flags[k] = True
             # convert month to number if applicable
-            if k.lower().strip() == "month" and v.capitalize() in calendar.month_abbr:
-                v = strptime(v, "%b").tm_mon
+            if k.lower().strip() == "month":
+                month_val = _MONTH_TO_INT.get(v.lower().strip())
+                if month_val is not None:
+                    v = month_val
             field_dict[k] = v
         self.__fields = field_dict
         if check_fields:
