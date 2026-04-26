@@ -25,6 +25,11 @@ Removed
 
 Fixed
 ~~~~~
+- Extended month normalisation in ``BibItem.__normalize_fields`` to handle full
+  English month names (e.g. ``july``, ``june``) and non-standard abbreviations
+  (e.g. ``sept``) returned by some DOI/PubMed resolvers, in addition to the
+  existing standard 3-letter BibTeX abbreviations. Unused ``calendar`` and
+  ``strptime`` imports removed.
 
 Security
 ~~~~~~~~
