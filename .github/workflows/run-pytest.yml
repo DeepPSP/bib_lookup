@@ -43,17 +43,20 @@ jobs:
         pip list
     - name: Run test with pytest and collect coverage
       run: |
-        pytest --cov=bib_lookup --cov-report term-missing -vv -s test
+        pytest --cov=bib_lookup --cov-report term-missing --cov-report xml:coverage.xml --junitxml=junit.xml -vv -s test
     - name: Upload coverage to Codecov
       # Only upload coverage for Python ${MAIN_PYTHON_VERSION} and the event is not scheduled
       if: matrix.python-version == env.MAIN_PYTHON_VERSION && !contains(fromJson('["schedule"]'), github.event_name)
       uses: codecov/codecov-action@v6
       with:
+        files: coverage.xml
         fail_ci_if_error: true # optional (default = false)
         verbose: true # optional (default = false)
         token: ${{ secrets.CODECOV_TOKEN }} # required
     - name: Upload test results to Codecov
       if: ${{ !cancelled() }}
-      uses: codecov/test-results-action@v1
+      uses: codecov/codecov-action@v6
       with:
+        files: junit.xml
+        report_type: test_results
         token: ${{ secrets.CODECOV_TOKEN }}
