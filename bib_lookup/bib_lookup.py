@@ -583,7 +583,21 @@ class BibLookup(ReprMixin):
                 if style and style.lower() in self.supported_styles:
                     try:
                         # res is currently BibTeX string because we forced format="bibtex" in _obtain_feed_content
-                        # Now parse and format using our local style
+                        # Before handing the raw BibTeX to pybtex's strict parser,
+                        # normalise it through _to_bib_item so that unquoted month
+                        # names (e.g. ``month=June``) are converted to their numeric
+                        # form (``month = {6}``) — otherwise pybtex treats them as
+                        # undefined macros and raises an UndefinedMacro error.
+                        res = str(
+                            self._to_bib_item(
+                                res,
+                                idtf,
+                                align,
+                                ignore_fields=[],  # keep all fields; stripping is done below
+                                label=label,
+                                capitalize_title=capitalize_title,
+                            )
+                        )
 
                         # Parsing
                         bib_data = parse_string(res, bib_format="bibtex")

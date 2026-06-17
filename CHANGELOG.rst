@@ -25,6 +25,10 @@ Removed
 
 Fixed
 ~~~~~
+- Fixed ``--format text --style gbt`` (and other pybtex-backed styles) returning
+  ``Not Found`` for DOIs whose BibTeX contains unquoted full month names (e.g.
+  ``month=June``). The raw BibTeX is now normalised through ``_to_bib_item``
+  before handing it to pybtex's strict parser.
 - Extended month normalisation in ``BibItem.__normalize_fields`` to handle full
   English month names (e.g. ``july``, ``june``) and non-standard abbreviations
   (e.g. ``sept``) returned by some DOI/PubMed resolvers, in addition to the
