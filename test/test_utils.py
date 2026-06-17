@@ -165,9 +165,8 @@ def test_remove_comments():
 
     # verbatim block: content untouched
     verbatim_inp = "text % comment\n" r"\begin{verbatim}" + "\n" "100% ok\n" r"\end{verbatim}" + "\n" "more % another"
-    # The cleaned non-verbatim segment may lose the trailing newline
-    # before the verbatim block; this does not affect LaTeX compilation.
-    verbatim_expected = "text " r"\begin{verbatim}" + "\n" "100% ok\n" r"\end{verbatim}" + "\n" "more "
+    # Newlines should be preserved when stripping comments.
+    verbatim_expected = "text \n" r"\begin{verbatim}" + "\n" "100% ok\n" r"\end{verbatim}" + "\n" "more "
     assert _remove_comments(verbatim_inp) == verbatim_expected
 
     # gather_tex_source_files_in_one with keep_comments=False
