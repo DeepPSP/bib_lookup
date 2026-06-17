@@ -468,7 +468,7 @@ def _remove_comments(content: str) -> str:
 
     def _clean_lines(text: str) -> str:
         cleaned: List[str] = []
-        for line in text.splitlines():
+        for line in text.split("\n"):
             chars: List[str] = []
             escaped = False
             i = 0
