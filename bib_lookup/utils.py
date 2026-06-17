@@ -446,6 +446,13 @@ def is_sub_interval(
 def _remove_comments(content: str) -> str:
     """Remove LaTeX comments from content.
 
+    Only ``%`` that is *not* preceded by an odd number of
+    consecutive backslashes is treated as a comment start;
+    ``\\%`` (escaped percent sign) is preserved, while
+    ``\\\\%`` (line break followed by a comment) is removed.
+    Content inside ``\\verb|...|`` and
+    ``\\begin{verbatim}...\\end{verbatim}`` is left untouched.
+
     Parameters
     ----------
     content : str
@@ -457,8 +464,47 @@ def _remove_comments(content: str) -> str:
         The LaTeX content without comments.
 
     """
-    comment_pattern = re.compile(r"%.*?$", re.MULTILINE)
-    return comment_pattern.sub("", content)
+    _VERBATIM_BLOCK = re.compile(r"\\begin\{verbatim\}(.*?)\\end\{verbatim\}", re.DOTALL)
+
+    def _clean_lines(text: str) -> str:
+        cleaned: List[str] = []
+        for line in text.split("\n"):
+            chars: List[str] = []
+            escaped = False
+            i = 0
+            while i < len(line):
+                ch = line[i]
+                # \verb|...| or \verb*|...|  — copy verbatim
+                if ch == "\\" and (line[i:].startswith("\\verb*") or line[i:].startswith("\\verb")):
+                    cmd_len = 6 if line[i:].startswith("\\verb*") else 5
+                    if len(line) > i + cmd_len:
+                        delim = line[i + cmd_len]
+                        end = line.find(delim, i + cmd_len + 1)
+                        if end != -1:
+                            chars.append(line[i : end + 1])
+                            i = end + 1
+                            escaped = False
+                            continue
+                # \begin{verbatim}...  (block handled above; this catches
+                #   the \begin line itself)
+                if ch == "%" and not escaped:
+                    break
+                chars.append(ch)
+                escaped = not escaped if ch == "\\" else False
+                i += 1
+            cleaned.append("".join(chars))
+        return "\n".join(cleaned)
+
+    # Split on verbatim blocks: process each non-verbatim segment,
+    # copy verbatim blocks as-is.
+    parts = []
+    last = 0
+    for m in _VERBATIM_BLOCK.finditer(content):
+        parts.append(_clean_lines(content[last : m.start()]))
+        parts.append(m.group(0))  # verbatim block untouched
+        last = m.end()
+    parts.append(_clean_lines(content[last:]))
+    return "".join(parts)
 
 
 def gather_tex_source_files_in_one(

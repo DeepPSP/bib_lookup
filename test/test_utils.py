@@ -6,6 +6,7 @@ from pathlib import Path
 import pytest
 
 from bib_lookup.utils import (
+    _remove_comments,
     capitalize_title,
     color_text,
     gather_tex_source_files_in_one,
@@ -134,6 +135,45 @@ def test_gather_tex_source_files_in_one():
         gather_tex_source_files_in_one(entry_file, write_file=True, output_file=output_file)
 
     gather_tex_source_files_in_one(entry_file, write_file=True, output_file=output_file, overwrite=True)
+
+
+def test_remove_comments():
+    """Test LaTeX comment removal edge cases."""
+    # Escaped percent (odd backslashes): preserved
+    assert _remove_comments(r"100\% positive") == r"100\% positive"
+    assert _remove_comments(r"CODE-15\% is large") == r"CODE-15\% is large"
+    assert _remove_comments(r"\\\%  three backslashes") == r"\\\%  three backslashes"
+
+    # Even backslashes followed by %: comment is removed
+    assert _remove_comments(r"hello\\% comment") == r"hello\\"
+    assert _remove_comments(r"text \\\\% comment") == r"text \\\\"
+    assert _remove_comments(r"\\\\% comment") == r"\\\\"
+
+    # Normal comments
+    assert _remove_comments("abc % this is a comment") == "abc "
+    assert _remove_comments("  % indented comment") == "  "
+    assert _remove_comments("% full line comment\nNext line") == "\nNext line"
+
+    # No comments
+    assert _remove_comments("No comments here") == "No comments here"
+
+    # \verb|...| preserves content including %
+    assert _remove_comments(r"\verb|100%| is not a comment") == r"\verb|100%| is not a comment"
+    assert _remove_comments(r"\verb*|100%| star variant") == r"\verb*|100%| star variant"
+    assert _remove_comments(r"\verb!100%! bang delimiter") == r"\verb!100%! bang delimiter"
+    assert _remove_comments(r"before \verb|100%| after % real comment") == r"before \verb|100%| after "
+
+    # verbatim block: content untouched
+    verbatim_inp = "text % comment\n" r"\begin{verbatim}" + "\n" "100% ok\n" r"\end{verbatim}" + "\n" "more % another"
+    # Newlines should be preserved when stripping comments.
+    verbatim_expected = "text \n" r"\begin{verbatim}" + "\n" "100% ok\n" r"\end{verbatim}" + "\n" "more "
+    assert _remove_comments(verbatim_inp) == verbatim_expected
+
+    # gather_tex_source_files_in_one with keep_comments=False
+    entry = _SAMPLE_DIR / "sample-source.tex"
+    ret = gather_tex_source_files_in_one(entry, keep_comments=False)
+    assert r"% comment line" not in ret
+    assert r"\verb|" in ret  # verbatim content preserved
 
 
 def test_capitalize_title():
