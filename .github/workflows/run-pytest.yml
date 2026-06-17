@@ -47,7 +47,7 @@ jobs:
     - name: Upload coverage to Codecov
       # Only upload coverage for Python ${MAIN_PYTHON_VERSION} and the event is not scheduled
       if: matrix.python-version == env.MAIN_PYTHON_VERSION && !contains(fromJson('["schedule"]'), github.event_name)
-      uses: codecov/codecov-action@v6
+      uses: codecov/codecov-action@v7
       with:
         files: coverage.xml
         fail_ci_if_error: true # optional (default = false)
@@ -55,7 +55,7 @@ jobs:
         token: ${{ secrets.CODECOV_TOKEN }} # required
     - name: Upload test results to Codecov
       if: ${{ !cancelled() }}
-      uses: codecov/codecov-action@v6
+      uses: codecov/codecov-action@v7
       with:
         files: junit.xml
         report_type: test_results
