@@ -548,3 +548,47 @@ def test_misc():
     assert BibLookup(verbose=0).max_names == 3
     for node in [ieee_pages, ieee_month, chicago_pages, chicago_date]:
         assert str(node.format_data({})) == ""
+
+
+def test_text_format_unquoted_full_month_name(monkeypatch):
+    """``--format text --style gbt`` (and other pybtex-backed styles) must not
+    return ``Not Found`` when the raw BibTeX contains an unquoted full month
+    name like ``month=June`` — pybtex treats bare words as macros and raises
+    ``UndefinedMacro`` unless the raw BibTeX is normalised beforehand."""
+
+    from bib_lookup import BibLookup
+
+    # Raw BibTeX as returned by some DOI resolvers (e.g. Springer via crossref)
+    RAW_WITH_UNQUOTED_MONTH = """@article{An_2018, title={Prediction of remaining useful life under different conditions using accelerated life testing data}, volume={32}, ISSN={1976-3824}, url={http://dx.doi.org/10.1007/s12206-018-0507-z}, DOI={10.1007/s12206-018-0507-z}, number={6}, journal={Journal of Mechanical Science and Technology}, publisher={Springer Science and Business Media LLC}, author={An, Dawn and Choi, Joo-Ho and Kim, Nam Ho}, year={2018}, month=June, pages={2497–2507} }"""
+
+    def _fake_obtain_feed_content(self, identifier, arxiv2doi=None, format=None, style=None, timeout=None):
+        return ("doi", {}, "10.1007/s12206-018-0507-z")
+
+    def _fake_handle_doi(self, feed_content):
+        return RAW_WITH_UNQUOTED_MONTH
+
+    monkeypatch.setattr(BibLookup, "_obtain_feed_content", _fake_obtain_feed_content)
+    monkeypatch.setattr(BibLookup, "_handle_doi", _fake_handle_doi)
+
+    bl = BibLookup(verbose=0)
+
+    # 1. GBT7714 style (uppercases author names per the standard)
+    result = bl("10.1007/s12206-018-0507-z", format="text", style="gbt", print_result=False)
+    assert result not in (None, "Not Found"), f"GBT7714 failed: {result!r}"
+    assert "Prediction" in result
+    assert "AN" in result  # GBT7714 uppercases surnames
+
+    # 2. IEEE style — same unquoted month should not break it
+    result_ieee = bl("10.1007/s12206-018-0507-z", format="text", style="ieee", print_result=False)
+    assert result_ieee not in (None, "Not Found"), f"IEEE failed: {result_ieee!r}"
+    assert "An" in result_ieee
+
+    # 3. APA style
+    result_apa = bl("10.1007/s12206-018-0507-z", format="text", style="apa", print_result=False)
+    assert result_apa not in (None, "Not Found"), f"APA failed: {result_apa!r}"
+    assert "An" in result_apa
+
+    # 4. Chicago style
+    result_chi = bl("10.1007/s12206-018-0507-z", format="text", style="chicago", print_result=False)
+    assert result_chi not in (None, "Not Found"), f"Chicago failed: {result_chi!r}"
+    assert "An" in result_chi
