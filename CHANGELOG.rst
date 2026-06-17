@@ -25,6 +25,12 @@ Removed
 
 Fixed
 ~~~~~
+- Fixed ``_remove_comments`` incorrectly stripping escaped percent signs
+  (``\%``) and content following them when called with ``keep_comments=False``.
+  The function now uses a character-level state machine that correctly
+  distinguishes escaped ``%`` (preceded by an odd number of backslashes)
+  from comment-start ``%``, and preserves content inside ``\\verb|...|`` and
+  ``\\begin{verbatim}...\\end{verbatim}`` environments.
 - Fixed ``--format text --style gbt`` (and other pybtex-backed styles) returning
   ``Not Found`` for DOIs whose BibTeX contains unquoted full month names (e.g.
   ``month=June``). The raw BibTeX is now normalised through ``_to_bib_item``
