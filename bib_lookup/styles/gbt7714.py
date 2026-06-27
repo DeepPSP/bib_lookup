@@ -139,7 +139,7 @@ class GBT7714Style(UnsrtStyle):
             self.format_names("author", as_sentence=False),
             join[field("title"), medium_tag],
             join(sep=", ")[
-                field("journal"),
+                optional_field("journal"),
                 gbt_year_vol_pages,
             ],
         ]

@@ -180,7 +180,7 @@ class ChicagoStyle(UnsrtStyle):
         if e.fields.get("volume"):
             # With volume: Journal Vol, no. N (Month Year): Pages
             journal_info = join(sep=" ")[
-                tag("em")[field("journal")],
+                tag("em")[optional_field("journal")],
                 join(sep="")[
                     optional_field("volume"),
                     optional[join(sep="")[", no. ", field("number")]],
@@ -192,7 +192,7 @@ class ChicagoStyle(UnsrtStyle):
         else:
             # Without volume: Journal, Month Year, Pages (comma-separated, no parens)
             journal_info = join(sep=", ")[
-                tag("em")[field("journal")],
+                tag("em")[optional_field("journal")],
                 chicago_date_plain,
                 chicago_pages,
             ]
