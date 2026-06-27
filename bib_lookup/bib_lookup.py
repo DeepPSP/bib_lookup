@@ -266,6 +266,8 @@ class BibLookup(ReprMixin):
         self.__default_err = "Not Found"
         self.__network_err = "Network Error"
         self.__timeout_err = "Timeout Error"
+        self.__format_err = "Format Error"
+        self.__parse_err = "Parse Error"
 
         self.__header_pattern = "^@(?P<entry_type>\\w+)\\{(?P<label>[^,]+)"
 
@@ -578,7 +580,7 @@ class BibLookup(ReprMixin):
                     if len(self.__cached_lookup_results) > self.__cache_limit:
                         self.__cached_lookup_results.popitem(last=False)
                 except Exception:  # pragma: no cover
-                    res = self.default_err
+                    res = self.parse_err
             elif format == "text":
                 if style and style.lower() in self.supported_styles:
                     try:
@@ -640,7 +642,7 @@ class BibLookup(ReprMixin):
                     except Exception as e:  # pragma: no cover
                         if self.verbose > 0:
                             print(f"Error formatting with local style {style}: {e}")
-                        res = self.default_err
+                        res = f"{self.format_err} ({style}): {e}"
                 else:
                     # Original text handling
                     with warnings.catch_warnings():
@@ -1163,6 +1165,14 @@ class BibLookup(ReprMixin):
     @property
     def timeout_err(self) -> str:
         return self.__timeout_err
+
+    @property
+    def format_err(self) -> str:
+        return self.__format_err
+
+    @property
+    def parse_err(self) -> str:
+        return self.__parse_err
 
     @property
     def lookup_errors(self) -> List[str]:
