@@ -1178,7 +1178,7 @@ class BibLookup(ReprMixin):
     def lookup_errors(self) -> List[str]:
         return [self.default_err, self.network_err, self.timeout_err, self.format_err, self.parse_err]
 
-    def _is_error(self, res: str) -> bool:
+    def _is_error(self, res: object) -> bool:
         """Check whether *res* is any kind of error string.
 
         Exact-match for static errors (``Not Found``, ``Network Error``, …)
