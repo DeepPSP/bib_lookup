@@ -13,6 +13,9 @@ Versioning <https://semver.org/spec/v2.0.0.html>`__.
 
 Added
 ~~~~~
+- Added ``format_err`` (``"Format Error"``) and ``parse_err`` (``"Parse Error"``)
+  as dedicated error types on ``BibLookup``, with corresponding ``@property``
+  getters, to distinguish local processing failures from remote lookup failures.
 
 Changed
 ~~~~~~~
@@ -25,6 +28,13 @@ Removed
 
 Fixed
 ~~~~~
+- Fixed text format and bibtex exception handlers silently returning ``Not Found``
+  when local parsing or style rendering fails.  They now return ``Parse Error``
+  and ``Format Error (<style>): <details>`` respectively.
+- Fixed ``--format text --style gbt`` (and IEEE / Chicago) returning ``Not Found``
+  for DOIs whose ``@article`` entry has no ``journal`` field — common for preprints
+  from bioRxiv, medRxiv, etc.  The style templates now use
+  ``optional_field("journal")`` instead of the mandatory ``field("journal")``.
 - Fixed ``_remove_comments`` incorrectly stripping escaped percent signs
   (``\%``) and content following them when called with ``keep_comments=False``.
   The function now uses a character-level state machine that correctly

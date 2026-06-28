@@ -592,3 +592,39 @@ def test_text_format_unquoted_full_month_name(monkeypatch):
     result_chi = bl("10.1007/s12206-018-0507-z", format="text", style="chicago", print_result=False)
     assert result_chi not in (None, "Not Found"), f"Chicago failed: {result_chi!r}"
     assert "An" in result_chi
+
+
+def test_text_format_missing_journal(monkeypatch):
+    """``--format text --style ...`` must not crash (or silently return
+    an error) when the ``@article`` entry has no ``journal`` field —
+    e.g. preprints from bioRxiv / medRxiv."""
+
+    from bib_lookup import BibLookup
+
+    # @article without journal (typical for preprint servers)
+    RAW_NO_JOURNAL = """@article{Chan_2025, title={ENTAgents: AI Agents for Complex Knowledge Otolaryngology}, url={http://dx.doi.org/10.1101/2025.01.01.25319863}, DOI={10.1101/2025.01.01.25319863}, publisher={openRxiv}, author={Chan, Tsz Kin and Dinh, Ngoc-Duy}, year={2025}, month={1} }"""
+
+    def _fake_obtain_feed_content(self, identifier, arxiv2doi=None, format=None, style=None, timeout=None):
+        return ("doi", {}, "10.1101/2025.01.01.25319863")
+
+    def _fake_handle_doi(self, feed_content):
+        return RAW_NO_JOURNAL
+
+    monkeypatch.setattr(BibLookup, "_obtain_feed_content", _fake_obtain_feed_content)
+    monkeypatch.setattr(BibLookup, "_handle_doi", _fake_handle_doi)
+
+    bl = BibLookup(verbose=0)
+
+    for style in ["gbt", "ieee", "apa", "chicago"]:
+        result = bl("10.1101/2025.01.01.25319863", format="text", style=style, print_result=False)
+        assert result is not None, f"{style}: result is None"
+        assert result not in bl.lookup_errors, f"{style}: got lookup error {result!r}"
+        assert not result.startswith("Format Error"), f"{style}: format error: {result!r}"
+        assert (
+            "ENTAgents" in result or "Entagents" in result or "Chan" in result
+        ), f"{style}: output doesn't contain expected text: {result!r}"
+
+        # IEEE compact format must not leave an orphan "In:" when
+        # journal is missing.
+        if style == "ieee" and "In: " in result:
+            assert "In:  (" not in result, f"ieee: orphan 'In:' without journal: {result!r}"

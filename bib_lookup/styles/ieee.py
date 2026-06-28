@@ -204,7 +204,7 @@ class IEEEStyle(UnsrtStyle):
             template = join(sep=" ")[
                 self.format_names("author", as_sentence=False, use_first_author_full=True),
                 join(sep="")[join(sep="")["“", field("title"), "”", "."]],
-                join(sep="")["In: ", tag("em")[field("journal")]],
+                optional[join(sep="")["In: ", tag("em")[field("journal")]]],
                 join(sep="")[
                     optional_field("volume"),
                     " (",
@@ -223,7 +223,7 @@ class IEEEStyle(UnsrtStyle):
             # Standard format: [1] H. Wen and J. Kang, "Title," Journal, vol. 43, no. 11, p. 115 006, Nov. 2022, ISSN: ...
             template = join(sep=", ")[
                 self.format_names("author", as_sentence=False, use_first_author_full=False),
-                join(sep=" ")[join(sep="")["“", field("title"), ",”"], tag("em")[field("journal")]],
+                join(sep=" ")[join(sep="")["“", field("title"), ",”"], tag("em")[optional_field("journal")]],
                 optional[words["vol.", field("volume")]],
                 optional[words["no.", field("number")]],
                 optional[ieee_pages],

@@ -266,6 +266,8 @@ class BibLookup(ReprMixin):
         self.__default_err = "Not Found"
         self.__network_err = "Network Error"
         self.__timeout_err = "Timeout Error"
+        self.__format_err = "Format Error"
+        self.__parse_err = "Parse Error"
 
         self.__header_pattern = "^@(?P<entry_type>\\w+)\\{(?P<label>[^,]+)"
 
@@ -577,17 +579,15 @@ class BibLookup(ReprMixin):
                     self.__cached_lookup_results[identifier] = res
                     if len(self.__cached_lookup_results) > self.__cache_limit:
                         self.__cached_lookup_results.popitem(last=False)
-                except Exception:  # pragma: no cover
-                    res = self.default_err
+                except Exception as e:  # pragma: no cover
+                    res = f"{self.parse_err}: {e}"
             elif format == "text":
                 if style and style.lower() in self.supported_styles:
+                    # --- parse phase ---
+                    # Normalise the raw BibTeX (handles unquoted month names,
+                    # etc.) and parse with pybtex.  Failures here are parse
+                    # errors, not format errors.
                     try:
-                        # res is currently BibTeX string because we forced format="bibtex" in _obtain_feed_content
-                        # Before handing the raw BibTeX to pybtex's strict parser,
-                        # normalise it through _to_bib_item so that unquoted month
-                        # names (e.g. ``month=June``) are converted to their numeric
-                        # form (``month = {6}``) — otherwise pybtex treats them as
-                        # undefined macros and raises an UndefinedMacro error.
                         res = str(
                             self._to_bib_item(
                                 res,
@@ -598,49 +598,46 @@ class BibLookup(ReprMixin):
                                 capitalize_title=capitalize_title,
                             )
                         )
-
-                        # Parsing
                         bib_data = parse_string(res, bib_format="bibtex")
-
-                        # Remove ignored fields before formatting
-                        if self._ignore_fields:
-                            for entry in bib_data.entries.values():
-                                for field in self._ignore_fields:
-                                    if field in entry.fields:
-                                        del entry.fields[field]
-
-                        # Formatting
-                        style_class = self.supported_styles[style.lower()]
-                        # Use style-specific defaults for max_names unless user explicitly configured it
-                        # Default max_names: GBT=3, IEEE=6, APA=20, Chicago=10
-                        style_defaults = {"gbt7714": 3, "gbt": 3, "gbt-7714": 3, "ieee": 6, "apa": 20, "chicago": 10}
-                        style_default_max = style_defaults.get(style.lower(), 3)
-
-                        # Only pass max_names if user explicitly configured it (different from global default of 3)
-                        if self.max_names != 3 or style.lower() in ["gbt7714", "gbt", "gbt-7714"]:
-                            custom_style = style_class(max_names=self.max_names)
-                        else:
-                            custom_style = style_class()
-                        formatted_entries = custom_style.format_entries(bib_data.entries.values())
-
-                        backend = TextBackend()
-                        output = io.StringIO()
-
-                        # Write all entries (usually just one)
-                        for entry in formatted_entries:
-                            backend.write_to_stream([entry], output)
-
-                        res = output.getvalue().strip()
-
-                        # Strip labels like [1] or [ ] if the style returns an empty label
-                        # but the backend still adds brackets.
-                        if style.lower() in ["apa", "chicago"]:
-                            res = re.sub(r"^\[\d*\]\s*", "", res)
-
                     except Exception as e:  # pragma: no cover
                         if self.verbose > 0:
-                            print(f"Error formatting with local style {style}: {e}")
-                        res = self.default_err
+                            print(f"Error parsing BibTeX: {e}")
+                        res = f"{self.parse_err}: {e}"
+                    else:
+                        # --- format phase ---
+                        try:
+                            # Remove ignored fields before formatting
+                            if self._ignore_fields:
+                                for entry in bib_data.entries.values():
+                                    for field in self._ignore_fields:
+                                        if field in entry.fields:
+                                            del entry.fields[field]
+
+                            style_class = self.supported_styles[style.lower()]
+                            style_defaults = {"gbt7714": 3, "gbt": 3, "gbt-7714": 3, "ieee": 6, "apa": 20, "chicago": 10}
+                            style_default_max = style_defaults.get(style.lower(), 3)
+
+                            if self.max_names != 3 or style.lower() in ["gbt7714", "gbt", "gbt-7714"]:
+                                custom_style = style_class(max_names=self.max_names)
+                            else:
+                                custom_style = style_class()
+                            formatted_entries = custom_style.format_entries(bib_data.entries.values())
+
+                            backend = TextBackend()
+                            output = io.StringIO()
+                            for entry in formatted_entries:
+                                backend.write_to_stream([entry], output)
+
+                            res = output.getvalue().strip()
+
+                            # Strip empty labels like [1] or [ ]
+                            if style.lower() in ["apa", "chicago"]:
+                                res = re.sub(r"^\[\d*\]\s*", "", res)
+
+                        except Exception as e:  # pragma: no cover
+                            if self.verbose > 0:
+                                print(f"Error formatting with local style {style}: {e}")
+                            res = f"{self.format_err} ({style}): {e}"
                 else:
                     # Original text handling
                     with warnings.catch_warnings():
@@ -648,13 +645,13 @@ class BibLookup(ReprMixin):
                         res = BeautifulSoup(res, "html.parser").get_text()
 
         if self.verbose >= 1:
-            if res in self.lookup_errors:
+            if self._is_error(res):
                 print_func(process_text(res, self.__err_color, font_size=self.__err_fontsize))  # type: ignore
             else:
                 print(res)
         self.verbose = original_verbose
 
-        if res in self.lookup_errors and ignore_errors:
+        if self._is_error(res) and ignore_errors:
             res = ""
 
         if print_result:
@@ -1165,8 +1162,27 @@ class BibLookup(ReprMixin):
         return self.__timeout_err
 
     @property
+    def format_err(self) -> str:
+        return self.__format_err
+
+    @property
+    def parse_err(self) -> str:
+        return self.__parse_err
+
+    @property
     def lookup_errors(self) -> List[str]:
-        return [self.default_err, self.network_err, self.timeout_err]
+        return [self.default_err, self.network_err, self.timeout_err, self.format_err, self.parse_err]
+
+    def _is_error(self, res: object) -> bool:
+        """Check whether *res* is any kind of error string.
+
+        Exact-match for static errors (``Not Found``, ``Network Error``, …)
+        and prefix-match for dynamic ones (``Format Error (<style>): …``).
+        Only meaningful for ``str`` results; non-strings are never errors.
+        """
+        if not isinstance(res, str):
+            return False
+        return res in self.lookup_errors or res.startswith(self.format_err) or res.startswith(self.parse_err)
 
     @property
     def ignore_fields(self) -> List[str]:
