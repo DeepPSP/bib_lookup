@@ -623,3 +623,8 @@ def test_text_format_missing_journal(monkeypatch):
         assert (
             "ENTAgents" in result or "Entagents" in result or "Chan" in result
         ), f"{style}: output doesn't contain expected text: {result!r}"
+
+        # IEEE compact format must not leave an orphan "In:" when
+        # journal is missing.
+        if style == "ieee" and "In: " in result:
+            assert "In:  (" not in result, f"ieee: orphan 'In:' without journal: {result!r}"

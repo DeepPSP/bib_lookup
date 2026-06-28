@@ -204,7 +204,7 @@ class IEEEStyle(UnsrtStyle):
             template = join(sep=" ")[
                 self.format_names("author", as_sentence=False, use_first_author_full=True),
                 join(sep="")[join(sep="")["“", field("title"), "”", "."]],
-                join(sep="")["In: ", tag("em")[optional_field("journal")]],
+                optional[join(sep="")["In: ", tag("em")[field("journal")]]],
                 join(sep="")[
                     optional_field("volume"),
                     " (",

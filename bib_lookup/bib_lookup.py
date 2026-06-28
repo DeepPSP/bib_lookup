@@ -650,13 +650,13 @@ class BibLookup(ReprMixin):
                         res = BeautifulSoup(res, "html.parser").get_text()
 
         if self.verbose >= 1:
-            if res in self.lookup_errors:
+            if self._is_error(res):
                 print_func(process_text(res, self.__err_color, font_size=self.__err_fontsize))  # type: ignore
             else:
                 print(res)
         self.verbose = original_verbose
 
-        if res in self.lookup_errors and ignore_errors:
+        if self._is_error(res) and ignore_errors:
             res = ""
 
         if print_result:
@@ -1176,7 +1176,18 @@ class BibLookup(ReprMixin):
 
     @property
     def lookup_errors(self) -> List[str]:
-        return [self.default_err, self.network_err, self.timeout_err]
+        return [self.default_err, self.network_err, self.timeout_err, self.format_err, self.parse_err]
+
+    def _is_error(self, res: str) -> bool:
+        """Check whether *res* is any kind of error string.
+
+        Exact-match for static errors (``Not Found``, ``Network Error``, …)
+        and prefix-match for dynamic ones (``Format Error (<style>): …``).
+        Only meaningful for ``str`` results; non-strings are never errors.
+        """
+        if not isinstance(res, str):
+            return False
+        return res in self.lookup_errors or res.startswith(self.format_err) or res.startswith(self.parse_err)
 
     @property
     def ignore_fields(self) -> List[str]:
