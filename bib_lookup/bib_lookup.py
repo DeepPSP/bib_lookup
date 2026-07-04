@@ -890,10 +890,11 @@ class BibLookup(ReprMixin):
         if res in self.lookup_errors:
             return res
 
-        # If we asked for BibTeX but the response does not look like BibTeX,
-        # the server ignored our Accept header (returned HTML, a redirect page, etc.)
-        # — treat this as a network error rather than returning garbage to the parser.
-        if is_requesting_bibtex and not res.strip().startswith("@"):
+        # If we asked for BibTeX but the response looks like HTML,
+        # the server ignored our Accept header (returned a landing page,
+        # redirect page, error page, etc.) — treat this as a network error
+        # rather than returning raw HTML to the BibTeX parser.
+        if is_requesting_bibtex and re.match(r"\s*<(!DOCTYPE|html)", res, re.IGNORECASE):
             return self.network_err
 
         if res:
