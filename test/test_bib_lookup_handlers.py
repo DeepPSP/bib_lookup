@@ -49,19 +49,32 @@ def test_handle_doi_request_exception(monkeypatch):
 def test_handle_doi_success(monkeypatch):
     bl = BibLookup()
 
-    # return content bytes that decode to "OK"
+    bibtex_content = b"@article{Test_2020,\n  title={Test},\n  author={Author},\n  year={2020}\n}"
+
     def fake_get(**kwargs):
-        return FakeResp(content=b"OK")
+        return FakeResp(content=bibtex_content)
 
     monkeypatch.setattr(bl.session, "get", fake_get, raising=True)
 
     res = bl._handle_doi({"url": "http://example", "headers": {"Accept": "application/x-bibtex"}})
-    # If content starts with @, it returns immediately
-    # But here content is just "OK", which doesn't start with @
-    # So it proceeds to fallback
-    # However, "http://example" does NOT contain "doi.org", so fallback is skipped
-    # And it returns "OK"
-    assert res == "OK"
+    # BibTeX response (starts with @) is returned immediately
+    assert res == bibtex_content.decode("utf-8")
+
+
+def test_handle_doi_html_response_returns_network_error(monkeypatch):
+    """When the server ignores the Accept header and returns HTML,
+    _handle_doi should return network_err instead of the raw HTML."""
+    bl = BibLookup()
+
+    html_content = b'<!DOCTYPE html>\n<html lang="en"><head><meta charset="UTF-8"></head></html>'
+
+    def fake_get(**kwargs):
+        return FakeResp(content=html_content)
+
+    monkeypatch.setattr(bl.session, "get", fake_get, raising=True)
+
+    res = bl._handle_doi({"url": "http://example", "headers": {"Accept": "application/x-bibtex"}})
+    assert res == bl.network_err
 
 
 def test_handle_pm_timeout(monkeypatch):

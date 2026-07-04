@@ -8,7 +8,7 @@ import json
 import sys
 import warnings
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any, Dict, Sequence
 
 try:
     import yaml
@@ -17,9 +17,52 @@ except ImportError:
 
 from bib_lookup._const import CONFIG_FILE as _CONFIG_FILE
 from bib_lookup._const import DEFAULT_CONFIG as _DEFAULT_CONFIG
+from bib_lookup._const import STYLE_PARAMETERS as _STYLE_PARAMETERS
 from bib_lookup.bib_lookup import BibLookup
 from bib_lookup.utils import str2bool
 from bib_lookup.version import __version__ as bl_version
+
+
+def _valid_config_keys() -> set:
+    """Return the set of all recognised configuration keys."""
+    keys = set(_DEFAULT_CONFIG.keys())
+    for style_params in _STYLE_PARAMETERS.values():
+        keys.update(style_params.keys())
+    return keys
+
+
+def _parse_config_value(value: str) -> Any:
+    """Parse a string config value into the appropriate Python type.
+
+    - ``none``/``null`` → ``None``
+    - booleans (``true``/``false``/``yes``/``no``/…) → ``bool``
+    - ``[a, b, c]`` → ``list`` (quotes stripped, empty list ``[]`` handled)
+    - otherwise → ``str``
+    """
+    if value.lower() in ("none", "null"):
+        return None
+    try:
+        return str2bool(value)
+    except ValueError:
+        pass
+    if value.startswith("[") and value.endswith("]"):
+        inner = value.strip("[]").strip()
+        if not inner:
+            return []
+        return [v.strip().strip("'\"") for v in inner.split(",")]
+    return value
+
+
+def _read_user_config() -> dict:
+    """Read the user config file, returning an empty dict if it does not exist."""
+    if _CONFIG_FILE.is_file():
+        return json.loads(_CONFIG_FILE.read_text())
+    return {}
+
+
+def _write_user_config(config: dict) -> None:
+    """Write the config dict to the user config file."""
+    _CONFIG_FILE.write_text(json.dumps(config, indent=4))
 
 
 def _handle_config(config_arg: str) -> None:
@@ -50,10 +93,11 @@ def _handle_config(config_arg: str) -> None:
         return
     else:
         if "=" in config_arg:
-            config = dict([kv.strip().split("=") for kv in config_arg.split(";")])
+            config = {k.strip(): _parse_config_value(v.strip()) for k, v in (kv.split("=", 1) for kv in config_arg.split(";"))}
         else:
             config_path = Path(config_arg)
-            assert config_path.is_file(), f"Configuration file ``{config_arg}`` does not exist. Please check and try again."
+            if not config_path.is_file():
+                raise ValueError(f"Configuration file ``{config_arg}`` does not exist. Please check and try again.")
 
             if config_path.suffix == ".json":
                 config = json.loads(config_path.read_text())
@@ -68,22 +112,48 @@ def _handle_config(config_arg: str) -> None:
                     f"Unknown configuration file type ``{config_path.suffix}``. " "Only json and yaml files are supported."
                 )
 
-        # discard unknown keys
-        unknown_keys = set(config.keys()) - set(_DEFAULT_CONFIG.keys())
-        config = {k: v for k, v in config.items() if k in _DEFAULT_CONFIG}
-        # parse lists in the config
-        for k, v in config.items():
-            if isinstance(v, str) and v.startswith("[") and v.endswith("]"):
-                config[k] = [vv.strip() for vv in v.strip("[]").split(",")]
+        # Warn about unknown keys (but keep them — they may be style-specific)
+        unknown_keys = set(config.keys()) - _valid_config_keys()
         if len(unknown_keys) > 0:
             verb = "are" if len(unknown_keys) > 1 else "is"
             warnings.warn(
-                f"Unknown configuration keys ``{unknown_keys}`` {verb} discarded.",
+                f"Unknown configuration keys ``{unknown_keys}`` {verb} kept but might have no effect.",
                 RuntimeWarning,
             )
+
+        # Merge with existing user config and write back
+        existing = _read_user_config()
+        existing.update(config)
+        _write_user_config(existing)
         print(f"Setting configurations:\n{json.dumps(config, indent=4)}")
-        _CONFIG_FILE.write_text(json.dumps(config, indent=4))
         return
+
+
+def _handle_set(args_set: Sequence[str]) -> None:
+    """Handle the ``set`` subcommand.
+
+    Usage: ``bib-lookup set KEY VALUE``
+    ``VALUE`` of ``none``/``null`` resets the key to ``None`` (built-in logic).
+    """
+    if len(args_set) != 2:
+        print("Error: ``set`` accepts exactly 2 arguments: KEY VALUE.")
+        sys.exit(1)
+
+    key, value = args_set
+
+    if key not in _valid_config_keys():
+        verb = "is"
+        warnings.warn(
+            f"Unknown configuration key ``{key}`` {verb} set anyway.",
+            RuntimeWarning,
+        )
+
+    parsed_value = _parse_config_value(value)
+
+    existing = _read_user_config()
+    existing[key] = parsed_value
+    _write_user_config(existing)
+    print(f"Set ``{key}`` to ``{parsed_value}``")
 
 
 def _handle_gather(args: Dict[str, Any]) -> None:
@@ -151,6 +221,13 @@ def _handle_simplify_bib(args: Dict[str, Any]) -> None:
 
 def main():
     """Command-line interface for the bib_lookup package."""
+    # Intercept the ``set`` subcommand before argparse runs,
+    # since the main parser uses a variable-length positional arg
+    # that would otherwise swallow ``set`` as an identifier.
+    if len(sys.argv) > 1 and sys.argv[1] == "set":
+        _handle_set(sys.argv[2:])
+        return
+
     parser = argparse.ArgumentParser(description="Look up a BibTeX entry from a DOI identifier, PMID (URL) or arXiv ID (URL).")
     parser.add_argument(
         "identifiers",

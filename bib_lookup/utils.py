@@ -269,26 +269,30 @@ def printmd(md_str: str) -> None:
         print(md_str)  # pragma: no cover
 
 
-def str2bool(v: Union[str, bool, int, float]) -> bool:
+def str2bool(v: Union[str, bool, int, float, None]) -> Union[bool, None]:
     """Converts a "boolean" value possibly in the format of str to bool.
 
     Implementation from StackOverflow [#sa]_.
 
     Parameters
     ----------
-    v : str or bool or int or float
-        The "boolean" value.
+    v : str or bool or int or float or None
+        The "boolean" value. ``None`` is passed through unchanged so that
+        config keys reset to ``None`` (via ``set key none``) keep working
+        for fields that default to ``None`` (e.g. ``gbmedium``).
 
     Returns
     -------
-    bool
-        `v` in the format of bool.
+    bool or None
+        `v` in the format of bool, or ``None`` if `v` is ``None``.
 
     References
     ----------
     .. [#sa] https://stackoverflow.com/questions/15008758/parsing-boolean-values-with-argparse
 
     """
+    if v is None:
+        return None
     if isinstance(v, bool):
         b = v
     elif isinstance(v, (int, float)):
