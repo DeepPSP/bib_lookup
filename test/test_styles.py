@@ -540,6 +540,103 @@ def test_additional_coverage():
     assert _r(gbt_year_vol_pages, entry_year_only3) == "2021"
 
 
+def test_gbmedium():
+    """Test that ``gbmedium`` controls the ``[J]`` vs ``[J/OL]`` tag in GBT7714."""
+    from pybtex.database import parse_string
+
+    # Entry with DOI — auto-detect would give [J/OL]
+    entry_with_doi = """@article{test_gbmedium,
+        title={Test Title},
+        author={Wen, Hao},
+        journal={Test Journal},
+        year={2022},
+        doi={10.1234/test},
+        volume={1},
+        pages={100}
+    }"""
+    bib_data = parse_string(entry_with_doi, bib_format="bibtex", encoding="utf-8")
+    entry = list(bib_data.entries.values())[0]
+
+    ctx = {"entry": entry, "bib_data": bib_data}
+
+    # gbmedium=None (default) — auto-detect: DOI present → [J/OL]
+    style_default = GBT7714Style()
+    result_default = str(style_default.get_article_template(entry).format_data(ctx)).strip()
+    assert "[J/OL]" in result_default, f"auto-detect with DOI should give [J/OL], got: {result_default}"
+
+    # gbmedium=True — force [J/OL]
+    style_online = GBT7714Style(gbmedium=True)
+    result_online = str(style_online.get_article_template(entry).format_data(ctx)).strip()
+    assert "[J/OL]" in result_online, f"gbmedium=True should give [J/OL], got: {result_online}"
+
+    # gbmedium=False — force [J]
+    style_print = GBT7714Style(gbmedium=False)
+    result_print = str(style_print.get_article_template(entry).format_data(ctx)).strip()
+    assert (
+        "[J]" in result_print and "[J/OL]" not in result_print
+    ), f"gbmedium=False should give [J] (not [J/OL]), got: {result_print}"
+
+    # Entry without DOI — auto-detect would give [J]
+    entry_no_doi = """@article{test_gbmedium_nodoi,
+        title={Test Title},
+        author={Wen, Hao},
+        journal={Test Journal},
+        year={2022},
+        volume={1},
+        pages={100}
+    }"""
+    bib_data_nodoi = parse_string(entry_no_doi, bib_format="bibtex", encoding="utf-8")
+    entry_nodoi = list(bib_data_nodoi.entries.values())[0]
+    ctx_nodoi = {"entry": entry_nodoi, "bib_data": bib_data_nodoi}
+
+    style_default_nodoi = GBT7714Style()
+    result_nodoi = str(style_default_nodoi.get_article_template(entry_nodoi).format_data(ctx_nodoi)).strip()
+    assert (
+        "[J]" in result_nodoi and "[J/OL]" not in result_nodoi
+    ), f"auto-detect without DOI should give [J], got: {result_nodoi}"
+
+    # gbmedium=True forces [J/OL] even without DOI
+    style_online_nodoi = GBT7714Style(gbmedium=True)
+    result_online_nodoi = str(style_online_nodoi.get_article_template(entry_nodoi).format_data(ctx_nodoi)).strip()
+    assert "[J/OL]" in result_online_nodoi, f"gbmedium=True without DOI should force [J/OL], got: {result_online_nodoi}"
+
+
+def test_gbmedium_via_biblookup(monkeypatch):
+    """End-to-end: ``gbmedium`` set via config propagates to GBT7714Style."""
+    from bib_lookup import BibLookup
+
+    RAW = """@article{Wen_2022,
+        title={Test Title},
+        author={Wen, Hao},
+        journal={Test Journal},
+        year={2022},
+        doi={10.1234/test},
+        volume={1},
+        pages={100}
+    }"""
+
+    def _fake_obtain(self, identifier, arxiv2doi=None, format=None, style=None, timeout=None):
+        return ("doi", {}, "10.1234/test")
+
+    def _fake_handle(self, feed_content):
+        return RAW
+
+    monkeypatch.setattr(BibLookup, "_obtain_feed_content", _fake_obtain)
+    monkeypatch.setattr(BibLookup, "_handle_doi", _fake_handle)
+
+    # gbmedium=True → [J/OL]
+    bl_online = BibLookup(gbmedium=True, verbose=0)
+    result = bl_online("10.1234/test", format="text", style="gbt", print_result=False)
+    assert "[J/OL]" in result, f"gbmedium=True via BibLookup should give [J/OL], got: {result}"
+
+    # gbmedium=False → [J]
+    bl_print = BibLookup(gbmedium=False, verbose=0)
+    result_print = bl_print("10.1234/test", format="text", style="gbt", print_result=False)
+    assert (
+        "[J]" in result_print and "[J/OL]" not in result_print
+    ), f"gbmedium=False via BibLookup should give [J], got: {result_print}"
+
+
 def test_misc():
     with pytest.raises(ValueError):
         GBTNames("author", str, limit=0)

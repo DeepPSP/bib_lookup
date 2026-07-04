@@ -308,6 +308,12 @@ class BibLookup(ReprMixin):
         if self.max_names < 1:
             raise ValueError(f"`max_names` must be an integer >= 1, but got `{max_names_raw}`")
 
+        # Style-specific settings collected into a dict mapping style name → kwargs.
+        # This keeps BibLookup free of per-setting attributes and makes it easy
+        # to add new style-specific parameters in the future.
+        self._style_kwargs: Dict[str, dict] = {}
+        self._init_style_kwargs(bl_config)
+
         self.__field_pattern = f""",\\s*({"|".join(list(BIB_FIELDS))})\\s*=\\s*"""
 
         self.__info_color = "blue"
@@ -394,6 +400,23 @@ class BibLookup(ReprMixin):
             pass
 
         return supported_styles
+
+    def _init_style_kwargs(self, bl_config: dict) -> None:
+        """Populate ``self._style_kwargs`` from the merged config.
+
+        This dict maps normalised style names to the extra keyword arguments
+        that should be passed to the corresponding style class constructor.
+        It is the single place to add new style-specific settings.
+        """
+        # gbmedium for GB/T 7714
+        gbmedium_raw = bl_config.get("gbmedium", None)
+        if gbmedium_raw is not None and not (isinstance(gbmedium_raw, str) and gbmedium_raw.lower() in ("none", "null")):
+            _gbmedium_val = str2bool(gbmedium_raw)
+            self._style_kwargs = {
+                "gbt7714": {"gbmedium": _gbmedium_val},
+                "gbt": {"gbmedium": _gbmedium_val},
+                "gbt-7714": {"gbmedium": _gbmedium_val},
+            }
 
     def __call__(
         self,
@@ -614,13 +637,14 @@ class BibLookup(ReprMixin):
                                             del entry.fields[field]
 
                             style_class = self.supported_styles[style.lower()]
-                            style_defaults = {"gbt7714": 3, "gbt": 3, "gbt-7714": 3, "ieee": 6, "apa": 20, "chicago": 10}
-                            style_default_max = style_defaults.get(style.lower(), 3)
 
+                            # Build kwargs for the style constructor:
+                            # merge max_names logic with any style-specific settings
+                            _style_kwargs = dict(self._style_kwargs.get(style.lower(), {}))
                             if self.max_names != 3 or style.lower() in ["gbt7714", "gbt", "gbt-7714"]:
-                                custom_style = style_class(max_names=self.max_names)
-                            else:
-                                custom_style = style_class()
+                                _style_kwargs.setdefault("max_names", self.max_names)
+
+                            custom_style = style_class(**_style_kwargs)
                             formatted_entries = custom_style.format_entries(bib_data.entries.values())
 
                             backend = TextBackend()

@@ -99,11 +99,13 @@ class GBT7714Style(UnsrtStyle):
         name_style: Optional[Any] = None,
         sorting_style: Optional[Any] = None,
         max_names: int = 3,
+        gbmedium: Optional[bool] = None,
         **kwargs: Any,
     ):
         sorting_style = "none"
         super().__init__(label_style, name_style, sorting_style, **kwargs)
         self.max_names = max_names
+        self.gbmedium = gbmedium
 
     def format_names(self, role: str, as_sentence: bool = True) -> Union[Node, sentence]:
         formatted_names = GBTNames(role, self._format_person, limit=self.max_names)
@@ -133,8 +135,16 @@ class GBT7714Style(UnsrtStyle):
         return f"{surname} {initials}".strip()
 
     def get_article_template(self, e: Entry) -> Node:
-        # Use [J/OL] for online articles (with DOI or URL), [J] for print
-        medium_tag = "[J/OL]" if ("doi" in e.fields or "url" in e.fields) else "[J]"
+        # Determine medium tag per GB/T 7714:
+        #  - gbmedium is True  -> force [J/OL] (online)
+        #  - gbmedium is False -> force [J] (print)
+        #  - gbmedium is None  -> auto-detect from DOI/URL fields
+        if self.gbmedium is True:
+            medium_tag = "[J/OL]"
+        elif self.gbmedium is False:
+            medium_tag = "[J]"
+        else:
+            medium_tag = "[J/OL]" if ("doi" in e.fields or "url" in e.fields) else "[J]"
         template = join(sep=". ")[
             self.format_names("author", as_sentence=False),
             join[field("title"), medium_tag],
