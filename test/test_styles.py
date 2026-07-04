@@ -601,6 +601,45 @@ def test_gbmedium():
     assert "[J/OL]" in result_online_nodoi, f"gbmedium=True without DOI should force [J/OL], got: {result_online_nodoi}"
 
 
+def test_handle_doi_returns_network_error_on_html_response(monkeypatch):
+    """When Crossref returns HTML instead of BibTeX (200 OK but wrong content),
+    _handle_doi should return network_err, not the raw HTML.  Otherwise the
+    parser gets 'list index out of range' on HTML input."""
+    from bib_lookup import BibLookup
+
+    HTML_RESPONSE = (
+        '<!DOCTYPE html>\n<html lang="en" class="no-js">\n'
+        '    <head><meta charset="UTF-8"></head>\n'
+        "    <body><h1>Not Found</h1></body>\n</html>"
+    )
+
+    def _fake_obtain(self, identifier, arxiv2doi=None, format=None, style=None, timeout=None):
+        return (
+            "doi",
+            {"url": "https://doi.org/10.1234/test", "timeout": 10, "headers": {"Accept": "application/x-bibtex"}},
+            "10.1234/test",
+        )
+
+    def _fake_handle(self, feed_content):
+        # Pretend we got a 200 OK with HTML content
+        # by monkeypatching session.get directly
+        pass
+
+    import requests
+
+    class _FakeResponse:
+        status_code = 200
+        content = HTML_RESPONSE.encode("utf-8")
+        url = "https://doi.org/10.1234/test"
+        text = HTML_RESPONSE
+
+    monkeypatch.setattr(requests.Session, "get", lambda *a, **kw: _FakeResponse())
+
+    bl = BibLookup(verbose=0)
+    result = bl("10.1234/test", timeout=10)
+    assert "Network Error" in result, f"Expected Network Error for HTML response, got: {result!r}"
+
+
 def test_gbmedium_via_biblookup(monkeypatch):
     """End-to-end: ``gbmedium`` set via config propagates to GBT7714Style."""
     from bib_lookup import BibLookup

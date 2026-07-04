@@ -890,8 +890,12 @@ class BibLookup(ReprMixin):
         if res in self.lookup_errors:
             return res
 
-        # If we successfully got content (even if it doesn't look like BibTeX but wasn't an error), return it.
-        # This handles the case where we asked for BibTeX, got something else (200 OK), fallback skipped (no doi.org), and we just return what we got.
+        # If we asked for BibTeX but the response does not look like BibTeX,
+        # the server ignored our Accept header (returned HTML, a redirect page, etc.)
+        # — treat this as a network error rather than returning garbage to the parser.
+        if is_requesting_bibtex and not res.strip().startswith("@"):
+            return self.network_err
+
         if res:
             return res
 
