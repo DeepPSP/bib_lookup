@@ -406,17 +406,16 @@ class BibLookup(ReprMixin):
 
         This dict maps normalised style names to the extra keyword arguments
         that should be passed to the corresponding style class constructor.
-        It is the single place to add new style-specific settings.
+        It is the single place to add new style-specific settings.  Each
+        block updates ``self._style_kwargs`` in place so that adding new
+        style-specific settings does not clobber existing ones.
         """
         # gbmedium for GB/T 7714
         gbmedium_raw = bl_config.get("gbmedium", None)
         if gbmedium_raw is not None and not (isinstance(gbmedium_raw, str) and gbmedium_raw.lower() in ("none", "null")):
             _gbmedium_val = str2bool(gbmedium_raw)
-            self._style_kwargs = {
-                "gbt7714": {"gbmedium": _gbmedium_val},
-                "gbt": {"gbmedium": _gbmedium_val},
-                "gbt-7714": {"gbmedium": _gbmedium_val},
-            }
+            for _name in ("gbt7714", "gbt", "gbt-7714"):
+                self._style_kwargs.setdefault(_name, {})["gbmedium"] = _gbmedium_val
 
     def __call__(
         self,
@@ -603,7 +602,8 @@ class BibLookup(ReprMixin):
                     if len(self.__cached_lookup_results) > self.__cache_limit:
                         self.__cached_lookup_results.popitem(last=False)
                 except Exception as e:  # pragma: no cover
-                    res = f"{self.parse_err}: {e}"
+                    _truncated = res if len(res) <= 200 else res[:200] + "..."
+                    res = f"{self.parse_err} ({idtf}): {e}\n  Input: {_truncated}"
             elif format == "text":
                 if style and style.lower() in self.supported_styles:
                     # --- parse phase ---
@@ -625,7 +625,8 @@ class BibLookup(ReprMixin):
                     except Exception as e:  # pragma: no cover
                         if self.verbose > 0:
                             print(f"Error parsing BibTeX: {e}")
-                        res = f"{self.parse_err}: {e}"
+                        _truncated = res if len(res) <= 200 else res[:200] + "..."
+                        res = f"{self.parse_err} ({idtf}): {e}\n  Input: {_truncated}"
                     else:
                         # --- format phase ---
                         try:

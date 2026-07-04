@@ -159,8 +159,8 @@ Set a single configuration value (new shortcut):
 ```bash
 bib-lookup set timeout 2.0
 bib-lookup set style gbt
-bib-lookup set gbmedium true   # reset a key to its built-in default with "none"
-bib-lookup set gbmedium none
+bib-lookup set gbmedium true   # force [J/OL] for all articles
+bib-lookup set gbmedium none   # reset to built-in auto-detection
 ```
 
 Note that unrecognized fields will trigger a warning but are still written to the configuration file. The following table lists all the available configuration options:

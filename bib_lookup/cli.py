@@ -36,7 +36,7 @@ def _parse_config_value(value: str) -> Any:
 
     - ``none``/``null`` → ``None``
     - booleans (``true``/``false``/``yes``/``no``/…) → ``bool``
-    - ``[a, b, c]`` → ``list``
+    - ``[a, b, c]`` → ``list`` (quotes stripped, empty list ``[]`` handled)
     - otherwise → ``str``
     """
     if value.lower() in ("none", "null"):
@@ -46,7 +46,10 @@ def _parse_config_value(value: str) -> Any:
     except ValueError:
         pass
     if value.startswith("[") and value.endswith("]"):
-        return [v.strip() for v in value.strip("[]").split(",")]
+        inner = value.strip("[]").strip()
+        if not inner:
+            return []
+        return [v.strip().strip("'\"") for v in inner.split(",")]
     return value
 
 
@@ -90,10 +93,11 @@ def _handle_config(config_arg: str) -> None:
         return
     else:
         if "=" in config_arg:
-            config = dict([kv.strip().split("=") for kv in config_arg.split(";")])
+            config = {k.strip(): _parse_config_value(v.strip()) for k, v in (kv.split("=", 1) for kv in config_arg.split(";"))}
         else:
             config_path = Path(config_arg)
-            assert config_path.is_file(), f"Configuration file ``{config_arg}`` does not exist. Please check and try again."
+            if not config_path.is_file():
+                raise ValueError(f"Configuration file ``{config_arg}`` does not exist. Please check and try again.")
 
             if config_path.suffix == ".json":
                 config = json.loads(config_path.read_text())

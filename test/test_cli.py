@@ -273,6 +273,20 @@ def test_cli():
     exitcode, output_msg = execute_cmd(cmd)
     assert not _CONFIG_FILE.exists()
 
+    # --- test that --config KEY=VALUE pairs parse lists, bools, and None ---
+    cmd = """bib-lookup --config "ignore_fields=['url','pdf'];print_result=true;email=none" """
+    exitcode, output_msg = execute_cmd(cmd)
+    assert exitcode == 0
+    assert _CONFIG_FILE.exists()
+    user_config = json.loads(_CONFIG_FILE.read_text())
+    assert user_config["ignore_fields"] == ["url", "pdf"], f"list not parsed: {user_config['ignore_fields']}"
+    assert user_config["print_result"] is True, f"bool not parsed: {user_config['print_result']}"
+    assert user_config["email"] is None, f"none not parsed: {user_config['email']}"
+
+    cmd = "bib-lookup --config reset"
+    exitcode, output_msg = execute_cmd(cmd)
+    assert not _CONFIG_FILE.exists()
+
     # --- test that --config warns on unknown keys (instead of silent discard) ---
     if _CONFIG_FILE.exists():
         _CONFIG_FILE.rename(_CONFIG_FILE.with_suffix(".bak"))
