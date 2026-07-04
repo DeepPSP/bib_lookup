@@ -154,7 +154,16 @@ bib-lookup --config /path/to/config.json
 bib-lookup --config /path/to/config.yaml
 ```
 
-Note that unrecognized fields will be ignored and warning messages will be printed. The following table lists all the available configuration options:
+Set a single configuration value (new shortcut):
+
+```bash
+bib-lookup set timeout 2.0
+bib-lookup set style gbt
+bib-lookup set gbmedium true   # reset a key to its built-in default with "none"
+bib-lookup set gbmedium none
+```
+
+Note that unrecognized fields will trigger a warning but are still written to the configuration file. The following table lists all the available configuration options:
 
 | Option          | Type    | Default                                       | Description                                         |
 |-----------------|---------|-----------------------------------------------|-----------------------------------------------------|
@@ -169,6 +178,7 @@ Note that unrecognized fields will be ignored and warning messages will be print
 | `verbose`       | `int`   | `0`                                           | Verbosity level.                                    |
 | `print_result`  | `bool`  | `False`                                       | Whether to print the result.                        |
 | `ordering`      | `list`  | `['title', 'author', 'journal', 'booktitle']` | Ordering of the fields.                             |
+| `gbmedium`      | `bool`  | `None`                                        | (**GB/T 7714 only**) Medium tag for articles: `True` forces `[J/OL]`, `False` forces `[J]`, `None` auto-detects from DOI/URL fields. |
 
 :point_right: [Back to TOC](#bib_lookup)
 

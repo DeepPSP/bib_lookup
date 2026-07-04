@@ -16,9 +16,24 @@ Added
 - Added ``format_err`` (``"Format Error"``) and ``parse_err`` (``"Parse Error"``)
   as dedicated error types on ``BibLookup``, with corresponding ``@property``
   getters, to distinguish local processing failures from remote lookup failures.
+- Added ``set`` subcommand to the CLI (``bib-lookup set KEY VALUE``) for setting
+  individual configuration values; ``VALUE`` of ``none``/``null`` resets the key
+  to ``None`` (falling back to built-in logic).
+- Added ``gbmedium`` configuration option for the GB/T 7714-2015 style:
+  ``True`` forces ``[J/OL]`` (online), ``False`` forces ``[J]`` (print),
+  ``None`` (default) auto-detects based on the presence of ``doi``/``url`` fields.
+- Added ``STYLE_PARAMETERS`` registry in ``_const.py`` documenting per-style
+  configuration parameters, used for validation in ``--config`` and ``set``.
 
 Changed
 ~~~~~~~
+- ``--config`` now warns (instead of silently discards) when unknown keys are
+  encountered; the keys are still written to the config file.
+- ``str2bool`` now passes ``None`` through unchanged so that config values
+  reset to ``None`` work correctly for boolean fields.
+- Style-specific settings are now collected in a ``_style_kwargs`` dictionary
+  inside ``BibLookup`` (populated by ``_init_style_kwargs``) rather than as
+  individual attributes, making it easy to add new per-style parameters.
 
 Deprecated
 ~~~~~~~~~~
