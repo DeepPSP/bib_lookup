@@ -226,6 +226,77 @@ def test_cli():
     assert exitcode == 0
     # output_msg should contain something if successful.
 
+    # --- tests for the ``set`` subcommand ---
+    # set a single key (value is stored as string; BibLookup coerces on read)
+    cmd = "bib-lookup set timeout 5.0"
+    exitcode, output_msg = execute_cmd(cmd)
+    assert exitcode == 0
+    assert _CONFIG_FILE.exists()
+    user_config = json.loads(_CONFIG_FILE.read_text())
+    assert user_config["timeout"] == "5.0"
+
+    # set with boolean value
+    cmd = "bib-lookup set print_result true"
+    exitcode, output_msg = execute_cmd(cmd)
+    assert exitcode == 0
+    user_config = json.loads(_CONFIG_FILE.read_text())
+    assert user_config["print_result"] is True
+
+    # set with none resets to None
+    cmd = "bib-lookup set print_result none"
+    exitcode, output_msg = execute_cmd(cmd)
+    assert exitcode == 0
+    user_config = json.loads(_CONFIG_FILE.read_text())
+    assert user_config["print_result"] is None
+
+    # set gbmedium (style-specific key)
+    cmd = "bib-lookup set gbmedium true"
+    exitcode, output_msg = execute_cmd(cmd)
+    assert exitcode == 0
+    user_config = json.loads(_CONFIG_FILE.read_text())
+    assert user_config["gbmedium"] is True
+
+    # set with unknown key should warn but succeed
+    cmd = "bib-lookup set totally_unknown_key value"
+    exitcode, output_msg = execute_cmd(cmd)
+    assert exitcode == 0
+    output_text = "".join(output_msg)
+    assert "Unknown" in output_text or "unknown" in output_text
+
+    # set with wrong number of arguments should fail
+    cmd = "bib-lookup set only_one_arg"
+    exitcode, output_msg = execute_cmd(cmd, raise_error=False)
+    assert exitcode == 1
+
+    # clean up
+    cmd = "bib-lookup --config reset"
+    exitcode, output_msg = execute_cmd(cmd)
+    assert not _CONFIG_FILE.exists()
+
+    # --- test that --config warns on unknown keys (instead of silent discard) ---
+    if _CONFIG_FILE.exists():
+        _CONFIG_FILE.rename(_CONFIG_FILE.with_suffix(".bak"))
+        config_backed_file2 = _CONFIG_FILE.with_suffix(".bak")
+    else:
+        config_backed_file2 = None
+
+    cmd = """bib-lookup --config "timeout=2.0;unknown_key=foo" """
+    exitcode, output_msg = execute_cmd(cmd)
+    assert exitcode == 0
+    output_text = "".join(output_msg)
+    assert "Unknown" in output_text or "unknown" in output_text
+    # the valid key should still be written (as string; BibLookup coerces on read)
+    assert _CONFIG_FILE.exists()
+    user_config = json.loads(_CONFIG_FILE.read_text())
+    assert user_config["timeout"] == "2.0"
+
+    cmd = "bib-lookup --config reset"
+    exitcode, output_msg = execute_cmd(cmd)
+    assert not _CONFIG_FILE.exists()
+
+    if config_backed_file2 is not None:
+        config_backed_file2.rename(_CONFIG_FILE)
+
     # restore the original config file
     if config_backed_file is not None:
         config_backed_file.rename(_CONFIG_FILE)
