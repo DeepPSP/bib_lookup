@@ -307,7 +307,7 @@ def main():
     parser.add_argument(
         "--timeout",
         type=float,
-        default=6,
+        default=6.0,
         help="Timeout for the lookup request. Unit is seconds. Default is 6 seconds.",
         dest="timeout",
     )
@@ -330,10 +330,10 @@ def main():
     )
     parser.add_argument(
         "--style",
-        type=str,
+        type=str.lower,
         help="Style of the output, valid only when 'format' is 'text', optional.",
         dest="style",
-        choices=list(BibLookup._get_supported_styles().keys()),
+        choices=sorted(BibLookup._get_supported_styles().keys()),
     )
     parser.add_argument(
         "--verbose",

@@ -287,6 +287,46 @@ def test_cli():
     exitcode, output_msg = execute_cmd(cmd)
     assert not _CONFIG_FILE.exists()
 
+    # --- test --config with non-existent config file fails with exit code 1 ---
+    cmd = "bib-lookup --config /nonexistent/path/to/config.json"
+    exitcode, output_msg = execute_cmd(cmd, raise_error=False)
+    assert exitcode == 1
+
+    # --- test bib-lookup with no identifiers and no input file fails with exit code 1 ---
+    cmd = "bib-lookup"
+    exitcode, output_msg = execute_cmd(cmd, raise_error=False)
+    assert exitcode == 1
+    output_text = "".join(output_msg)
+    assert "No identifiers" in output_text or "Error" in output_text
+
+    # --- test --style with invalid value is rejected by argparse ---
+    cmd = "bib-lookup 10.1109/CVPR.2016.90 --format text --style totally_invalid_style"
+    exitcode, output_msg = execute_cmd(cmd, raise_error=False)
+    assert exitcode != 0  # argparse exits with code 2 for invalid choice
+
+    # --- test --style with uppercase value is accepted (type=str.lower) ---
+    cmd = "bib-lookup 10.1142/S1005386718000305 --format text --style APA --timeout 10 --ignore-errors"
+    exitcode, output_msg = execute_cmd(cmd)
+    assert exitcode == 0
+
+    # --- test that --timeout accepts float values ---
+    cmd = "bib-lookup --config 'timeout=7.5'"
+    exitcode, output_msg = execute_cmd(cmd)
+    assert exitcode == 0
+    assert _CONFIG_FILE.exists()
+    user_config = json.loads(_CONFIG_FILE.read_text())
+    # _parse_config_value stores as string; BibLookup coerces to float on read
+    assert user_config["timeout"] == "7.5", f"timeout not stored correctly: {user_config['timeout']}"
+    # Verify BibLookup correctly reads and coerces the float
+    from bib_lookup import BibLookup
+
+    bl = BibLookup()
+    assert bl.timeout == 7.5, f"timeout not coerced to float: {bl.timeout}"
+    # clean up
+    cmd = "bib-lookup --config reset"
+    exitcode, output_msg = execute_cmd(cmd)
+    assert not _CONFIG_FILE.exists()
+
     # --- test that --config warns on unknown keys (instead of silent discard) ---
     if _CONFIG_FILE.exists():
         _CONFIG_FILE.rename(_CONFIG_FILE.with_suffix(".bak"))
