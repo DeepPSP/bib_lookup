@@ -97,7 +97,8 @@ def _handle_config(config_arg: str) -> None:
         else:
             config_path = Path(config_arg)
             if not config_path.is_file():
-                raise ValueError(f"Configuration file ``{config_arg}`` does not exist. Please check and try again.")
+                print(f"Error: Configuration file ``{config_arg}`` does not exist. Please check and try again.")
+                sys.exit(1)
 
             if config_path.suffix == ".json":
                 config = json.loads(config_path.read_text())
@@ -305,8 +306,8 @@ def main():
     )
     parser.add_argument(
         "--timeout",
-        type=int,
-        default=6,
+        type=float,
+        default=6.0,
         help="Timeout for the lookup request. Unit is seconds. Default is 6 seconds.",
         dest="timeout",
     )
@@ -329,9 +330,10 @@ def main():
     )
     parser.add_argument(
         "--style",
-        type=str,
+        type=str.lower,
         help="Style of the output, valid only when 'format' is 'text', optional.",
         dest="style",
+        choices=sorted(BibLookup._get_supported_styles().keys()),
     )
     parser.add_argument(
         "--verbose",
@@ -424,7 +426,9 @@ def main():
         bl.check_bib_file(check_file)
         return
     else:
-        assert len(args["identifiers"]) > 0 or args["input_file"] is not None, "No identifiers given."
+        if len(args["identifiers"]) == 0 and args["input_file"] is None:
+            print("Error: No identifiers given.")
+            sys.exit(1)
 
     extra_kw = {}
     if args["format"] is not None and args["format"] not in ["bibtex", "bibentry"]:
