@@ -29,7 +29,7 @@ jobs:
         fetch-depth: 0   # Use full history so hatch-vcs/git describe can see all tags
         fetch-tags: true # Ensure tags are available for versioning
     - name: Set up Python
-      uses: actions/setup-python@v6
+      uses: actions/setup-python@v7
       with:
         python-version: '3.x'
         cache: 'pip' # caching pip dependencies
