@@ -3,11 +3,13 @@
 import collections
 import json
 import subprocess
+import sys
 from pathlib import Path
 from typing import List, Tuple, Union
 
 import yaml
 
+import bib_lookup.cli as _cli_mod
 from bib_lookup._const import CONFIG_FILE as _CONFIG_FILE
 
 
@@ -334,3 +336,43 @@ def test_cli():
     result_file = LARGE_DATABASE.parent / (LARGE_DATABASE.stem + "_simplified.bib")
     assert result_file.exists()
     result_file.unlink()
+
+
+def test_cli_arxiv2doi_default_respects_config(monkeypatch):
+    """CLI must not override the config default (`arxiv2doi=True`) with False when the flag is absent."""
+    captured = {}
+
+    class FakeBL:
+        @staticmethod
+        def _get_supported_styles():
+            return {}
+
+        def __init__(self, **kwargs):
+            captured.update(kwargs)
+            self.output_file = None
+
+        def __call__(self, *args, **kwargs):
+            return ""
+
+        def __len__(self):
+            return 0
+
+        def print(self):
+            pass
+
+    monkeypatch.setattr(_cli_mod, "BibLookup", FakeBL)
+
+    # no flag: `arxiv2doi` must not be forced to False, the config default is used
+    monkeypatch.setattr(sys, "argv", ["bib-lookup", "1706.06296"])
+    _cli_mod.main()
+    assert "arxiv2doi" not in captured
+
+    captured.clear()
+    monkeypatch.setattr(sys, "argv", ["bib-lookup", "1706.06296", "--arxiv2doi"])
+    _cli_mod.main()
+    assert captured["arxiv2doi"] is True
+
+    captured.clear()
+    monkeypatch.setattr(sys, "argv", ["bib-lookup", "1706.06296", "--no-arxiv2doi"])
+    _cli_mod.main()
+    assert captured["arxiv2doi"] is False

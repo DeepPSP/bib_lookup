@@ -65,6 +65,11 @@ Fixed
   (e.g. ``sept``) returned by some DOI/PubMed resolvers, in addition to the
   existing standard 3-letter BibTeX abbreviations. Unused ``calendar`` and
   ``strptime`` imports removed.
+- Fixed arXiv identifiers like ``arXiv.1706.06296`` being rejected; the
+  pattern now accepts both ``arXiv:`` and ``arXiv.`` separators.
+- Fixed ``_handle_arxiv`` crashing with ``IndexError`` on empty API responses
+  (unknown IDs); it now returns ``Not Found``.  Also switched the arXiv API
+  to ``https://`` (the ``http`` endpoint now redirects).
 
 Security
 ~~~~~~~~

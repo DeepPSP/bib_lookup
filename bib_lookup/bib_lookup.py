@@ -203,7 +203,7 @@ class BibLookup(ReprMixin):
     __URL__ = dict(
         doi="https://doi.org/",
         pm="https://www.ncbi.nlm.nih.gov/pmc/utils/idconv/v1.0/?format=json&ids=",
-        arxiv="http://export.arxiv.org/api/query?id_list=",
+        arxiv="https://export.arxiv.org/api/query?id_list=",
     )
     __name__ = "BibLookup"
 
@@ -260,8 +260,9 @@ class BibLookup(ReprMixin):
         self.__pm_pattern_prefix = f"{self.__pmurl_pattern_prefix}|{self.__pmid_pattern_prefix}"
         self.__pm_pattern = f"^(?:{self.__pm_pattern_prefix})?(?:\\d+|pmc\\d+(?:\\.\\d+)?)(?:\\/)?$"
         # arXiv examples:
-        # "arXiv:1501.00001v1", "arXiv:cs/0012022"
-        self.__arxiv_pattern_prefix = f"((?:(?:(?:https?:\\/\\/)?arxiv.org\\/)?abs\\/)|(arxiv{colon}))"
+        # "arXiv:1501.00001v1", "arXiv.1501.00001", "arXiv:cs/0012022"
+        # NOTE `[.:]` (a character class) matches a literal `.` or `:`; no escape needed inside a class
+        self.__arxiv_pattern_prefix = "((?:(?:(?:https?:\\/\\/)?arxiv.org\\/)?abs\\/)|(arxiv[\\s]*[\\.:][\\s]*))"
         self.__arxiv_pattern = f"^(?:{self.__arxiv_pattern_prefix})?(?:([\\w\\-]+\\/\\d+)|(\\d+\\.\\d+(v(\\d+))?))$"
         self.__default_err = "Not Found"
         self.__network_err = "Network Error"
@@ -792,7 +793,7 @@ class BibLookup(ReprMixin):
                 return self._obtain_feed_content(idtf)
         else:
             warnings.warn(
-                "unrecognized `indentifier` (none of 'doi', 'pmid', 'pmcid', 'pmurl', 'arxiv').",
+                "unrecognized `identifier` (none of 'doi', 'pmid', 'pmcid', 'pmurl', 'arxiv').",
                 RuntimeWarning,
             )
             category, fc = "error", {}
@@ -959,7 +960,12 @@ class BibLookup(ReprMixin):
         except requests.RequestException:
             res = self.network_err
             return res
-        parsed = feedparser.parse(r.content.decode("utf-8")).entries[0]
+        entries = feedparser.parse(r.content.decode("utf-8")).entries
+        # the API returns an empty feed (HTTP 200) for unknown IDs
+        if not entries:
+            res = self.default_err
+            return res
+        parsed = entries[0]
         if self.verbose > 3:
             print_func(str(parsed))
         # sometimes this field has "\n"

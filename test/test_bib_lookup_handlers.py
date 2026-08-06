@@ -196,6 +196,30 @@ def test_handle_arxiv_success(monkeypatch):
     assert res["doi"].startswith("10.48550/arXiv.")
 
 
+def test_handle_arxiv_empty_entries(monkeypatch):
+    bl = BibLookup()
+    # arXiv API returns an empty feed (HTTP 200) for unknown IDs
+    monkeypatch.setattr(bl.session, "get", lambda **kw: FakeResp(content=b"<feed/>"), raising=True)
+    import feedparser
+
+    monkeypatch.setattr(feedparser, "parse", lambda content: types.SimpleNamespace(entries=[]), raising=True)
+
+    res = bl._handle_arxiv({"url": "http://example"})
+    assert res == bl.default_err
+
+
+def test_obtain_feed_content_arxiv_dot_and_colon_format():
+    bl = BibLookup()
+    # "arXiv.1706.06296" (DataCite DOI suffix style) and "arXiv:1501.00001v1" must be recognized as arxiv
+    category, fc, idtf = bl._obtain_feed_content("arXiv.1706.06296", arxiv2doi=False)
+    assert category == "arxiv"
+    assert idtf == "1706.06296"
+    assert fc["url"].startswith("https://export.arxiv.org/api/query?id_list=")
+    category, fc, idtf = bl._obtain_feed_content("arXiv:1501.00001v1", arxiv2doi=False)
+    assert category == "arxiv"
+    assert idtf == "1501.00001"
+
+
 def test_handle_network_error_variants():
     bl = BibLookup()
     # DOI Not Found -> default_err
