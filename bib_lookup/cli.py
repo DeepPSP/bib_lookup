@@ -293,16 +293,14 @@ def main():
     )
     parser.add_argument(
         "--arxiv2doi",
-        action="store_true",
+        action=argparse.BooleanOptionalAction,
         default=None,
-        help="Convert arXiv ID to DOI to look up. Defaults to the config value (true unless disabled).",
+        help=(
+            "Convert arXiv ID to DOI to look up. Defaults to the config value "
+            "(true unless disabled); ``--no-arxiv2doi`` looks up the ID directly "
+            "via the arXiv API instead."
+        ),
         dest="arxiv2doi",
-    )
-    parser.add_argument(
-        "--no-arxiv2doi",
-        action="store_false",
-        dest="arxiv2doi",
-        help="Look up arXiv IDs directly via the arXiv API instead of converting to DOI.",
     )
     parser.add_argument(
         "--ignore-errors",
