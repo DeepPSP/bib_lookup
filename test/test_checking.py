@@ -64,7 +64,7 @@ def test_warnings():
         default_bl("PMID: 35344711", format="text")
     with pytest.warns(
         RuntimeWarning,
-        match="unrecognized `indentifier` \\(none of 'doi', 'pmid', 'pmcid', 'pmurl', 'arxiv'\\)",
+        match="unrecognized `identifier` \\(none of 'doi', 'pmid', 'pmcid', 'pmurl', 'arxiv'\\)",
     ):
         default_bl("none: xxxxx")
 
