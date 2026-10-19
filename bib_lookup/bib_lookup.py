@@ -39,9 +39,6 @@ from .utils import (
     NETWORK_ERROR_MESSAGES,
     ReprMixin,
     _remove_comments,
-)
-from .utils import capitalize_title as capitalize_title_func
-from .utils import (
     color_text,
     find_verbatim_blocks,
     gather_tex_source_files_in_one,
@@ -51,6 +48,7 @@ from .utils import (
     printmd,
     str2bool,
 )
+from .utils import capitalize_title as capitalize_title_func
 
 __all__ = [
     "BibLookup",
