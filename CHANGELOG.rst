@@ -27,6 +27,13 @@ Added
 
 Changed
 ~~~~~~~
+- Import time of ``import bib_lookup`` reduced from ~0.66s to ~0.21s (cold):
+  ``pandas`` is no longer imported at module level (``_bib.py`` now uses plain
+  dicts instead of ``DataFrame`` lookups), ``pybtex`` (and its ``pkg_resources``
+  chain) is deferred into the formatting path, and ``IPython`` detection in
+  ``is_notebook`` no longer imports IPython.  ``BibLookup.supported_styles``
+  is now discovered lazily on first access instead of in ``__init__``, which
+  also keeps the module-level ``bib_lookuper`` instance pybtex-free.
 - ``--config`` now warns (instead of silently discards) when unknown keys are
   encountered; the keys are still written to the config file.
 - ``str2bool`` now passes ``None`` through unchanged so that config values
@@ -40,6 +47,11 @@ Deprecated
 
 Removed
 ~~~~~~~
+- Removed the undocumented module-level ``DataFrame`` constants
+  ``DF_BIB_ENTRY_TYPES`` and ``DF_BIB_FIELDS`` (and the private
+  ``_optional_fields`` dict) from ``bib_lookup._bib``; nothing in the docs or
+  known downstreams used them.  Required-field lookups now use the plain dict
+  ``BIB_ENTRY_REQUIRED_FIELDS`` instead.
 
 Fixed
 ~~~~~

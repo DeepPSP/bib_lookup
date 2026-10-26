@@ -4,8 +4,6 @@ import sqlite3
 import warnings
 from typing import Optional, Sequence, Union
 
-import pandas as pd
-
 from ._const import CACHE_DIR
 from .bib_lookup import BibLookup
 
@@ -60,6 +58,8 @@ class CitationMixin(object):
         # Backward compatibility: Migrate CSV to SQLite
         if self.citation_cache_csv.exists():
             try:
+                import pandas as pd
+
                 df = pd.read_csv(self.citation_cache_csv)
                 # Batch insert data, use OR IGNORE to avoid duplicates
                 data = list(df[["doi", "citation"]].itertuples(index=False, name=None))

@@ -29,10 +29,8 @@ import feedparser
 import numpy as np
 import requests
 from bs4 import BeautifulSoup, MarkupResemblesLocatorWarning
-from pybtex.backends.plaintext import Backend as TextBackend
-from pybtex.database import parse_string
 
-from ._bib import BIB_FIELDS, DF_BIB_ENTRY_TYPES, BibItem
+from ._bib import BIB_ENTRY_REQUIRED_FIELDS, BIB_FIELDS, BibItem
 from ._const import CONFIG_FILE as _CONFIG_FILE
 from ._const import DEFAULT_CONFIG as _DEFAULT_CONFIG
 from .utils import (
@@ -345,8 +343,10 @@ class BibLookup(ReprMixin):
                 requests.adapters.HTTPAdapter(pool_connections=20, max_retries=2),
             )
 
-        # Get all supported styles (custom local + pybtex built-in)
-        self.__supported_styles = self._get_supported_styles()
+        # Supported styles (custom local + pybtex built-in) are discovered
+        # lazily on first access of `self.supported_styles`, to keep
+        # `import bib_lookup` free of pybtex.
+        self.__supported_styles = None
 
     @staticmethod
     def _get_supported_styles():
@@ -486,6 +486,12 @@ class BibLookup(ReprMixin):
             the output is printed and ``None`` is returned.
 
         """
+        # pybtex is imported lazily (deferred from module level) so that
+        # `import bib_lookup` does not pay for pybtex (and its pkg_resources)
+        # unless an actual look-up formats entries.
+        from pybtex.backends.plaintext import Backend as TextBackend
+        from pybtex.database import parse_string
+
         original_verbose = self.verbose
         if verbose is not None:
             self.verbose = verbose
@@ -1243,6 +1249,8 @@ class BibLookup(ReprMixin):
     @property
     def supported_styles(self) -> dict:
         # Get all supported styles (custom local + pybtex built-in)
+        if self.__supported_styles is None:
+            self.__supported_styles = self._get_supported_styles()
         return self.__supported_styles
 
     def debug(self) -> None:
@@ -1509,7 +1517,7 @@ class BibLookup(ReprMixin):
                     f"\042{process_text(bi.entry_type, self.__err_color, font_size=self.__err_fontsize)}\042 "
                     f"should have the following fields:{newline}{whitespace * 4}"
                     + process_text(
-                        f"{DF_BIB_ENTRY_TYPES[DF_BIB_ENTRY_TYPES.entry_type == bi.entry_type].iloc[0].required_fields}",
+                        f"{BIB_ENTRY_REQUIRED_FIELDS.get(bi.entry_type, [])}",
                         self.__info_color,
                     )
                     + newline

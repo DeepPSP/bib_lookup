@@ -1,15 +1,10 @@
 """ """
 
 import re
+import sys
 from enum import Enum
 from pathlib import Path
 from typing import Any, List, Optional, Sequence, Union
-
-try:
-    from IPython import get_ipython  # type: ignore
-except ModuleNotFoundError:
-    get_ipython = None  # type: ignore
-
 
 __all__ = [
     "is_notebook",
@@ -45,8 +40,14 @@ def is_notebook() -> bool:  # pragma: no cover
     .. [#sa] https://stackoverflow.com/questions/15411967/how-can-i-check-if-code-is-executed-in-the-ipython-notebook
 
     """
-    if get_ipython is None:
+    # IPython is deliberately NOT imported here (this function runs at module
+    # level in `bib_lookup.bib_lookup`, and importing IPython costs ~0.14s):
+    # a notebook always has IPython already loaded, so its absence in
+    # `sys.modules` is a reliable and cheap negative signal.
+    if "IPython" not in sys.modules:
         return False
+    from IPython import get_ipython  # type: ignore
+
     try:
         shell = get_ipython().__class__
         if shell.__name__ == "ZMQInteractiveShell":
@@ -58,8 +59,6 @@ def is_notebook() -> bool:  # pragma: no cover
         else:  # Other type (?)
             return False
     except NameError:  # Probably standard Python interpreter
-        return False
-    except TypeError:  # get_ipython is None
         return False
 
 
