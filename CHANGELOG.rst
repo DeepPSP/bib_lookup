@@ -55,6 +55,9 @@ Removed
   nothing in the docs or known downstreams used them.  Required-field and
   optional-field lookups now use the plain dicts
   ``BIB_ENTRY_REQUIRED_FIELDS`` and ``BIB_ENTRY_OPTIONAL_FIELDS`` instead.
+- Removed the NiceGUI-based web interface (``nicegui_app.py``) and the
+  ``nicegui`` dependency; the Streamlit app (``streamlit_app.py``) remains
+  as the single web UI.
 
 Fixed
 ~~~~~
