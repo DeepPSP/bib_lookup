@@ -1,19 +1,12 @@
-import warnings
-
 import streamlit as st
 
-from bib_lookup.bib_lookup import BibLookup
-from bib_lookup.version import __version__
+from bib_lookup import BibLookup, __version__
 
 st.set_page_config(
     page_title="Bib Lookup",
     page_icon=":books:",
     layout="centered",
 )
-
-
-# ignore warnings
-warnings.filterwarnings("ignore")
 
 
 @st.cache_resource
@@ -58,7 +51,7 @@ def do_lookup():
             # cache into session_state["history"]
             if "history" not in st.session_state:
                 st.session_state["history"] = {}
-            if input_doi not in st.session_state["history"] and bib not in bl.lookup_errors:
+            if bib not in bl.lookup_errors:
                 st.session_state["history"]["doi"] = input_doi
                 st.session_state["history"]["fmt"] = current_fmt
                 st.session_state["history"]["arxiv2doi"] = current_arxiv2doi
@@ -88,7 +81,6 @@ bl = get_bib_lookuper()
 st.title("Bib Lookup 🔍")
 
 # show the version number on the sidebar
-
 st.sidebar.markdown(f"version: {__version__}")
 
 # configurations on the sidebar
@@ -100,7 +92,6 @@ align = st.sidebar.selectbox(
     options=["middle", "left", "left-middle"],
     index=0,
     key="align",
-    # on_change=do_lookup,
     on_change=lambda: st.session_state.update({"confirmed_doi": True}),
 )
 # select the format of the output
@@ -109,7 +100,6 @@ fmt = st.sidebar.selectbox(
     options=["bibtex", "text", "rdf-xml", "turtle", "ris", "crossref-xml", "datacite-xml", "crossref-tdm", "bibentry"],
     index=0,
     key="fmt",
-    # on_change=do_lookup,
     on_change=lambda: st.session_state.update({"confirmed_doi": True}),
 )
 # toggle arxiv2doi to be on or off
@@ -117,7 +107,6 @@ arxiv2doi = st.sidebar.checkbox(
     label="arXiv ID to DOI",
     value=True,
     key="arxiv2doi",
-    # on_change=do_lookup,
     on_change=lambda: st.session_state.update({"confirmed_doi": True}),
 )
 # toggle capitalize_title to be on or off
@@ -125,7 +114,6 @@ capitalize_title = st.sidebar.checkbox(
     label="Capitalize title",
     value=False,
     key="capitalize_title",
-    # on_change=do_lookup,
     on_change=lambda: st.session_state.update({"confirmed_doi": True}),
 )
 # link to issue tracker on GitHub
@@ -146,7 +134,6 @@ with col_input:
         value="",
         max_chars=100,
         key="input_doi",
-        # help="Enter a DOI, PubMed ID or arXiv ID",
         placeholder="Paste DOI, arXiv ID, or PubMed ID here...",
         on_change=lambda: st.session_state.update({"confirmed_doi": True}),
     )
@@ -157,11 +144,10 @@ with col_btn:
         key="button",
         type="primary",
         use_container_width=True,
-        # on_click=do_lookup,
         on_click=lambda: st.session_state.update({"confirmed_doi": True}),
     )
 
-# a container for writting output
+# a container for writing output
 if st.session_state.get("confirmed_doi", False):
     st.divider()
 output_container = st.container()
