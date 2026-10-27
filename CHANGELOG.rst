@@ -24,6 +24,9 @@ Added
   ``None`` (default) auto-detects based on the presence of ``doi``/``url`` fields.
 - Added ``STYLE_PARAMETERS`` registry in ``_const.py`` documenting per-style
   configuration parameters, used for validation in ``--config`` and ``set``.
+- Added the public ``BIB_ENTRY_OPTIONAL_FIELDS`` dict in ``bib_lookup._bib``
+  (same content as the former private ``_optional_fields``, previously only
+  reachable through the removed ``DF_BIB_ENTRY_TYPES`` DataFrame).
 
 Changed
 ~~~~~~~
@@ -48,10 +51,10 @@ Deprecated
 Removed
 ~~~~~~~
 - Removed the undocumented module-level ``DataFrame`` constants
-  ``DF_BIB_ENTRY_TYPES`` and ``DF_BIB_FIELDS`` (and the private
-  ``_optional_fields`` dict) from ``bib_lookup._bib``; nothing in the docs or
-  known downstreams used them.  Required-field lookups now use the plain dict
-  ``BIB_ENTRY_REQUIRED_FIELDS`` instead.
+  ``DF_BIB_ENTRY_TYPES`` and ``DF_BIB_FIELDS`` from ``bib_lookup._bib``;
+  nothing in the docs or known downstreams used them.  Required-field and
+  optional-field lookups now use the plain dicts
+  ``BIB_ENTRY_REQUIRED_FIELDS`` and ``BIB_ENTRY_OPTIONAL_FIELDS`` instead.
 
 Fixed
 ~~~~~

@@ -489,6 +489,24 @@ BIB_ENTRY_REQUIRED_FIELDS = {
     "techreport": ["author", "title", "institution", "year"],
     "unpublished": ["author", "title", "note"],
 }
+BIB_ENTRY_OPTIONAL_FIELDS = {
+    # https://www.openoffice.org/bibliographic/bibtex-defs.html
+    # https://www.andy-roberts.net/res/writing/latex/bibentries.pdf
+    "article": ["volume", "number", "pages", "month", "note"],
+    "book": ["volume|number", "series", "address", "edition", "month", "note"],
+    "booklet": ["author", "howpublished", "address", "month", "year", "note"],
+    "inbook": ["volume|number", "series", "type", "address", "edition", "month", "note"],
+    "incollection": ["editor", "volume|number", "series", "type", "chapter", "pages", "address", "edition", "month", "note"],
+    "inproceedings": ["editor", "volume|number", "series", "pages", "address", "month", "organization", "publisher", "note"],
+    "conference": ["editor", "volume|number", "series", "pages", "address", "month", "organization", "publisher", "note"],
+    "manual": ["author", "organization", "address", "edition", "month", "year", "note"],
+    "mastersthesis": ["type", "address", "month", "note"],
+    "misc": ["author", "title", "howpublished", "month", "year", "note"],
+    "phdthesis": ["type", "address", "month", "note"],
+    "proceedings": ["editor", "volume|number", "series", "address", "month", "publisher", "organization", "note"],
+    "techreport": ["type", "number", "address", "month", "note", "key"],
+    "unpublished": ["month", "year", "key"],
+}
 # fmt: on
 
 

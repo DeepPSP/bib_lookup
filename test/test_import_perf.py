@@ -82,6 +82,17 @@ def test_bib_entry_required_fields_dict() -> None:
     assert BIB_ENTRY_REQUIRED_FIELDS["misc"] == []
 
 
+def test_bib_entry_optional_fields_dict() -> None:
+    # `BIB_ENTRY_OPTIONAL_FIELDS` (restored public dict, formerly the private
+    # `_optional_fields`) must mirror the required-fields dict coverage.
+    from bib_lookup._bib import BIB_ENTRY_OPTIONAL_FIELDS, BIB_ENTRY_REQUIRED_FIELDS, BIB_ENTRY_TYPES
+
+    assert set(BIB_ENTRY_OPTIONAL_FIELDS) == set(BIB_ENTRY_REQUIRED_FIELDS)
+    assert set(BIB_ENTRY_OPTIONAL_FIELDS) <= set(BIB_ENTRY_TYPES)
+    assert all(isinstance(v, list) for v in BIB_ENTRY_OPTIONAL_FIELDS.values())
+    assert BIB_ENTRY_OPTIONAL_FIELDS["misc"] == ["author", "title", "howpublished", "month", "year", "note"]
+
+
 def test_check_required_fields_biblatex_only_type() -> None:
     # "software" is a valid entry type but has no required-fields entry;
     # the check must pass silently (as it did with the DataFrame lookup).
