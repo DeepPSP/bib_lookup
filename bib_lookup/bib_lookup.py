@@ -25,10 +25,8 @@ from pathlib import Path
 from string import punctuation
 from typing import Dict, List, Literal, Optional, Sequence, Tuple, Union
 
-import feedparser
 import numpy as np
 import requests
-from bs4 import BeautifulSoup, MarkupResemblesLocatorWarning
 
 from ._bib import BIB_ENTRY_REQUIRED_FIELDS, BIB_FIELDS, BibItem
 from ._const import CONFIG_FILE as _CONFIG_FILE
@@ -67,7 +65,21 @@ else:
     newline = "\n"
     whitespace = " "
 
-warnings.filterwarnings("ignore", category=MarkupResemblesLocatorWarning)
+
+def _html_to_text(html: str) -> str:
+    """Strip HTML tags from a string.
+
+    bs4 is imported lazily (deferred from module level) so that
+    `import bib_lookup` does not pay for it; it is only needed when a
+    look-up response has to be cleaned of HTML markup.  The import site
+    is also the single place where ``MarkupResemblesLocatorWarning`` is
+    silenced for these parses.
+    """
+    from bs4 import BeautifulSoup, MarkupResemblesLocatorWarning
+
+    with warnings.catch_warnings():
+        warnings.filterwarnings("ignore", category=MarkupResemblesLocatorWarning)
+        return BeautifulSoup(html, "html.parser").get_text()
 
 
 class BibLookup(ReprMixin):
@@ -672,9 +684,7 @@ class BibLookup(ReprMixin):
                             res = f"{self.format_err} ({style}): {e}"
                 else:
                     # Original text handling
-                    with warnings.catch_warnings():
-                        warnings.filterwarnings("ignore", category=MarkupResemblesLocatorWarning)
-                        res = BeautifulSoup(res, "html.parser").get_text()
+                    res = _html_to_text(res)
 
         if self.verbose >= 1:
             if self._is_error(res):
@@ -958,6 +968,11 @@ class BibLookup(ReprMixin):
             Decoded and parsed query result.
 
         """
+        # feedparser is imported lazily (deferred from module level) so that
+        # `import bib_lookup` does not pay for it; only arXiv look-ups,
+        # which parse the Atom feed, ever need it.
+        import feedparser
+
         try:
             r = self.session.get(**feed_content)
         except requests.Timeout:
@@ -1131,9 +1146,7 @@ class BibLookup(ReprMixin):
                 field_dict[k] = v[1:-1]
             elif (tmp_v.startswith("{") and tmp_v.endswith("}")) or len(tmp_v) == 0:
                 field_dict[k] = v[1:-1]
-            with warnings.catch_warnings():
-                warnings.filterwarnings("ignore", category=MarkupResemblesLocatorWarning)
-                field_dict[k] = BeautifulSoup(field_dict[k], "html.parser").get_text()
+            field_dict[k] = _html_to_text(field_dict[k])
             # replace the "&" in field content with "\&"
             field_dict[k] = field_dict[k].replace("&", r"\&").replace(r"\\&", r"\&")
 

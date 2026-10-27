@@ -1,9 +1,10 @@
 """Tests that `import bib_lookup` stays lightweight.
 
 Heavy optional-path dependencies (pandas, pybtex and its pkg_resources,
-IPython) must not be loaded at import time; pybtex should load only when
-citation styles are actually accessed, pandas only when the citation cache
-is actually used.
+IPython, feedparser, bs4) must not be loaded at import time; pybtex should
+load only when citation styles are actually accessed, pandas only when the
+citation cache is actually used, and feedparser/bs4 only during network
+look-ups.
 
 The checks run in a subprocess so that the importing test session (which
 may have these modules loaded for other tests) does not pollute
@@ -23,7 +24,7 @@ _CLEAN_IMPORT_SCRIPT = """\
 import sys
 import bib_lookup  # noqa: F401
 
-heavy = ("pandas", "pybtex", "pkg_resources", "IPython")
+heavy = ("pandas", "pybtex", "pkg_resources", "IPython", "feedparser", "bs4")
 loaded = sorted({h for m in sys.modules for h in heavy if m == h or m.startswith(h + ".")})
 assert not loaded, f"heavy modules loaded on import: {loaded}"
 print("ok")

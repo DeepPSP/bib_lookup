@@ -27,13 +27,13 @@ Added
 
 Changed
 ~~~~~~~
-- Import time of ``import bib_lookup`` reduced from ~0.66s to ~0.21s (cold):
+- Import time of ``import bib_lookup`` reduced from ~0.66s to ~0.12s (cold):
   ``pandas`` is no longer imported at module level (``_bib.py`` now uses plain
   dicts instead of ``DataFrame`` lookups), ``pybtex`` (and its ``pkg_resources``
-  chain) is deferred into the formatting path, and ``IPython`` detection in
-  ``is_notebook`` no longer imports IPython.  ``BibLookup.supported_styles``
-  is now discovered lazily on first access instead of in ``__init__``, which
-  also keeps the module-level ``bib_lookuper`` instance pybtex-free.
+  chain), ``IPython``, ``feedparser``, and ``bs4`` are all deferred to the code
+  paths that actually use them.  ``BibLookup.supported_styles`` is now
+  discovered lazily on first access instead of in ``__init__``, which also
+  keeps the module-level ``bib_lookuper`` instance pybtex-free.
 - ``--config`` now warns (instead of silently discards) when unknown keys are
   encountered; the keys are still written to the config file.
 - ``str2bool`` now passes ``None`` through unchanged so that config values
