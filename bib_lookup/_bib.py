@@ -10,8 +10,6 @@ import warnings
 from collections import OrderedDict
 from typing import Any, Optional, Sequence, Set, Union
 
-import pandas as pd
-
 # Map all common month representations (lower-case) to their integer value.
 # Covers: standard 3-letter BibTeX abbreviations, full English names,
 # and non-standard abbreviations (e.g. "sept") that some resolvers return.
@@ -196,7 +194,9 @@ class BibItem(object):
 
     def check_required_fields(self) -> None:
         """Check if the bib item contains all required fields."""
-        required_fields = DF_BIB_ENTRY_TYPES[DF_BIB_ENTRY_TYPES["entry_type"] == self.entry_type].iloc[0]["required_fields"]
+        # entry types without a dedicated entry (e.g. biblatex-only types like
+        # "software") simply have no required fields
+        required_fields = BIB_ENTRY_REQUIRED_FIELDS.get(self.entry_type, [])
         for item in required_fields:
             # "xx|yy" means "xx or yy"
             # "xx+|yy" means "xx and/or yy"
@@ -470,9 +470,8 @@ BIB_ENTRY_TYPES = {
     "video": "audiovisual recordings, typically on DVD, VHS cassette, or similar media",
 }
 
-DF_BIB_ENTRY_TYPES = pd.DataFrame([(k, v) for k, v in BIB_ENTRY_TYPES.items()], columns=["entry_type", "description"])
 # fmt: off
-_required_fields = {
+BIB_ENTRY_REQUIRED_FIELDS = {
     # https://www.openoffice.org/bibliographic/bibtex-defs.html
     # https://www.andy-roberts.net/res/writing/latex/bibentries.pdf
     "article": ["author", "title", "journal", "year|date"],
@@ -490,7 +489,7 @@ _required_fields = {
     "techreport": ["author", "title", "institution", "year"],
     "unpublished": ["author", "title", "note"],
 }
-_optional_fields = {
+BIB_ENTRY_OPTIONAL_FIELDS = {
     # https://www.openoffice.org/bibliographic/bibtex-defs.html
     # https://www.andy-roberts.net/res/writing/latex/bibentries.pdf
     "article": ["volume", "number", "pages", "month", "note"],
@@ -509,8 +508,6 @@ _optional_fields = {
     "unpublished": ["month", "year", "key"],
 }
 # fmt: on
-DF_BIB_ENTRY_TYPES["required_fields"] = DF_BIB_ENTRY_TYPES.entry_type.apply(lambda x: _required_fields.get(x, []))
-DF_BIB_ENTRY_TYPES["optional_fields"] = DF_BIB_ENTRY_TYPES.entry_type.apply(lambda x: _optional_fields.get(x, []))
 
 
 BIB_FIELDS = {
@@ -633,5 +630,3 @@ BIB_FIELDS = {
     "key": "used for alphabetizing, crossreferencing, and creating a label when the “author” and “editor” fields are missing",
     "annote": "an annotation for annotated bibliography styles (not typical)",
 }
-
-DF_BIB_FIELDS = pd.DataFrame([(k, v) for k, v in BIB_FIELDS.items()], columns=["field", "description"])

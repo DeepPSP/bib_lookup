@@ -24,9 +24,19 @@ Added
   ``None`` (default) auto-detects based on the presence of ``doi``/``url`` fields.
 - Added ``STYLE_PARAMETERS`` registry in ``_const.py`` documenting per-style
   configuration parameters, used for validation in ``--config`` and ``set``.
+- Added the public ``BIB_ENTRY_OPTIONAL_FIELDS`` dict in ``bib_lookup._bib``
+  (same content as the former private ``_optional_fields``, previously only
+  reachable through the removed ``DF_BIB_ENTRY_TYPES`` DataFrame).
 
 Changed
 ~~~~~~~
+- Import time of ``import bib_lookup`` reduced from ~0.66s to ~0.12s (cold):
+  ``pandas`` is no longer imported at module level (``_bib.py`` now uses plain
+  dicts instead of ``DataFrame`` lookups), ``pybtex`` (and its ``pkg_resources``
+  chain), ``IPython``, ``feedparser``, and ``bs4`` are all deferred to the code
+  paths that actually use them.  ``BibLookup.supported_styles`` is now
+  discovered lazily on first access instead of in ``__init__``, which also
+  keeps the module-level ``bib_lookuper`` instance pybtex-free.
 - ``--config`` now warns (instead of silently discards) when unknown keys are
   encountered; the keys are still written to the config file.
 - ``str2bool`` now passes ``None`` through unchanged so that config values
@@ -40,6 +50,11 @@ Deprecated
 
 Removed
 ~~~~~~~
+- Removed the undocumented module-level ``DataFrame`` constants
+  ``DF_BIB_ENTRY_TYPES`` and ``DF_BIB_FIELDS`` from ``bib_lookup._bib``;
+  nothing in the docs or known downstreams used them.  Required-field and
+  optional-field lookups now use the plain dicts
+  ``BIB_ENTRY_REQUIRED_FIELDS`` and ``BIB_ENTRY_OPTIONAL_FIELDS`` instead.
 
 Fixed
 ~~~~~
