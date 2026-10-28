@@ -114,11 +114,13 @@ jobs:
       - name: Publish package to TestPyPI  # to test, use https://test.pypi.org/
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
-          password: ${{ secrets.TEST_PYPI_TOKEN }}
+          # trusted publishing (OIDC): the publisher registered on
+          # test.pypi.org must match owner/repo/workflow/environment below
           repository-url: https://test.pypi.org/legacy/
           packages-dir: ${{ env.ARTIFACT_DIR }}
       - name: Publish package to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
-          password: ${{ secrets.PYPI_TOKEN }}
+          # trusted publishing (OIDC): the publisher registered on pypi.org
+          # must match owner/repo/workflow/environment below
           packages-dir: ${{ env.ARTIFACT_DIR }}
