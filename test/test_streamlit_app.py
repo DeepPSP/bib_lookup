@@ -9,7 +9,9 @@ call, and results persisting across script re-runs.
 
 import pytest
 
-pytest.importorskip("streamlit.testing")
+# name the full submodule: older streamlit versions have `streamlit.testing`
+# but not `testing.v1`, and the app tests need its API
+pytest.importorskip("streamlit.testing.v1")
 
 from streamlit.testing.v1 import AppTest  # noqa: E402
 
