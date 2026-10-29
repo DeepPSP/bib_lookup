@@ -11,6 +11,15 @@ Versioning <https://semver.org/spec/v2.0.0.html>`__.
 `Unreleased <https://github.com/DeepPSP/bib_lookup/compare/v0.2.0...HEAD>`__
 ----------------------------------------------------------------------------
 
+Added
+~~~~~
+- The Streamlit app now keeps the rendered result in the session state, so it
+  survives script re-runs (e.g. websocket reconnects), and caches lookups per
+  ``(identifier, arxiv2doi, format)``: switching between formats of the same
+  identifier or re-rendering with a different alignment / title case no longer
+  triggers a new network request.  Covered by new AppTest-based tests in
+  ``test/test_streamlit_app.py``.
+
 `0.2.0 <https://github.com/DeepPSP/bib_lookup/compare/v0.1.4...v0.2.0>`__ - 2026-10-28
 --------------------------------------------------------------------------------------
 
