@@ -1,0 +1,21 @@
+# keep the build context small; only pyproject.toml, README.md, LICENSE,
+# bib_lookup/ and streamlit_app.py are actually COPYed
+.git
+.github
+.zcode
+.pytest_cache
+__pycache__
+*.pyc
+*.log
+test
+tests
+docs
+tmp
+temp
+sample-files
+*.pdf
+nicegui_app.py
+requirements.txt
+Dockerfile
+docker-compose.yml
+.dockerignore
