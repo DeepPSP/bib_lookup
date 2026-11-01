@@ -14,64 +14,73 @@ def get_bib_lookuper():
     return BibLookup(verbose=0)
 
 
-def do_lookup():
-    if input_doi == "":
-        pass  # do nothing
-    else:
-        current_arxiv2doi = st.session_state.arxiv2doi if "arxiv2doi" in st.session_state else True
-        current_align = st.session_state.align if "align" in st.session_state else "middle"
-        current_fmt = st.session_state.fmt if "fmt" in st.session_state else "bibtex"
-        current_capitalize_title = st.session_state.capitalize_title if "capitalize_title" in st.session_state else False
-        if "history" in st.session_state and st.session_state["history"] != {}:
-            if (
-                st.session_state["history"]["doi"] == input_doi
-                and st.session_state["history"]["arxiv2doi"] == current_arxiv2doi
-            ):
-                cached_bib = st.session_state["history"]["bib"]
-                if isinstance(cached_bib, str) and cached_bib.startswith(BibLookup.__REDIRECT_FLAG__):
-                    url = cached_bib.split("visit: ")[-1].strip()
-                    output_container.warning("⚠️ This DOI cannot be resolved to BibTeX automatically (ChinaDOI/CNKI).")
-                    output_container.link_button("👉 Click to visit Article Page", url)
-                    return
-                if st.session_state["history"]["fmt"] == current_fmt == "bibtex":
-                    bib = str(bl._to_bib_item(cached_bib, align=current_align, capitalize_title=current_capitalize_title))
-                    output_container.code(bib, language="latex", line_numbers=False)
-                    return
-                elif st.session_state["history"]["fmt"] == current_fmt:
-                    output_container.code(cached_bib, language="latex", line_numbers=False)
-                    return
-        try:
-            bib = bl(
-                input_doi,
-                arxiv2doi=current_arxiv2doi,
-                format=current_fmt,
-                align=current_align,
-                capitalize_title=current_capitalize_title,
-            )
-            # cache into session_state["history"]
-            if "history" not in st.session_state:
-                st.session_state["history"] = {}
-            if bib not in bl.lookup_errors:
-                st.session_state["history"]["doi"] = input_doi
-                st.session_state["history"]["fmt"] = current_fmt
-                st.session_state["history"]["arxiv2doi"] = current_arxiv2doi
-                st.session_state["history"]["bib"] = bib
-                st.session_state["history"]["capitalize_title"] = current_capitalize_title
-        except Exception as e:
-            output_container.error(f"Error: {e}")
-        else:
-            if bib and bib.startswith(BibLookup.__REDIRECT_FLAG__):
-                url = bib.split("visit: ")[-1].strip()
-                output_container.warning(
-                    "Automatic lookup failed. This appears to be a ChinaDOI/CNKI record that does not support standard BibTeX export."
-                )
-                output_container.markdown(f"**Redirect URL detected:** `{url}`")
-                output_container.link_button("👉 Click to visit Article Page", url)
-            elif bib in bl.lookup_errors:
-                output_container.error(f"Lookup Failed: {bib}")
-            else:
-                output_container.code(bib, language="latex", line_numbers=False)
+# the marker that follows the resolvable URL in BibLookup's redirect message
+REDIRECT_URL_MARKER = "visit: "
 
+
+def current_config():
+    return {
+        "doi": st.session_state.get("input_doi", "").strip(),
+        "arxiv2doi": st.session_state.get("arxiv2doi", True),
+        "align": st.session_state.get("align", "middle"),
+        "fmt": st.session_state.get("fmt", "bibtex"),
+        "capitalize_title": st.session_state.get("capitalize_title", False),
+    }
+
+
+def cache_key(cfg):
+    return f"{cfg['doi']}||{cfg['arxiv2doi']}||{cfg['fmt']}"
+
+
+def render_success(container, text: str) -> None:
+    container.code(text, language="latex", line_numbers=False)
+
+
+def render_redirect(container, url: str) -> None:
+    container.warning("⚠️ This DOI cannot be resolved to BibTeX automatically (ChinaDOI/CNKI).")
+    container.link_button("👉 Click to visit Article Page", url)
+
+
+def do_lookup():
+    """Perform (or re-render) the lookup and store the result in the session state.
+
+    The result is kept in ``st.session_state["last_render"]`` instead of being
+    written to widgets directly, so it survives script re-runs (e.g. websocket
+    reconnects) and is re-displayed without another lookup.
+    """
+    cfg = current_config()
+    render = None
+    if cfg["doi"]:
+        history = st.session_state.setdefault("history", {})
+        slot = history.get(cache_key(cfg))
+        if slot is not None:
+            # cache hit: no network call; a cached bibtex entry can be
+            # re-rendered locally with the current align / capitalize settings
+            if cfg["fmt"] == "bibtex":
+                bib = str(bl._to_bib_item(slot, align=cfg["align"], capitalize_title=cfg["capitalize_title"]))
+            else:
+                bib = slot
+            render = {"status": "success", "text": bib}
+        else:
+            try:
+                bib = bl(
+                    cfg["doi"],
+                    arxiv2doi=cfg["arxiv2doi"],
+                    format=cfg["fmt"],
+                    align=cfg["align"],
+                    capitalize_title=cfg["capitalize_title"],
+                )
+            except Exception as e:
+                render = {"status": "error", "text": f"Error: {e}"}
+            else:
+                if bib and bib.startswith(BibLookup.__REDIRECT_FLAG__):
+                    render = {"status": "redirect", "url": bib.split(REDIRECT_URL_MARKER)[-1].strip()}
+                elif bib in bl.lookup_errors:
+                    render = {"status": "error", "text": f"Lookup Failed: {bib}"}
+                else:
+                    history[cache_key(cfg)] = bib
+                    render = {"status": "success", "text": bib}
+    st.session_state["last_render"] = render
     st.session_state["confirmed_doi"] = False
 
 
@@ -87,7 +96,7 @@ st.sidebar.markdown(f"version: {__version__}")
 
 st.sidebar.title("Configurations")
 # select the style of alignment
-align = st.sidebar.selectbox(
+st.sidebar.selectbox(
     label="Alignment",
     options=["middle", "left", "left-middle"],
     index=0,
@@ -95,7 +104,7 @@ align = st.sidebar.selectbox(
     on_change=lambda: st.session_state.update({"confirmed_doi": True}),
 )
 # select the format of the output
-fmt = st.sidebar.selectbox(
+st.sidebar.selectbox(
     label="Format",
     options=["bibtex", "text", "rdf-xml", "turtle", "ris", "crossref-xml", "datacite-xml", "crossref-tdm", "bibentry"],
     index=0,
@@ -103,14 +112,14 @@ fmt = st.sidebar.selectbox(
     on_change=lambda: st.session_state.update({"confirmed_doi": True}),
 )
 # toggle arxiv2doi to be on or off
-arxiv2doi = st.sidebar.checkbox(
+st.sidebar.checkbox(
     label="arXiv ID to DOI",
     value=True,
     key="arxiv2doi",
     on_change=lambda: st.session_state.update({"confirmed_doi": True}),
 )
 # toggle capitalize_title to be on or off
-capitalize_title = st.sidebar.checkbox(
+st.sidebar.checkbox(
     label="Capitalize title",
     value=False,
     key="capitalize_title",
@@ -128,7 +137,7 @@ col_input, col_btn = st.columns([4, 1], gap="small")
 
 # input on the main page
 with col_input:
-    input_doi = st.text_input(
+    st.text_input(
         label="**DOI / PubMed ID / arXiv ID**",
         label_visibility="collapsed",
         value="",
@@ -139,7 +148,7 @@ with col_input:
     )
 # a "Search" button to trigger the lookup on the right side of the input box
 with col_btn:
-    button = st.button(
+    st.button(
         label="Search",
         key="button",
         type="primary",
@@ -147,10 +156,19 @@ with col_btn:
         on_click=lambda: st.session_state.update({"confirmed_doi": True}),
     )
 
-# a container for writing output
-if st.session_state.get("confirmed_doi", False):
-    st.divider()
-output_container = st.container()
-
+# perform the lookup (updates `last_render` in the session state) ...
 if st.session_state.get("confirmed_doi", False):
     do_lookup()
+
+# ... and (re-)render the last result, which persists across script re-runs
+last_render = st.session_state.get("last_render")
+if last_render is not None:
+    st.divider()
+    output_container = st.container()
+    with output_container:
+        if last_render["status"] == "success":
+            render_success(output_container, last_render["text"])
+        elif last_render["status"] == "error":
+            output_container.error(last_render["text"])
+        elif last_render["status"] == "redirect":
+            render_redirect(output_container, last_render["url"])

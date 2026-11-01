@@ -13,12 +13,25 @@ Versioning <https://semver.org/spec/v2.0.0.html>`__.
 
 Added
 ~~~~~
+- The Streamlit app now keeps the rendered result in the session state, so it
+  survives script re-runs (e.g. websocket reconnects), and caches lookups per
+  ``(identifier, arxiv2doi, format)``: switching between formats of the same
+  identifier or re-rendering with a different alignment / title case no longer
+  triggers a new network request.  Covered by new AppTest-based tests in
+  ``test/test_streamlit_app.py``.
 - Docker packaging for the Streamlit web app: a multi-stage ``Dockerfile``
   (``python:3.12-slim``, venv-isolated install, unprivileged runtime user,
   built-in health check) plus a ``docker-compose.yml`` with
   ``restart: unless-stopped`` binding ``127.0.0.1:8501``.  The PyPI package
   stays library-only; the app is packaged from the repository snapshot.
   The reverse-proxy configuration in front of it is unchanged.
+
+Removed
+~~~~~~~
+- Dropped support for Python 3.9 and 3.10 (both end-of-life — October 2025 and
+  October 2026 respectively); the minimum supported Python is now 3.11, and
+  Python 3.14 is now covered by the test matrix.  Users on older interpreters
+  will automatically resolve the last compatible release from PyPI.
 
 `0.2.0 <https://github.com/DeepPSP/bib_lookup/compare/v0.1.4...v0.2.0>`__ - 2026-10-28
 --------------------------------------------------------------------------------------
