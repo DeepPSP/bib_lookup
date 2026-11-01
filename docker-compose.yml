@@ -1,0 +1,23 @@
+# Compose v2 spec file: no `version:` key (deprecated and ignored).
+# The container listens on 127.0.0.1 only — apache/nginx in front of it is
+# the public entry point (the existing reverse proxy keeps working as-is).
+
+services:
+  bib-lookup:
+    build:
+      context: .
+      # hatch-vcs has no .git inside the build context; override at build
+      # time with e.g. SETUPTOOLS_SCM_PRETEND_VERSION=0.2.0 docker compose build
+      args:
+        SETUPTOOLS_SCM_PRETEND_VERSION: ${SETUPTOOLS_SCM_PRETEND_VERSION:-0.0.0}
+    image: ghcr.io/deeppsp/bib_lookup-app:local
+    container_name: bib-lookup-app
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8501:8501"
+    # uncomment to persist the BibLookup cache across container recreation
+    # volumes:
+    #   - bib-lookup-cache:/home/appuser/.cache/bib-lookup
+
+# volumes:
+#   bib-lookup-cache:

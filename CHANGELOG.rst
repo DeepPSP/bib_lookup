@@ -11,6 +11,15 @@ Versioning <https://semver.org/spec/v2.0.0.html>`__.
 `Unreleased <https://github.com/DeepPSP/bib_lookup/compare/v0.2.0...HEAD>`__
 ----------------------------------------------------------------------------
 
+Added
+~~~~~
+- Docker packaging for the Streamlit web app: a multi-stage ``Dockerfile``
+  (``python:3.12-slim``, venv-isolated install, unprivileged runtime user,
+  built-in health check) plus a ``docker-compose.yml`` with
+  ``restart: unless-stopped`` binding ``127.0.0.1:8501``.  The PyPI package
+  stays library-only; the app is packaged from the repository snapshot.
+  The reverse-proxy configuration in front of it is unchanged.
+
 `0.2.0 <https://github.com/DeepPSP/bib_lookup/compare/v0.1.4...v0.2.0>`__ - 2026-10-28
 --------------------------------------------------------------------------------------
 
