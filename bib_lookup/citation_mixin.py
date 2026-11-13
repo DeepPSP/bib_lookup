@@ -198,8 +198,7 @@ class CitationMixin(object):
             stamp = datetime.now().strftime("%Y%m%d-%H%M%S")
             quarantine = db.with_name(f"{db.name}.corrupt-{stamp}-{os.getpid()}")
             warnings.warn(
-                f"Citation cache database is corrupt and will be recreated: {db} "
-                f"(original moved to {quarantine.name})",
+                f"Citation cache database is corrupt and will be recreated: {db} " f"(original moved to {quarantine.name})",
                 UserWarning,
             )
             try:
