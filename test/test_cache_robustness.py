@@ -15,6 +15,7 @@ import sqlite3
 import subprocess
 import sys
 import textwrap
+import warnings
 from pathlib import Path
 
 import pytest
@@ -30,8 +31,10 @@ IS_POSIX = os.name == "posix"
 @pytest.fixture(autouse=True)
 def _reset_global_cache_state():
     cm._reset_cache_disable_state()
+    _const._CACHE_DIR_RESOLVED = _const._UNSET
     yield
     cm._reset_cache_disable_state()
+    _const._CACHE_DIR_RESOLVED = _const._UNSET
 
 
 class _Holder(bib_lookup.CitationMixin):
@@ -172,6 +175,18 @@ def test_resolution_falls_back_to_temp_when_home_unwritable(monkeypatch, tmp_pat
         assert str(resolved).startswith(tempfile.gettempdir())
     finally:
         (home / ".cache").chmod(0o755)
+
+
+def test_get_cache_dir_memoized_and_created(monkeypatch, tmp_path):
+    monkeypatch.setenv("BIB_LOOKUP_CACHE_DIR", str(tmp_path / "memo"))
+    d1 = _const.get_cache_dir()
+    d2 = _const.get_cache_dir()
+    assert d1 == d2 == tmp_path / "memo"
+    assert (tmp_path / "memo").is_dir()
+    # no warning on the happy path
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        assert _const.get_cache_dir() == d1
 
 
 # ----------------------------------------------------------------------
