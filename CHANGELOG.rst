@@ -33,6 +33,31 @@ Removed
   Python 3.14 is now covered by the test matrix.  Users on older interpreters
   will automatically resolve the last compatible release from PyPI.
 
+Fixed
+~~~~~
+- ``import bib_lookup`` no longer touches the filesystem at import time and no
+  longer crashes when ``HOME`` is unset, non-existent, read-only, quota-limited
+  or otherwise unusable (e.g. ``HOME=/proc``, HPC/Apptainer/CI deployments).
+  The cache root is now resolved lazily through ``BIB_LOOKUP_CACHE_DIR`` →
+  ``XDG_CACHE_HOME`` → ``~/.cache`` → a process-local temporary directory, and
+  citation caching degrades cleanly (with a single warning) when nothing is
+  usable, instead of failing the import.  Since ``torch_ecg`` imports
+  ``bib_lookup`` at its own import time, this removes a whole class of
+  model-startup failures in competition/HPC containers.
+- Transient SQLite failures (``database is locked``, permission denied,
+  read-only filesystem, ...) are no longer misclassified as database
+  corruption, so a valid cache database is never deleted.  A genuinely corrupt
+  database file is now quarantined as ``bib-lookup-cache.db.corrupt-<timestamp>-<pid>``
+  (recoverable by hand) instead of being ``unlink()``-ed, after a second
+  integrity probe guards against racing with a concurrent cache creator.
+- Every SQLite connection of the citation cache (probe, schema, read, write) is
+  now explicitly closed, eliminating ``ResourceWarning: unclosed database``
+  during ``import torch_ecg``; initialization is serialized across processes
+  with a file lock so concurrent first-time initializers cannot split the
+  cache, and a consistent busy timeout
+  (``bib_lookup.citation_mixin.SQLITE_TIMEOUT_S``) is used everywhere.
+  Covered by ``test/test_cache_robustness.py`` (12 regression tests).
+
 `0.2.0 <https://github.com/DeepPSP/bib_lookup/compare/v0.1.4...v0.2.0>`__ - 2026-10-28
 --------------------------------------------------------------------------------------
 
