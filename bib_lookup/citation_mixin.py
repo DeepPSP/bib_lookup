@@ -6,7 +6,7 @@ import warnings
 from contextlib import contextmanager
 from datetime import datetime
 from pathlib import Path
-from typing import Iterator, List, Optional, Sequence, Set, Tuple, Union
+from typing import Iterator, List, Optional, Sequence, Set, Union
 
 try:
     import fcntl
@@ -71,7 +71,6 @@ class CitationMixin(object):
         is honored as-is; otherwise the root directory from
         :func:`bib_lookup._const.get_cache_dir` is used.  Never raises.
         """
-        global _CACHE_DISABLED
         self._cache_resolved = True
         if _CACHE_DISABLED:
             self._cache_enabled = False
