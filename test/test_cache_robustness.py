@@ -88,6 +88,7 @@ def _run_py(code: str, env: dict = None, timeout: int = 180):
 # 1. unusable HOME must not break the import (nor touch the filesystem)
 # ----------------------------------------------------------------------
 
+
 @pytest.mark.skipif(not IS_POSIX, reason="/proc and chmod semantics are POSIX")
 def test_import_never_crashes_with_unusable_home(tmp_path):
     unwritable = tmp_path / "home"
@@ -114,6 +115,7 @@ def test_import_with_nonexistent_home(tmp_path):
 # ----------------------------------------------------------------------
 # 2. BIB_LOOKUP_CACHE_DIR override
 # ----------------------------------------------------------------------
+
 
 def test_bib_lookup_cache_dir_env_override(tmp_path):
     target = tmp_path / "custom-cache"
@@ -176,6 +178,7 @@ def test_resolution_falls_back_to_temp_when_home_unwritable(monkeypatch, tmp_pat
 # 3. XDG_CACHE_HOME override
 # ----------------------------------------------------------------------
 
+
 @pytest.mark.skipif(not IS_POSIX, reason="needs /proc")
 def test_xdg_cache_home_env(tmp_path):
     xdg = tmp_path / "xdgroot"
@@ -194,6 +197,7 @@ def test_xdg_cache_home_env(tmp_path):
 # ----------------------------------------------------------------------
 # 4. valid database on a read-only filesystem: never deleted, never crashes
 # ----------------------------------------------------------------------
+
 
 @pytest.mark.skipif(RUNS_AS_ROOT, reason="chmod is ineffective for root")
 def test_valid_db_on_readonly_dir_survives(monkeypatch, tmp_path):
@@ -229,6 +233,7 @@ def test_valid_db_on_readonly_dir_survives(monkeypatch, tmp_path):
 # 5. corrupt database: quarantined (renamed aside), never lost
 # ----------------------------------------------------------------------
 
+
 def test_corrupt_db_quarantined_not_deleted(monkeypatch, tmp_path):
     db, _csv = _patch_cache_paths(monkeypatch, tmp_path)
     garbage = b"definitely not a sqlite database" * 10
@@ -254,6 +259,7 @@ def test_corrupt_db_quarantined_not_deleted(monkeypatch, tmp_path):
 # 6. locked database: never deleted
 # ----------------------------------------------------------------------
 
+
 @pytest.mark.skipif(not IS_POSIX, reason="POSIX file locking semantics")
 def test_locked_db_is_never_deleted(monkeypatch, tmp_path):
     db, _csv = _patch_cache_paths(monkeypatch, tmp_path)
@@ -272,9 +278,7 @@ def test_locked_db_is_never_deleted(monkeypatch, tmp_path):
         print("LOCKED", flush=True)
         time.sleep(30)
     """)
-    proc = subprocess.Popen(
-        [sys.executable, "-c", holder_code, str(db)], stdout=subprocess.PIPE, text=True
-    )
+    proc = subprocess.Popen([sys.executable, "-c", holder_code, str(db)], stdout=subprocess.PIPE, text=True)
     try:
         assert proc.stdout.readline().strip() == "LOCKED"
         monkeypatch.setattr(cm, "SQLITE_TIMEOUT_S", 0.2)
@@ -297,6 +301,7 @@ def test_locked_db_is_never_deleted(monkeypatch, tmp_path):
 # ----------------------------------------------------------------------
 # 7. no unclosed SQLite connections anywhere in the cache paths
 # ----------------------------------------------------------------------
+
 
 def test_no_unclosed_sqlite_connections(tmp_path):
     env = {
@@ -337,6 +342,7 @@ def test_no_unclosed_sqlite_connections(tmp_path):
 # 8. concurrent initialization across processes
 # ----------------------------------------------------------------------
 
+
 def test_concurrent_init_no_races(tmp_path):
     env = {"BIB_LOOKUP_CACHE_DIR": str(tmp_path / "shared")}
     code = """
@@ -359,8 +365,16 @@ def test_concurrent_init_no_races(tmp_path):
         assert h.get_citation() == f"@article{{{mine}}}"
         print(f"PID-OK {os.getpid()}")
     """
-    procs = [subprocess.Popen([sys.executable, "-c", textwrap.dedent(code)], env={**os.environ, **env},
-                              stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True) for _ in range(4)]
+    procs = [
+        subprocess.Popen(
+            [sys.executable, "-c", textwrap.dedent(code)],
+            env={**os.environ, **env},
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+        )
+        for _ in range(4)
+    ]
     outs = [p.communicate(timeout=180) for p in procs]
     for p, (out, err) in zip(procs, outs):
         assert p.returncode == 0, f"stderr: {err}"
