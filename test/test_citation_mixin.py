@@ -436,6 +436,22 @@ def test_citation_mixin_coverage_gaps(monkeypatch, tmp_path, capsys):
     res = obj5.get_citation(print_result=False)
     assert res == ""
 
+    # obj6 exercises get_citation() with the real BibLookup client.  Pre-populate
+    # the (already-patched) cache so the lookups are cache hits: live fetches with
+    # the 1.0 s client timeout flaked on CI runners (doi.org rate limiting).
+    conn = sqlite3.connect(db_path)
+    try:
+        conn.executemany(
+            "INSERT OR REPLACE INTO citations (doi, citation) VALUES (?, ?)",
+            [
+                ("10.1088/1361-6579/ac9451", "@article{Wen_2022, doi = {10.1088/1361-6579/ac9451}}"),
+                ("10.5281/ZENODO.6435017", "@misc{zenodo_6435017, doi = {10.5281/ZENODO.6435017}}"),
+            ],
+        )
+        conn.commit()
+    finally:
+        conn.close()
+
     obj6 = AnotherClass()
     res = obj6.get_citation()
     assert "10.1088/1361-6579/ac9451" in res
