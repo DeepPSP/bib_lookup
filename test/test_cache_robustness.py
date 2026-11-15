@@ -190,6 +190,68 @@ def test_get_cache_dir_memoized_and_created(monkeypatch, tmp_path):
 
 
 # ----------------------------------------------------------------------
+# 2b. undeterminable home directory (HOME unset AND no passwd entry):
+#     Path.home() itself raises RuntimeError -> import must still succeed
+# ----------------------------------------------------------------------
+
+
+def test_import_with_undeterminable_home(tmp_path):
+    code = """
+        import pathlib
+        import tempfile
+
+        def _raise():
+            raise RuntimeError("Could not determine home directory")
+
+        pathlib.Path.home = staticmethod(_raise)
+
+        import bib_lookup
+        from bib_lookup._const import CONFIG_FILE, DEFAULT_CITATION_CACHE_DB, get_cache_dir
+
+        assert CONFIG_FILE is None
+        assert DEFAULT_CITATION_CACHE_DB is None
+
+        bib_lookup.BibLookup()  # config read is guarded against None
+
+        d = get_cache_dir()
+        assert d is not None and str(d).startswith(tempfile.gettempdir())
+
+        class H(bib_lookup.CitationMixin):
+            @property
+            def doi(self):
+                return "10.1/nohome"
+
+        h = H()
+        assert h._init_db() is True  # temp-fallback caching still works
+        print("NOHOME-OK")
+    """
+    r = _run_py(code, {"HOME": ""})
+    assert r.returncode == 0, r.stderr
+    assert "NOHOME-OK" in r.stdout
+
+
+def test_safe_home_and_resolution_without_home(monkeypatch, tmp_path):
+    import pathlib
+
+    def _raise():
+        raise RuntimeError("Could not determine home directory")
+
+    monkeypatch.setattr(pathlib.Path, "home", staticmethod(_raise))
+    assert _const._safe_home() is None
+
+    # with CACHE_DIR undeterminable, the chain still works: env -> temp
+    monkeypatch.setattr(_const, "CACHE_DIR", None)
+    monkeypatch.delenv("BIB_LOOKUP_CACHE_DIR", raising=False)
+    monkeypatch.delenv("XDG_CACHE_HOME", raising=False)
+    resolved, is_temporary = _const._resolve_cache_dir()
+    assert is_temporary and resolved is not None
+
+    monkeypatch.setenv("BIB_LOOKUP_CACHE_DIR", str(tmp_path / "envroot"))
+    resolved, is_temporary = _const._resolve_cache_dir()
+    assert resolved == tmp_path / "envroot" and not is_temporary
+
+
+# ----------------------------------------------------------------------
 # 3. XDG_CACHE_HOME override
 # ----------------------------------------------------------------------
 

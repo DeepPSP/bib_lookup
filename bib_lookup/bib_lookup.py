@@ -224,7 +224,7 @@ class BibLookup(ReprMixin):
         **kwargs,
     ) -> None:
         bl_config = deepcopy(_DEFAULT_CONFIG)
-        if _CONFIG_FILE.exists():
+        if _CONFIG_FILE is not None and _CONFIG_FILE.exists():
             # if config file exists, update current config
             bl_config.update(json.loads(_CONFIG_FILE.read_text(encoding="utf-8", errors="ignore")))
         # update current config with user-defined config

@@ -36,8 +36,10 @@ Removed
 Fixed
 ~~~~~
 - ``import bib_lookup`` no longer touches the filesystem at import time and no
-  longer crashes when ``HOME`` is unset, non-existent, read-only, quota-limited
-  or otherwise unusable (e.g. ``HOME=/proc``, HPC/Apptainer/CI deployments).
+  longer crashes when ``HOME`` is unset, non-existent, read-only, quota-limited,
+  has no passwd entry for the process user (``docker run -u 12345`` -- where
+  ``Path.home()`` itself raises ``RuntimeError``), or is otherwise unusable
+  (e.g. ``HOME=/proc``, HPC/Apptainer/CI deployments).
   The cache root is now resolved lazily through ``BIB_LOOKUP_CACHE_DIR`` →
   ``XDG_CACHE_HOME`` → ``~/.cache`` → a process-local temporary directory, and
   citation caching degrades cleanly (with a single warning) when nothing is

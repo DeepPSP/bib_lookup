@@ -8,20 +8,37 @@ from typing import Optional, Tuple
 
 _CACHE_ROOT_NAME = "bib-lookup"
 
-# Preferred cache root.  This is only a *path*: it is deliberately NOT created
-# here (import must never touch the filesystem) and it may be unusable, e.g.
-# when HOME is absent, read-only, quota-limited or not owned by the process
-# user.  Use :func:`get_cache_dir` for a resolved, usable directory.
-CACHE_DIR = Path.home() / ".cache" / _CACHE_ROOT_NAME
 
-# user config file
-CONFIG_FILE = CACHE_DIR / "config.json"
+def _safe_home() -> Optional[Path]:
+    """Return ``Path.home()``, or ``None`` if it cannot be determined.
+
+    ``Path.home()`` raises ``RuntimeError`` when ``HOME`` is unset *and* the
+    process UID has no passwd entry (e.g. ``docker run -u 12345``) -- it must
+    therefore never be called at module import time.
+    """
+    try:
+        return Path.home()
+    except (RuntimeError, OSError):
+        return None
+
+
+# Preferred cache root.  This is only a *path*: it is deliberately NOT created
+# here (import must never touch the filesystem) and it may be unusable or even
+# undeterminable (``None``), e.g. when HOME is absent, read-only, quota-limited,
+# or there is no passwd entry for the process user.  Use :func:`get_cache_dir`
+# for a resolved, usable directory.
+_HOME = _safe_home()
+CACHE_DIR = _HOME / ".cache" / _CACHE_ROOT_NAME if _HOME is not None else None
+
+# user config file (``None`` when the home directory cannot be determined;
+# config reads/writes must guard for that)
+CONFIG_FILE = CACHE_DIR / "config.json" if CACHE_DIR is not None else None
 
 # default citation cache paths, used by `CitationMixin` as class-level
 # defaults; they are resolved per instance at first use (see
 # `citation_mixin.CitationMixin._resolve_cache`)
-DEFAULT_CITATION_CACHE_DB = CACHE_DIR / "bib-lookup-cache.db"
-DEFAULT_CITATION_CACHE_CSV = CACHE_DIR / "bib-lookup-cache.csv"
+DEFAULT_CITATION_CACHE_DB = CACHE_DIR / "bib-lookup-cache.db" if CACHE_DIR is not None else None
+DEFAULT_CITATION_CACHE_CSV = CACHE_DIR / "bib-lookup-cache.csv" if CACHE_DIR is not None else None
 
 # default config
 DEFAULT_CONFIG = dict(
@@ -103,7 +120,8 @@ def _resolve_cache_dir() -> Tuple[Optional[Path], bool]:
     xdg_dir = os.environ.get("XDG_CACHE_HOME")
     if xdg_dir:
         candidates.append(Path(xdg_dir).expanduser() / _CACHE_ROOT_NAME)
-    candidates.append(CACHE_DIR)
+    if CACHE_DIR is not None:
+        candidates.append(CACHE_DIR)
     for candidate in candidates:
         if _usable_cache_dir(candidate):
             return candidate, False
