@@ -49,52 +49,48 @@ jobs:
         path: dist
 
   github-release:
-    # github release and changelog
+    # GitHub release: the release's CHANGELOG.rst section as the preamble,
+    # GitHub's auto-generated "What's Changed" PR list appended (no labels
+    # required), and the built distributions attached as assets.
     needs: build
     runs-on: ubuntu-22.04
+    if: startsWith(github.ref, 'refs/tags/v')
     steps:
       - name: Checkout
         uses: actions/checkout@v7
-      - name: Build Changelog
-        id: changelog
-        uses: mikepenz/release-changelog-builder-action@v6
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Download artifact
+        uses: actions/download-artifact@v8
         with:
-          configurationJson: |
-            {
-              "template": "# Changelog\n\n{{CHANGELOG}}\n\n<details>\n<summary>📦 Other changes</summary>\n\n{{UNCATEGORIZED}}\n\n</details>",
-              "categories": [
-                {
-                  "title": "🚀 Features",
-                  "labels": ["feature","enhancement"]
-                },
-                {
-                  "title": "🐛 Bug Fixes",
-                  "labels": ["bug","fix"]
-                },
-                {
-                  "title": "📚 Documentation",
-                  "labels": ["documentation","docs"]
-                },
-                {
-                  "title": "⬆️ Dependencies",
-                  "labels": ["dependencies"]
-                },
-                {
-                  "title": "🧰 Maintenance",
-                  "labels": ["chore","ci"]
-                }
-              ],
-              "exclude_labels": [
-                "pre-commit"
-              ]
-            }
+          name: ${{ env.ARTIFACT_NAME }}
+          path: ${{ env.ARTIFACT_DIR }}
+      - name: Extract changelog section for this release
+        run: |
+          python3 - <<'PY'
+          import os, re
+
+          tag = os.environ["GITHUB_REF_NAME"]  # e.g. v0.3.0
+          ver = tag.lstrip("v")
+          text = open("CHANGELOG.rst", encoding="utf-8").read()
+          pat = re.compile(r"^`(?P<v>\d[\w.]* <[^>]+>`__ - \d{4}-\d{2}-\d{2})\n-+\n", re.M)
+          matches = list(pat.finditer(text))
+          body = ""
+          for i, m in enumerate(matches):
+              if m.group("v").split(" <")[0] == ver:
+                  start = m.end()
+                  end = matches[i + 1].start() if i + 1 < len(matches) else len(text)
+                  body = text[start:end].strip()
+                  break
+          if not body:
+              body = "See [CHANGELOG.rst](https://github.com/DeepPSP/bib_lookup/blob/master/CHANGELOG.rst)."
+          with open("release_notes.md", "w", encoding="utf-8") as f:
+              f.write(f"# Changes in {tag}\n\n{body}\n")
+          PY
       - name: Create Release
-        id: create_release
         uses: softprops/action-gh-release@v3
         with:
-          body: ${{ steps.changelog.outputs.changelog }}
+          body_path: release_notes.md
+          generate_release_notes: true
+          files: ${{ env.ARTIFACT_DIR }}/*
 
   pypi-publish:
     # publishing is separated from building
@@ -132,3 +128,38 @@ jobs:
           # trusted publishing (OIDC): the publisher registered on pypi.org
           # must match owner/repo/workflow/environment below
           packages-dir: ${{ env.ARTIFACT_DIR }}
+
+  docker-ghcr:
+    # build & push the Streamlit app image to GHCR on version tags
+    needs: build
+    runs-on: ubuntu-22.04
+    if: startsWith(github.ref, 'refs/tags/v')
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Compute version
+        id: ver
+        run: echo "version=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          build-args: |
+            SETUPTOOLS_SCM_PRETEND_VERSION=${{ steps.ver.outputs.version }}
+          tags: |
+            ghcr.io/deeppsp/bib_lookup-app:${{ github.ref_name }}
+            ghcr.io/deeppsp/bib_lookup-app:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
