@@ -348,7 +348,7 @@ class CitationMixin(object):
                         cursor = conn.cursor()
                         for i in range(0, len(doi), chunk_size):
                             chunk = doi[i : i + chunk_size]
-                            if not chunk:
+                            if not chunk:  # pragma: no cover -- never empty by construction
                                 continue
 
                             placeholders = ",".join("?" * len(chunk))

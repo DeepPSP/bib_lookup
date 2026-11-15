@@ -14,8 +14,10 @@ import os
 import sqlite3
 import subprocess
 import sys
+import tempfile
 import textwrap
 import warnings
+from contextlib import contextmanager
 from pathlib import Path
 
 import pytest
@@ -68,16 +70,28 @@ def _patch_cache_paths(monkeypatch, tmp_path):
     return db, csv
 
 
-def _run_py(code: str, env: dict = None, timeout: int = 180):
-    full_env = {**os.environ, **(env or {})}
-    # The child's HOME may be overridden, which would move its user-site
-    # directory along with it; pin PYTHONUSERBASE to the parent's real user
-    # base so bib_lookup and its dependencies stay importable regardless of
-    # HOME.  (Do NOT use PYTHONPATH for this: site dirs on PYTHONPATH shadow
-    # the stdlib, e.g. a legacy `dataclasses` backport breaks Python 3.13.)
+def _child_env(extra: dict = None) -> dict:
+    """Environment for child interpreters spawned by these tests.
+
+    Pins PYTHONUSERBASE to the parent's real user base so the child stays
+    importable even when its HOME is overridden (site dirs on PYTHONPATH
+    would shadow the stdlib, e.g. a legacy `dataclasses` backport breaking
+    Python 3.13), and keeps pytest-cov's subprocess-coverage hooks
+    (COV_CORE_* / COVERAGE_*) out: the embedded early-start tracer crashes
+    numpy's single-phase-init guard, and child-process execution is out of
+    scope for the coverage report by design.
+    """
     import site as _site
 
-    full_env.setdefault("PYTHONUSERBASE", _site.getuserbase())
+    env = {**os.environ, **(extra or {})}
+    env.setdefault("PYTHONUSERBASE", _site.getuserbase())
+    for key in [k for k in env if k.startswith(("COV_CORE_", "COVERAGE_"))]:
+        env.pop(key)
+    return env
+
+
+def _run_py(code: str, env: dict = None, timeout: int = 180):
+    full_env = _child_env(env)
     return subprocess.run(
         [sys.executable, "-c", textwrap.dedent(code)],
         capture_output=True,
@@ -445,7 +459,7 @@ def test_concurrent_init_no_races(tmp_path):
     procs = [
         subprocess.Popen(
             [sys.executable, "-c", textwrap.dedent(code)],
-            env={**os.environ, **env},
+            env=_child_env(env),
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             text=True,
@@ -470,3 +484,405 @@ def test_concurrent_init_no_races(tmp_path):
             if line.startswith("PID-OK"):
                 expected.add(f"10.1999/pid-{line.split()[1]}")
     assert expected <= dois, f"lost rows: {expected - dois}"
+
+
+# ======================================================================
+# In-process twins: exercise the branches that are otherwise only hit
+# inside the subprocess tests above, so they count for coverage.
+# ======================================================================
+
+
+def _mock_bl(return_map=None, default="@article{{{doi}}}"):
+    class BL:
+        format = "bibtex"
+        lookup_errors = ("__error__",)
+
+        def clear_cache(self):
+            pass
+
+        def __call__(self, doi, **kwargs):
+            if return_map and doi in return_map:
+                return return_map[doi]
+            return default.format(doi=doi)
+
+    return BL()
+
+
+def test_default_path_roundtrip_and_update_cache(monkeypatch, tmp_path):
+    """Full lifecycle through the REAL (non-overridden) cache paths."""
+    root = tmp_path / "envroot"
+    monkeypatch.setenv("BIB_LOOKUP_CACHE_DIR", str(root))
+
+    class H(bib_lookup.CitationMixin):
+        @property
+        def doi(self):
+            return ["10.1/a", "10.1/b"]
+
+    h = H()
+    h._bl = _mock_bl()
+    res = h.get_citation()  # cache miss -> mock fetch -> write-back
+    assert "@article{10.1/a}" in res and "@article{10.1/b}" in res
+    db = root / "bib-lookup-cache.db"
+    assert db.exists()
+
+    h2 = H()  # fresh instance, same default resolution: cache hit
+    h2._bl = _mock_bl(default="SHOULD-NOT-BE-USED")
+    res2 = h2.get_citation()
+    assert "@article{10.1/a}" in res2 and "SHOULD-NOT-BE-USED" not in res2
+
+    h2.update_cache()  # doi=None: lists everything, refreshes, writes back
+    conn = sqlite3.connect(db)
+    try:
+        dois = {row[0] for row in conn.execute("SELECT doi FROM citations")}
+    finally:
+        conn.close()
+    assert {"10.1/a", "10.1/b"} <= dois
+
+
+def test_resolve_cache_default_root_none(monkeypatch):
+    monkeypatch.setattr(cm, "get_cache_dir", lambda: None)
+    h = _Holder()
+    assert h._resolve_cache() is False
+    assert h.citation_cache_db is None and h.citation_cache_csv is None
+    assert h._cache_enabled is False
+
+
+def test_resolve_cache_with_none_override(monkeypatch):
+    monkeypatch.setattr(cm.CitationMixin, "citation_cache_db", None)
+    h = _Holder()
+    assert h._resolve_cache() is False
+    assert h._cache_enabled is False
+
+
+def test_resolve_cache_mkdir_oserror(monkeypatch, tmp_path):
+    blocker = tmp_path / "blocker"
+    blocker.write_text("i am a file")
+    db = blocker / "sub" / "bib-lookup-cache.db"
+    monkeypatch.setattr(cm.CitationMixin, "citation_cache_db", db)
+    monkeypatch.setattr(cm.CitationMixin, "citation_cache_csv", blocker / "sub" / "c.csv")
+    h = _Holder()
+    with pytest.warns(RuntimeWarning, match="disabled"):
+        assert h._resolve_cache() is False
+
+
+def test_global_disable_short_circuits_resolve_and_init(monkeypatch, tmp_path):
+    _patch_cache_paths(monkeypatch, tmp_path)
+    holder = _Holder()
+    holder._disable_cache("test")
+    other = _Holder()
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")  # no second warning: warn-once contract
+        assert other._init_db() is False  # silent early-return via _CACHE_DISABLED
+        other.update_cache(doi="10.1/whatever")  # same silent early-return
+
+
+def test_init_lock_without_fcntl(monkeypatch, tmp_path):
+    db, _csv = _patch_cache_paths(monkeypatch, tmp_path)
+    monkeypatch.setattr(cm, "fcntl", None)
+    h = _Holder()
+    assert h._init_db() is True  # lock skipped entirely, cache still created
+    assert db.exists()
+
+
+def _failing_fcntl():
+    class F:
+        LOCK_EX = 2
+        LOCK_UN = 8
+
+        @staticmethod
+        def flock(fh, op):
+            raise OSError("synthetic: fs refuses locks")
+
+    return F()
+
+
+def test_init_lock_open_oserror_with_usable_cache(monkeypatch, tmp_path):
+    """Exotic filesystem refuses opening the lock file but allows the cache:
+    initialization proceeds unlocked and completes normally."""
+    db, _csv = _patch_cache_paths(monkeypatch, tmp_path)
+    real_open = open
+
+    def guarded_open(file, mode="r", *a, **kw):
+        if "init-lock" in str(file):
+            raise PermissionError(f"synthetic: lock refused on {file}")
+        return real_open(file, mode, *a, **kw)
+
+    monkeypatch.setattr("builtins.open", guarded_open)
+    h = _Holder()
+    assert h._init_db() is True
+    assert db.exists()
+
+
+def test_init_lock_flock_oserror_is_best_effort(monkeypatch, tmp_path):
+    db, _csv = _patch_cache_paths(monkeypatch, tmp_path)
+    monkeypatch.setattr(cm, "fcntl", _failing_fcntl())
+    h = _Holder()
+    assert h._init_db() is True
+    assert db.exists()
+
+
+def test_init_lock_open_oserror_readonly_dir(monkeypatch, tmp_path):
+    if RUNS_AS_ROOT:
+        pytest.skip("chmod is ineffective for root")
+    db, _csv = _patch_cache_paths(monkeypatch, tmp_path)
+    tmp_path.chmod(0o555)
+    try:
+        h = _Holder()
+        with pytest.warns(RuntimeWarning, match="disabled"):
+            assert h._init_db() is False  # schema creation fails on readonly fs
+    finally:
+        tmp_path.chmod(0o755)
+
+
+def _scripted_connect(script):
+    """Replace sqlite3.connect (as seen from citation_mixin) with a scripted one."""
+
+    class _Cursor:
+        def fetchone(self):
+            return [0]
+
+    class FakeConn:
+        def __init__(self, actions):
+            self._actions = actions if isinstance(actions, list) else [actions]
+
+        def execute(self, sql, *a, **kw):
+            if not self._actions:
+                return _Cursor()
+            action = self._actions.pop(0)
+            if isinstance(action, Exception):
+                raise action
+            return _Cursor()
+
+        def commit(self):
+            pass
+
+        def cursor(self):
+            return self
+
+        def fetchall(self):
+            return []
+
+        def executemany(self, sql, data):
+            pass
+
+        def close(self):
+            pass
+
+    calls = {"n": 0}
+
+    def fake_connect(path, timeout=0.0):
+        idx = calls["n"]
+        calls["n"] += 1
+        # once the script is exhausted, behave as a plain successful connection
+        actions = script[idx] if idx < len(script) else []
+        return FakeConn(actions)
+
+    return fake_connect
+
+
+def test_check_db_file_second_probe_recovers(monkeypatch, tmp_path):
+    db, _csv = _patch_cache_paths(monkeypatch, tmp_path)
+    db.write_bytes(b"garbage")
+    monkeypatch.setattr(cm.sqlite3, "connect", _scripted_connect([sqlite3.DatabaseError("1st bad"), None]))
+    h = _Holder()
+    assert h._check_db_file() is True  # 2nd probe succeeds -> usable, no quarantine
+    assert db.read_bytes() == b"garbage"  # untouched
+
+
+def test_check_db_file_second_probe_operational(monkeypatch, tmp_path):
+    db, _csv = _patch_cache_paths(monkeypatch, tmp_path)
+    db.write_bytes(b"garbage")
+    monkeypatch.setattr(
+        cm.sqlite3,
+        "connect",
+        _scripted_connect([sqlite3.DatabaseError("1st bad"), sqlite3.OperationalError("2nd locked")]),
+    )
+    h = _Holder()
+    with pytest.warns(RuntimeWarning, match="disabled"):
+        assert h._check_db_file() is False
+
+
+def test_quarantine_moves_sidecars(monkeypatch, tmp_path):
+    """Real SQLite deletes stale sidecars of a corrupt db on open, so drive
+    quarantine through the scripted connection to reach the sidecar branch."""
+    db, _csv = _patch_cache_paths(monkeypatch, tmp_path)
+    db.write_bytes(b"garbage")
+    (tmp_path / "bib-lookup-cache.db-wal").write_bytes(b"wal")
+    (tmp_path / "bib-lookup-cache.db-shm").write_bytes(b"shm")
+    monkeypatch.setattr(
+        cm.sqlite3, "connect", _scripted_connect([sqlite3.DatabaseError("bad"), sqlite3.DatabaseError("still bad")])
+    )
+    h = _Holder()
+    with pytest.warns(UserWarning, match="corrupt"):
+        assert h._init_db() is True
+    moved = sorted(p.name for p in tmp_path.glob("*.corrupt-*"))
+    assert len(moved) == 3, moved  # db + -wal + -shm all quarantined
+    # (real-database recreation is asserted by test_corrupt_db_quarantined_not_deleted)
+
+
+def test_quarantine_sidecar_rename_oserror_is_best_effort(monkeypatch, tmp_path):
+    db, _csv = _patch_cache_paths(monkeypatch, tmp_path)
+    db.write_bytes(b"garbage")
+    (tmp_path / "bib-lookup-cache.db-wal").write_bytes(b"wal")
+    real_rename = Path.rename
+
+    def selective_rename(self, target):
+        if str(self).endswith(("-wal", "-shm")):
+            raise OSError("synthetic: sidecar rename refused")
+        return real_rename(self, target)
+
+    monkeypatch.setattr(Path, "rename", selective_rename)
+    monkeypatch.setattr(
+        cm.sqlite3, "connect", _scripted_connect([sqlite3.DatabaseError("bad"), sqlite3.DatabaseError("still bad")])
+    )
+    h = _Holder()
+    with pytest.warns(UserWarning, match="corrupt"):
+        assert h._init_db() is True  # db quarantined despite sidecar refusal
+    assert len(list(tmp_path.glob("bib-lookup-cache.db.corrupt-*"))) == 1
+    assert (tmp_path / "bib-lookup-cache.db-wal").exists()  # left in place
+
+
+def test_quarantine_rename_oserror_disables(monkeypatch, tmp_path):
+    db, _csv = _patch_cache_paths(monkeypatch, tmp_path)
+    db.write_bytes(b"garbage")
+
+    def raise_rename(self, target):
+        raise OSError("synthetic: rename refused")
+
+    monkeypatch.setattr(Path, "rename", raise_rename)
+    h = _Holder()
+    with pytest.warns(RuntimeWarning, match="disabled"):
+        assert h._check_db_file() is False
+    assert db.read_bytes() == b"garbage"  # still there, never deleted
+
+
+def test_init_db_databaseerror_branch(monkeypatch, tmp_path):
+    _patch_cache_paths(monkeypatch, tmp_path)
+
+    @contextmanager
+    def synth_dberror(self, commit=False):
+        raise sqlite3.DatabaseError("synthetic malformed schema")
+        yield None  # pragma: no cover
+
+    monkeypatch.setattr(cm.CitationMixin, "_open_db", synth_dberror)
+    h = _Holder()
+    with pytest.warns(RuntimeWarning, match="disabled"):
+        assert h._init_db() is False
+
+
+def _open_db_failing_on(when, skip_commits=0):
+    """Build an _open_db replacement that raises OperationalError on the
+    selected call shape ("read" for commit=False, "commit" for commit=True),
+    delegating everything else to the real implementation.  ``skip_commits``
+    lets the first N commit=True calls through (e.g. the _init_db schema
+    pass) so a later write-back is what actually fails."""
+    orig = cm.CitationMixin._open_db
+    commits_seen = {"n": 0}
+
+    @contextmanager
+    def patched(self, commit=False):
+        if not commit and when == "read":
+            raise sqlite3.OperationalError("synthetic failure on read")
+        if commit and when == "commit":
+            commits_seen["n"] += 1
+            if commits_seen["n"] > skip_commits:
+                raise sqlite3.OperationalError("synthetic failure on commit")
+        with orig(self, commit=commit) as conn:
+            yield conn
+
+    return patched
+
+
+def test_get_citation_read_failure_falls_back_to_network(monkeypatch, tmp_path):
+    db, _csv = _patch_cache_paths(monkeypatch, tmp_path)
+    monkeypatch.setattr(cm.CitationMixin, "_open_db", _open_db_failing_on("read"))
+    h = _Holder(doi="10.1/locked-read")
+    h._bl = _mock_bl()
+    with pytest.warns(RuntimeWarning, match="disabled"):
+        res = h.get_citation()  # read fails -> disable, fall back to network
+    assert res == "@article{10.1/locked-read}"
+
+
+def test_get_citation_write_failure_keeps_result(monkeypatch, tmp_path):
+    db, _csv = _patch_cache_paths(monkeypatch, tmp_path)
+    monkeypatch.setattr(cm.CitationMixin, "_open_db", _open_db_failing_on("commit", skip_commits=1))
+    h = _Holder(doi="10.1/w1")
+    h._bl = _mock_bl()
+    res = h.get_citation()  # write-back fails -> cache disabled, result intact
+    assert res == "@article{10.1/w1}"
+    h2 = _Holder(doi="10.1/w1b")  # globally disabled: silent, network-only
+    h2._bl = _mock_bl()
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        assert h2.get_citation() == "@article{10.1/w1b}"
+
+
+def test_update_cache_write_failure(monkeypatch, tmp_path):
+    db, _csv = _patch_cache_paths(monkeypatch, tmp_path)
+    monkeypatch.setattr(cm.CitationMixin, "_open_db", _open_db_failing_on("commit", skip_commits=1))
+    h = _Holder()
+    h._bl = _mock_bl()
+    with pytest.warns(RuntimeWarning, match="disabled"):
+        h.update_cache(doi="10.1/uc")  # read ok, fetch ok, write fails
+    assert db.exists()
+
+
+def test_update_cache_read_failure(monkeypatch, tmp_path):
+    db, _csv = _patch_cache_paths(monkeypatch, tmp_path)
+    monkeypatch.setattr(cm.CitationMixin, "_open_db", _open_db_failing_on("read"))
+    h = _Holder()
+    h._bl = _mock_bl()
+    with pytest.warns(RuntimeWarning, match="disabled"):
+        h.update_cache(doi="10.1/uc")  # read fails -> disable, no raise
+    assert db.exists()
+
+
+# --- _const twins ---
+
+
+def test_const_temp_fallback_oserror(monkeypatch, tmp_path):
+    if RUNS_AS_ROOT:
+        pytest.skip("chmod is ineffective for root")
+    home = tmp_path / "home"
+    (home / ".cache").mkdir(parents=True)
+    (home / ".cache").chmod(0o500)
+    monkeypatch.setattr(_const, "CACHE_DIR", home / ".cache" / "bib-lookup")
+    monkeypatch.delenv("BIB_LOOKUP_CACHE_DIR", raising=False)
+    monkeypatch.delenv("XDG_CACHE_HOME", raising=False)
+
+    def raise_mkdtemp(*a, **kw):
+        raise OSError("synthetic: no temp space")
+
+    monkeypatch.setattr(_const.tempfile, "mkdtemp", raise_mkdtemp)
+    resolved, is_temporary = _const._resolve_cache_dir()
+    assert resolved is None and is_temporary is False
+    (home / ".cache").chmod(0o755)
+
+
+def test_get_cache_dir_none_warns_once(monkeypatch):
+    monkeypatch.setattr(_const, "_resolve_cache_dir", lambda: (None, False))
+    _const._CACHE_DIR_RESOLVED = _const._UNSET
+    with pytest.warns(RuntimeWarning, match="caching is disabled"):
+        assert _const.get_cache_dir() is None
+    # memoized: second call silent
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        assert _const.get_cache_dir() is None
+    _const._CACHE_DIR_RESOLVED = _const._UNSET
+
+
+def test_get_cache_dir_temporary_warns(monkeypatch, tmp_path):
+    if RUNS_AS_ROOT:
+        pytest.skip("chmod is ineffective for root")
+    cache_root = tmp_path / "home" / ".cache" / "bib-lookup"
+    cache_root.mkdir(parents=True)
+    cache_root.chmod(0o500)
+    monkeypatch.setattr(_const, "CACHE_DIR", cache_root)
+    monkeypatch.delenv("BIB_LOOKUP_CACHE_DIR", raising=False)
+    monkeypatch.delenv("XDG_CACHE_HOME", raising=False)
+    _const._CACHE_DIR_RESOLVED = _const._UNSET
+    with pytest.warns(RuntimeWarning, match="temporary cache directory"):
+        d = _const.get_cache_dir()
+    assert d is not None and str(d).startswith(tempfile.gettempdir())
+    _const._CACHE_DIR_RESOLVED = _const._UNSET
+    cache_root.chmod(0o755)
