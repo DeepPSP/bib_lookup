@@ -55,20 +55,24 @@ def _parse_config_value(value: str) -> Any:
 
 def _read_user_config() -> dict:
     """Read the user config file, returning an empty dict if it does not exist."""
-    if _CONFIG_FILE.is_file():
+    if _CONFIG_FILE is not None and _CONFIG_FILE.is_file():
         return json.loads(_CONFIG_FILE.read_text())
     return {}
 
 
 def _write_user_config(config: dict) -> None:
     """Write the config dict to the user config file."""
+    if _CONFIG_FILE is None:
+        print("Cannot save configuration: the home directory cannot be determined.")
+        return
+    _CONFIG_FILE.parent.mkdir(parents=True, exist_ok=True)
     _CONFIG_FILE.write_text(json.dumps(config, indent=4))
 
 
 def _handle_config(config_arg: str) -> None:
     """Handle configuration commands."""
     if config_arg == "show":
-        if not _CONFIG_FILE.is_file():
+        if _CONFIG_FILE is None or not _CONFIG_FILE.is_file():
             print("User-defined configuration file does not exist.")
             print("Using default configurations:")
             print(json.dumps(_DEFAULT_CONFIG, indent=4))
@@ -85,7 +89,7 @@ def _handle_config(config_arg: str) -> None:
             )
         return
     elif config_arg == "reset":
-        if _CONFIG_FILE.is_file():
+        if _CONFIG_FILE is not None and _CONFIG_FILE.is_file():
             _CONFIG_FILE.unlink()
             print("User-defined configuration file deleted.")
         else:
